@@ -131,7 +131,7 @@ create table contact_submissions
     updated_at      timestamp   default CURRENT_TIMESTAMP
 );
 
-comment on table contact_submissions is 'Stores contact form submissions from CoderVai homepage';
+comment on table contact_submissions is 'Stores contact form submissions from Math Pro homepage';
 
 comment on column contact_submissions.status is 'Status: new, read, or replied';
 

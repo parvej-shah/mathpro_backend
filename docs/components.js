@@ -31,7 +31,7 @@ const courseFieldDocs = {
     example: {
       bundle_id: 1,
       thumbnails: { course_thumbnail_16_9: "https://.../DM-169.jpg", trailer_video_thumb_16_9: "", facebook_community_thumb_16_9: "" },
-      socials: { facebook_community: "https://www.facebook.com/groups/codervaicommunity", facebook_page: "https://www.facebook.com/codervaibd", facebook_private_group: "https://www.facebook.com/groups/...", telegram_group: "https://t.me/+abcdEFGhij", whatsapp: "https://wa.me/8801768976036", phone: "tel:+8801768976036", email: "mailto:support@codervai.com" },
+      socials: { facebook_community: "https://www.facebook.com/groups/mathprocommunity", facebook_page: "https://www.facebook.com/mathprobd", facebook_private_group: "https://www.facebook.com/groups/...", telegram_group: "https://t.me/+abcdEFGhij", whatsapp: "https://wa.me/8801768976036", phone: "tel:+8801768976036", email: "mailto:support@mathpro.com" },
       sections: [ { label: "চ্যাপ্টার সংখ্যা", value: "17 টি" }, { label: "ভিডিও ডিউরেশন", value: "100+ ঘণ্টা" } ],
       enrollment_details: { prebooking_end_date: 1732473599, enrollment_end_date: 1738367999, course_start_date: 1734480000 },
     },
@@ -728,7 +728,7 @@ module.exports = {
           routine_image_url: {
             type: "string",
             description: "S3 URL of the routine banner image",
-            example: "https://codervaimedia.s3.ap-south-1.amazonaws.com/routines/course-15-week-1.jpg",
+            example: "https://Math Promedia.s3.ap-south-1.amazonaws.com/routines/course-15-week-1.jpg",
           },
           week_start_date: {
             type: "string",

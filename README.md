@@ -1,4 +1,3 @@
-# Binary-School-Backend
+# Math Pro Backend
 
-Backend of CoderVai Infrastructure (1)
-
+Backend of Math Pro Infrastructure (1)

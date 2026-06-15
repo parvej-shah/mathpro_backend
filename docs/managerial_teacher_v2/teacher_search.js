@@ -64,7 +64,7 @@ module.exports = {
                     id: { type: 'integer', example: 1 },
                     name: { type: 'string', example: 'Arghya Pal' },
                     login: { type: 'string', example: '01712345678' },
-                    role: { type: 'string', example: 'Instructor at CoderVai' },
+                    role: { type: 'string', example: 'Instructor at Math Pro' },
                     university: { type: 'string', example: 'BUET' },
                     category: { type: 'string', example: 'instructor' },
                     isActive: { type: 'boolean', example: true },

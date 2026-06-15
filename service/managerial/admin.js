@@ -54,7 +54,7 @@ class AdminService extends Service {
      * @returns {Promise<{success: boolean, error?: string}>}
      */
     sendAdminCredentialsEmail = async (email, name, login, password) => {
-        const emailSubject = 'Your Admin Account Credentials - CoderVai';
+        const emailSubject = 'Your Admin Account Credentials - Math Pro';
         const emailHTML = `
             <!DOCTYPE html>
             <html lang="en">
@@ -138,7 +138,7 @@ class AdminService extends Service {
             <body>
                 <div class="container">
                     <div class="header">
-                        <div class="logo">CoderVai</div>
+                        <div class="logo">Math Pro</div>
                     </div>
                     <div class="content">
                         <h1>Your Admin Account Has Been Created</h1>
@@ -156,11 +156,11 @@ class AdminService extends Service {
                             </div>
                         </div>
                         
-                        <p>Please log in at: <a href="https://admin.codervai.com/">Admin Login</a></p>
+                        <p>Please log in at: <a href="https://admin.mathpro.com/">Admin Login</a></p>
                     </div>
                     <div class="footer">
                         <p>If you didn't expect this email, please contact the administrator immediately.</p>
-                        <p>© ${new Date().getFullYear()} CoderVai. All rights reserved.</p>
+                        <p>© ${new Date().getFullYear()} Math Pro. All rights reserved.</p>
                     </div>
                 </div>
             </body>

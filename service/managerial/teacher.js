@@ -101,7 +101,7 @@ class TeacherService extends Service {
         var params=[...this.cols.map(c=>{return reqObj[c]}),hashedPassWord]
         var result=await this.query(query,params)
         if(result.success){
-            var text=`Dear ${reqObj.name}, your login credentials for https://teachers.codervai.com is, login:${reqObj.login} and password:${password}`
+            var text=`Dear ${reqObj.name}, your login credentials for https://teachers.mathpro.com is, login:${reqObj.login} and password:${password}`
             var teacherId=result.data[0].id
             var insertValues=``
             reqObj.selectedCourse.map((s,i)=>{
@@ -158,7 +158,7 @@ class TeacherService extends Service {
         var password=this.getRandomPin('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',8);
         const salt = await bcrypt.genSalt(10)
         var hashedPassWord = await bcrypt.hash(password,salt)
-        var text=`Dear ${name}, your updated login credentials for https://teachers.codervai.com is, login:${phone} and password:${password}`
+        var text=`Dear ${name}, your updated login credentials for https://teachers.mathpro.com is, login:${phone} and password:${password}`
         var result=await Promise.all([
             this.query(`update managerial_auth set password = $1 where id=$2`,[hashedPassWord,id]),
             await messagingService.sendMessage(phone,text)

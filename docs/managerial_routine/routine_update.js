@@ -34,7 +34,7 @@ module.exports = {
                             routine_image_url: {
                                 type: "string",
                                 description: "S3 URL of the routine banner image",
-                                example: "https://codervaimedia.s3.ap-south-1.amazonaws.com/routines/course-15-week-2.jpg",
+                                example: "https://Math Promedia.s3.ap-south-1.amazonaws.com/routines/course-15-week-2.jpg",
                             },
                             week_start_date: {
                                 type: "string",

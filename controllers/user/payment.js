@@ -55,7 +55,7 @@ class PaymentController extends Controller {
             const itemId = req.body.value_b; // course_id or bundle_id
             
             // Build frontend URL with query parameters
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             let redirectUrl;
             
             if (type === 'bundle') {
@@ -71,7 +71,7 @@ class PaymentController extends Controller {
         } catch (error) {
             console.error('Error in handlePaymentSuccess:', error);
             // Fallback to generic success page
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             return res.redirect(`${frontendUrl}/dashboard`); // Redirect to dashboard if something goes wrong (user can see their purchases there)
         }
     }
@@ -80,13 +80,13 @@ class PaymentController extends Controller {
     handlePaymentFailure = async (req, res) => {
         try {
             const { tran_id } = req.body;
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             let redirectUrl = `${frontendUrl}/post-payment/failure`;
             
             return res.redirect(redirectUrl);
         } catch (error) {
             console.error('Error in handlePaymentFailure:', error);
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             return res.redirect(`${frontendUrl}/post-payment/failure`);
         }
     }
@@ -95,13 +95,13 @@ class PaymentController extends Controller {
     handlePaymentCancel = async (req, res) => {
         try {
             const { tran_id } = req.body;
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             let redirectUrl = `${frontendUrl}/post-payment/cancel`;
             
             return res.redirect(redirectUrl);
         } catch (error) {
             console.error('Error in handlePaymentCancel:', error);
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             return res.redirect(`${frontendUrl}/post-payment/cancel`);
         }
     }
@@ -483,7 +483,7 @@ class PaymentController extends Controller {
                                     const bundleTitle = bundle.title;
                                     const courseCount = bundleWithCourses.courses ? bundleWithCourses.courses.length : 0;
                                     
-                                    const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+                                    const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
                                     
                                     // CRITICAL FIX: Define successUrl for email template
                                     const successUrl = `${frontendUrl}/post-payment/success?type=bundle&bundleId=${bundleId}`;
@@ -491,7 +491,7 @@ class PaymentController extends Controller {
                                     // SMS: Use main dashboard link for bundle (shows all courses)
                                     const dashboardUrl = `${frontendUrl}/dashboard`;
                                     
-                                    const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from CoderVai! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
+                                    const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from Math Pro! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
                                 
                                 const emailText = `<!DOCTYPE html>
                                 <html lang="en">
@@ -619,7 +619,7 @@ class PaymentController extends Controller {
                                       <h2>অভিনন্দন! Bundle Purchase Successful!</h2>
                                     </div>
                                     <div class="content">
-                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased the <strong>${bundleTitle}</strong> bundle from CoderVai!</p>
+                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased the <strong>${bundleTitle}</strong> bundle from Math Pro!</p>
                                       
                                       ${bundleWithCourses.courses && bundleWithCourses.courses.length > 0 ? `
                                       <div class="course-list">
@@ -672,7 +672,7 @@ class PaymentController extends Controller {
                                                 });
                                                 return { success: false, error: err.message };
                                             }) : Promise.resolve({ success: false, error: 'No phone number' }),
-                                            userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | CoderVai', emailText).catch(err => {
+                                            userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | Math Pro', emailText).catch(err => {
                                                 console.error('IPN: Bundle Email send error:', {
                                                     userId,
                                                     transactionId,
@@ -839,7 +839,7 @@ class PaymentController extends Controller {
                                     // Get course title
                                     const courseTitle = dbResults[1].data[0].title;
                                     
-                                    const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+                                    const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
                                     
                                     // CRITICAL FIX: Define successUrl for email template
                                     const successUrl = `${frontendUrl}/post-payment/success?type=course&courseId=${courseId}`;
@@ -848,7 +848,7 @@ class PaymentController extends Controller {
                                     const courseIdStr = String(courseId);
                                     const dashboardUrl = `${frontendUrl}/dashboard/${courseIdStr}`;
                                     
-                                    const text = `Dear ${dbResults[0].data[0].name}, you have successfully purchased "${courseTitle}" course from CoderVai. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
+                                    const text = `Dear ${dbResults[0].data[0].name}, you have successfully purchased "${courseTitle}" course from Math Pro. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
                                 
                                 const emailText = `<!DOCTYPE html>
                                 <html lang="en">
@@ -969,7 +969,7 @@ class PaymentController extends Controller {
                                       <h2>অভিনন্দন! Course Purchase Successful!</h2>
                                     </div>
                                     <div class="content">
-                                      <p class="center">Dear <strong>${dbResults[0].data[0].name}</strong>, you have successfully purchased <strong>${courseTitle}</strong> course from CoderVai!</p>
+                                      <p class="center">Dear <strong>${dbResults[0].data[0].name}</strong>, you have successfully purchased <strong>${courseTitle}</strong> course from Math Pro!</p>
 
                                       <p class="center">Your access code is: <strong>${transactionId}</strong></p>
                                       <p class="center">আর তোমাকে সর্বাত্নক হেল্প করতে পাশে আছি <strong>আমরা কোডার ভাই পরিবার!</strong></p>
@@ -1017,7 +1017,7 @@ class PaymentController extends Controller {
                                                 });
                                                 return { success: false, error: err.message };
                                             }) : Promise.resolve({ success: false, error: 'No phone number' }),
-                                            userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | CoderVai', emailText).catch(err => {
+                                            userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | Math Pro', emailText).catch(err => {
                                                 console.error('IPN: Course Email send error:', {
                                                     userId,
                                                     transactionId,
@@ -1345,7 +1345,7 @@ class PaymentController extends Controller {
                             const user = dbResults[0].data[0];
                             const userPhone = user.login || user.phone;
                             const userEmail = user.profile?.email || user.email;
-                            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.codervai.com';
+                            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
                             
                             if (itemType === 'BUNDLE') {
                                 const bundle = dbResults[1].data[0];
@@ -1362,7 +1362,7 @@ class PaymentController extends Controller {
                                 
                                 const successUrl = `${frontendUrl}/post-payment/success?type=bundle&bundleId=${bundleId}`;
                                 const dashboardUrl = `${frontendUrl}/dashboard`;
-                                const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from CoderVai! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
+                                const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from Math Pro! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
                                 
                                 const emailText = `<!DOCTYPE html>
                                 <html lang="en">
@@ -1386,7 +1386,7 @@ class PaymentController extends Controller {
                                   <div class="container">
                                     <div class="header"><h2>অভিনন্দন! Bundle Purchase Successful!</h2></div>
                                     <div class="content">
-                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased the <strong>${bundleTitle}</strong> bundle from CoderVai!</p>
+                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased the <strong>${bundleTitle}</strong> bundle from Math Pro!</p>
                                       <p class="center">Your access code is: <strong>${transactionId}</strong></p>
                                       <p class="center">আর তোমাকে সর্বাত্নক হেল্প করতে পাশে আছি <strong>আমরা কোডার ভাই পরিবার!</strong></p>
                                       <div class="button-group">
@@ -1407,7 +1407,7 @@ class PaymentController extends Controller {
                                             console.error('Reconciliation: Bundle SMS send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No phone' }),
-                                        userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | CoderVai', emailText).catch(err => {
+                                        userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | Math Pro', emailText).catch(err => {
                                             console.error('Reconciliation: Bundle Email send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No email' })
@@ -1425,7 +1425,7 @@ class PaymentController extends Controller {
                                 
                                 const successUrl = `${frontendUrl}/post-payment/success?type=course&courseId=${courseId}`;
                                 const dashboardUrl = `${frontendUrl}/dashboard/${courseId}`;
-                                const text = `Dear ${user.name}, you have successfully purchased "${courseTitle}" course from CoderVai. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
+                                const text = `Dear ${user.name}, you have successfully purchased "${courseTitle}" course from Math Pro. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
                                 
                                 const emailText = `<!DOCTYPE html>
                                 <html lang="en">
@@ -1448,7 +1448,7 @@ class PaymentController extends Controller {
                                   <div class="container">
                                     <div class="header"><h2>অভিনন্দন! Course Purchase Successful!</h2></div>
                                     <div class="content">
-                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased <strong>${courseTitle}</strong> course from CoderVai!</p>
+                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased <strong>${courseTitle}</strong> course from Math Pro!</p>
                                       <p class="center">Your access code is: <strong>${transactionId}</strong></p>
                                       <p class="center">আর তোমাকে সর্বাত্নক হেল্প করতে পাশে আছি <strong>আমরা কোডার ভাই পরিবার!</strong></p>
                                       <div class="button-group">
@@ -1469,7 +1469,7 @@ class PaymentController extends Controller {
                                             console.error('Reconciliation: Course SMS send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No phone' }),
-                                        userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | CoderVai', emailText).catch(err => {
+                                        userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | Math Pro', emailText).catch(err => {
                                             console.error('Reconciliation: Course Email send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No email' })

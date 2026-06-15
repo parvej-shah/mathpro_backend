@@ -251,7 +251,7 @@ class ContactService extends Service {
         const adminEmailHtml = this.getAdminNotificationEmailTemplate(data, submissionId);
         await this.messagingService.sendMail(
             adminEmail,
-            `CoderVai LP - New Contact Form Submission - ${data.fullName}`,
+            `Math Pro LP - New Contact Form Submission - ${data.fullName}`,
             adminEmailHtml
         ).catch(err => console.error('Admin email error:', err));
 
@@ -259,7 +259,7 @@ class ContactService extends Service {
         const autoReplyHtml = this.getAutoReplyEmailTemplate(data.fullName);
         await this.messagingService.sendMail(
             data.email,
-            'Thank you for contacting CoderVai',
+            'Thank you for contacting Math Pro',
             autoReplyHtml
         ).catch(err => console.error('Auto-reply email error:', err));
     }
@@ -277,7 +277,7 @@ class ContactService extends Service {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Contact Form Submission - CoderVai</title>
+    <title>New Contact Form Submission - Math Pro</title>
     <style>
         body {
             margin: 0;
@@ -424,7 +424,7 @@ class ContactService extends Service {
         <div style="height: 40px;"></div>
         <div class="main-content">
             <div class="header">
-                <img src="https://image.codervai.com/dark.png" alt="CoderVai Logo" class="logo">
+                <img src="https://image.mathpro.com/dark.png" alt="Math Pro Logo" class="logo">
                 <h1 class="title">New Inquiry Received</h1>
                 <div class="badge">
                     ID: #${submissionId}
@@ -473,7 +473,7 @@ class ContactService extends Service {
                 </div>
             </div>
             <div class="footer">
-                <p style="margin: 0 0 8px 0;">This is an automated notification from CoderVai Contact Form System.</p>
+                <p style="margin: 0 0 8px 0;">This is an automated notification from Math Pro Contact Form System.</p>
                 <p style="margin: 0;">Please respond to the inquiry as soon as possible.</p>
             </div>
         </div>
@@ -496,7 +496,7 @@ class ContactService extends Service {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>We've received your message - CoderVai</title>
+    <title>We've received your message - Math Pro</title>
     <style>
         body {
             margin: 0;
@@ -608,8 +608,8 @@ class ContactService extends Service {
         <div style="height: 40px;"></div>
         <div class="main-content">
             <div class="header">
-                <a href="https://codervai.com" target="_blank">
-                    <img src="https://image.codervai.com/dark.png" alt="CoderVai" class="logo">
+                <a href="https://mathpro.com" target="_blank">
+                    <img src="https://image.mathpro.com/dark.png" alt="Math Pro" class="logo">
                 </a>
             </div>
             <div class="content">
@@ -618,16 +618,16 @@ class ContactService extends Service {
                 <p>We know your time is valuable. You can expect a personal response from a team member within <strong>24 hours</strong>.</p>
                 <p>In the meantime, feel free to browse our latest work or explore our services on our website. We are excited about the possibility of <strong>working together</strong>.</p>
                 <div style="margin-top: 32px; margin-bottom: 32px;">
-                    <a href="https://codervai.com" class="btn">Return to CoderVai</a>
+                    <a href="https://mathpro.com" class="btn">Return to Math Pro</a>
                 </div>
                 <hr class="divider">
                 <p style="margin-bottom: 0; font-size: 14px;">
                     Best regards,<br>
-                    <strong>The CoderVai Team</strong>
+                    <strong>The Math Pro Team</strong>
                 </p>
             </div>
             <div class="footer">
-                <p style="margin: 0 0 8px 0;">© CoderVai. All rights reserved.</p>
+                <p style="margin: 0 0 8px 0;">© Math Pro. All rights reserved.</p>
                 <p style="margin: 0;">This is an automated confirmation, but a real human will be with you shortly.</p>
             </div>
         </div>

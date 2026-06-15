@@ -261,11 +261,11 @@ class MessagingService{
       const action = purposeText[purpose] || 'verify your identity';
       
       if (contactType === 'phone') {
-        const smsText = `${otp} is your OTP to ${action} on CoderVai. Valid for 10 minutes. Do not share this code.`;
+        const smsText = `${otp} is your OTP to ${action} on Math Pro. Valid for 10 minutes. Do not share this code.`;
         return await this.sendMessage(contact, smsText);
       } 
       else if (contactType === 'email') {
-        const emailSubject = `CoderVai OTP - ${otp}`;
+        const emailSubject = `Math Pro OTP - ${otp}`;
         const emailHTML = this.getOTPEmailTemplate(otp, action);
         return await this.sendMail(contact, emailSubject, emailHTML);
       }
@@ -359,7 +359,7 @@ class MessagingService{
           <body>
             <div class="container">
               <div class="header">
-                <div class="logo">CoderVai</div>
+                <div class="logo">Math Pro</div>
               </div>
               <div class="content">
                 <h1>Your Verification Code</h1>
@@ -369,14 +369,14 @@ class MessagingService{
                 <div class="otp-code">${otp}</div>
                 <p>This code will expire in <strong>10 minutes</strong>.</p>
                 <p class="warning">
-                  ⚠️ Never share this code with anyone, including CoderVai staff.
+                  ⚠️ Never share this code with anyone, including Math Pro staff.
                 </p>
               </div>
               <div class="footer">
                 <p>
                   If you didn't request this code, please ignore this email.
                 </p>
-                <p>© ${new Date().getFullYear()} CoderVai. All rights reserved.</p>
+                <p>© ${new Date().getFullYear()} Math Pro. All rights reserved.</p>
               </div>
             </div>
           </body>

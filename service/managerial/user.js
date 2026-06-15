@@ -58,8 +58,8 @@ class UserService extends Service {
         if (contactType === 'email') {
             const isCreation = purpose === 'creation';
             const emailSubject = isCreation
-                ? '🎉 Welcome to CoderVai - Your Account Credentials'
-                : '🔐 Your Password Has Been Reset - CoderVai';
+                ? '🎉 Welcome to Math Pro - Your Account Credentials'
+                : '🔐 Your Password Has Been Reset - Math Pro';
 
             const emailHTML = `
                 <!DOCTYPE html>
@@ -218,7 +218,7 @@ class UserService extends Service {
                     <div class="email-wrapper">
                         <div class="header">
                             <div class="header-icon">${isCreation ? '🎉' : '🔐'}</div>
-                            <div class="logo">CoderVai</div>
+                            <div class="logo">Math Pro</div>
                             <div class="header-subtitle">${isCreation ? 'Welcome to Your Learning Journey' : 'Password Reset Confirmation'}</div>
                         </div>
                         
@@ -244,7 +244,7 @@ class UserService extends Service {
                             </div>
                             
                             <center>
-                                <a href="https://codervai.com/auth/login" class="cta-button">
+                                <a href="https://mathpro.com/auth/login" class="cta-button">
                                     ${isCreation ? '🚀 Login to Your Account' : '🔓 Login Now'}
                                 </a>
                             </center>
@@ -252,14 +252,14 @@ class UserService extends Service {
                             <div class="security-notice">
                                 <div class="security-notice-title">🔒 Security Recommendation</div>
                                 <div class="security-notice-text">
-                                    For your account security, we strongly recommend changing this ${isCreation ? 'temporary' : ''} password immediately after your first login. Never share your password with anyone, including CoderVai staff.
+                                    For your account security, we strongly recommend changing this ${isCreation ? 'temporary' : ''} password immediately after your first login. Never share your password with anyone, including Math Pro staff.
                                 </div>
                             </div>
                             
                             <div class="divider"></div>
                             
                             <div class="message" style="font-size: 14px; color: #718096;">
-                                Need help? Contact our support team at <a href="mailto:support@codervai.com" style="color: #667eea; text-decoration: none;">support@codervai.com</a>
+                                Need help? Contact our support team at <a href="mailto:support@mathpro.com" style="color: #667eea; text-decoration: none;">support@mathpro.com</a>
                             </div>
                         </div>
                         
@@ -271,7 +271,7 @@ class UserService extends Service {
                 }
                             </div>
                             <div class="footer-copyright">
-                                © ${new Date().getFullYear()} CoderVai. All rights reserved.
+                                © ${new Date().getFullYear()} Math Pro. All rights reserved.
                             </div>
                         </div>
                     </div>
@@ -284,8 +284,8 @@ class UserService extends Service {
             // Send SMS
             const isCreation = purpose === 'creation';
             const message = isCreation
-                ? `CoderVai: Your account has been created! Login: ${login}, Password: ${password}. Please change your password after first login. Visit: codervai.com/login`
-                : `CoderVai: Your password has been reset. Login: ${login}, New Password: ${password}. Please login and change your password immediately. Visit: codervai.com/login`;
+                ? `Math Pro: Your account has been created! Login: ${login}, Password: ${password}. Please change your password after first login. Visit: mathpro.com/login`
+                : `Math Pro: Your password has been reset. Login: ${login}, New Password: ${password}. Please login and change your password immediately. Visit: mathpro.com/login`;
             return await messagingService.sendSms(contact, message);
         }
     }

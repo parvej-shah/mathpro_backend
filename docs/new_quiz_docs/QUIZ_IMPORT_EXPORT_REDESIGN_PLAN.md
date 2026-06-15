@@ -3,7 +3,7 @@
 **Date:** January 2026  
 **Status:** ✅ FINALIZED - Ready for Implementation  
 **Priority:** High  
-**Project:** CoderVai EdTech Platform - Backend
+**Project:** Math Pro EdTech Platform - Backend
 
 ---
 
@@ -26,8 +26,8 @@
 
 ### Project Overview
 
-- **Platform**: CoderVai - EdTech Platform
-- **Repository**: Binary-School-Backend
+- **Platform**: Math Pro - EdTech Platform
+- **Repository**: Math Pro Backend
 - **Feature**: Quiz Import/Export API
 - **API Version**: V2 (Phase 8)
 

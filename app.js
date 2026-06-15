@@ -84,7 +84,7 @@ app.get("/ping", function (req, res) {
 
 // Add a new health endpoint
 app.get("/health", (req, res) => {
-  res.send("Codervai Backend is LIVE!");
+  res.send("Math Pro Backend is LIVE!");
 });
 
 app.use("/admin/auth", adminAuthRoutes);

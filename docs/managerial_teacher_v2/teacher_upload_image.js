@@ -21,7 +21,7 @@ module.exports = {
           properties: {
             image_url: {
               type: 'string',
-              example: 'https://codervaimedia.s3.ap-south-1.amazonaws.com/teachers/1736000000000_file.webp',
+              example: 'https://Math Promedia.s3.ap-south-1.amazonaws.com/teachers/1736000000000_file.webp',
               description: 'Public URL returned from presigned upload',
             },
           },

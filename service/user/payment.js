@@ -106,7 +106,7 @@ class PaymentService extends Service {
                     method: 'GET',
                     timeout: 30000,
                     headers: {
-                        'User-Agent': 'Codervai-Backend/1.0'
+                        'User-Agent': 'Math Pro Backend/1.0'
                     }
                 };
 
@@ -542,7 +542,7 @@ class PaymentService extends Service {
             cancel_url: `${paymentCallbackBaseUrl}/user/payment/cancel`,
             ipn_url: process.env.IPN_URL,
             shipping_method: bookSelection.include ? 'Courier' : 'NO',
-            product_name: 'Codervai Course',
+            product_name: 'Math Pro Course',
             product_category: 'Education',
             product_profile: bookSelection.include ? 'physical-goods' : 'digital-goods',
             // multi_card_name: 'mobilebank,othercard,internetbank',
@@ -753,7 +753,7 @@ class PaymentService extends Service {
             cancel_url: `${paymentCallbackBaseUrl}/user/payment/cancel`,
             ipn_url: process.env.IPN_URL,
             shipping_method: bookSelection.include ? 'Courier' : 'NO',
-            product_name: 'Codervai Bundle',
+            product_name: 'Math Pro Bundle',
             product_category: 'Education',
             product_profile: bookSelection.include ? 'physical-goods' : 'digital-goods',
             // multi_card_name: 'mobilebank,othercard,internetbank',

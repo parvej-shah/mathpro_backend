@@ -41,13 +41,13 @@ module.exports = {
                       type: 'string',
                       nullable: true,
                       description: 'Profile image URL',
-                      example: 'https://codervaimedia.s3.ap-south-1.amazonaws.com/teachers/abc123.jpg',
+                      example: 'https://Math Promedia.s3.ap-south-1.amazonaws.com/teachers/abc123.jpg',
                     },
                     role: {
                       type: 'string',
                       nullable: true,
                       description: 'Instructor role/title',
-                      example: 'Instructor, Problem Setter, Moderator @ CoderVai',
+                      example: 'Instructor, Problem Setter, Moderator @ Math Pro',
                     },
                     university: {
                       type: 'string',
@@ -136,8 +136,8 @@ module.exports = {
                   {
                     id: 4084,
                     name: 'Sohaib Bin Musa',
-                    image: 'https://codervaimedia.s3.ap-south-1.amazonaws.com/teachers/abc123.jpg',
-                    role: 'Instructor, Problem Setter, Moderator @ CoderVai',
+                    image: 'https://Math Promedia.s3.ap-south-1.amazonaws.com/teachers/abc123.jpg',
+                    role: 'Instructor, Problem Setter, Moderator @ Math Pro',
                     university: 'BUET',
                     bio: 'Experienced instructor with expertise in algorithms and competitive programming.',
                     achievements: [

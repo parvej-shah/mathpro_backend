@@ -113,7 +113,7 @@ class LiveService extends Service {
     //     var params=[...this.cols.map(c=>{return reqObj[c]}),fk_id]
     //     var result=await Promise.all([this.query(query,params),this.query(`select login,name from managerial_auth where id = $1`,[reqObj.teacher_id])])
     //     try{
-    //         var text=`Dear ${result[1].data[0].name}, you are assigned a new live class on codervai.com titled "${reqObj.title}" scheduled at ${new Date(reqObj.scheduled_at*1000).toLocaleString()}%0A%0AZoom meeting id: ${reqObj.meeting_id}%0Apassword: ${reqObj.meeting_pass}`
+    //         var text=`Dear ${result[1].data[0].name}, you are assigned a new live class on mathpro.com titled "${reqObj.title}" scheduled at ${new Date(reqObj.scheduled_at*1000).toLocaleString()}%0A%0AZoom meeting id: ${reqObj.meeting_id}%0Apassword: ${reqObj.meeting_pass}`
     //         await messagingService.sendMessage(result[1].data[0].login,text)
     //     }catch(err){
     //         console.log(err)
@@ -142,7 +142,7 @@ class LiveService extends Service {
         var params=[...this.cols.map(c=>{return reqObj[c]}),fk_id]
         var result=await Promise.all([this.query(query,params),this.query(`select login,name from managerial_auth where id = $1`,[reqObj.teacher_id])])
         try{
-            var text=`Dear ${result[1].data[0].name}, you are assigned a new live class on codervai.com titled "${reqObj.title}" scheduled at ${new Date(reqObj.scheduled_at*1000).toLocaleString()}%0A%0AZoom meeting id: ${reqObj.meeting_id}%0Apassword: ${reqObj.meeting_pass}`
+            var text=`Dear ${result[1].data[0].name}, you are assigned a new live class on mathpro.com titled "${reqObj.title}" scheduled at ${new Date(reqObj.scheduled_at*1000).toLocaleString()}%0A%0AZoom meeting id: ${reqObj.meeting_id}%0Apassword: ${reqObj.meeting_pass}`
             await messagingService.sendMessage(result[1].data[0].login,text)
         }catch(err){
             console.error('Live create: failed to send teacher message');

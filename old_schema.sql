@@ -2,9 +2,9 @@
 
 comment on database postgres is 'default administrative connection database';
 
-grant connect, create, temporary on database codervai to app_user;
+grant connect, create, temporary on database Math Pro to app_user;
 
-grant connect, create, temporary on database codervai to dev_user;
+grant connect, create, temporary on database Math Pro to dev_user;
 
 create table aftermessage
 (
@@ -156,7 +156,7 @@ create table contact_submissions
     updated_at      timestamp   default CURRENT_TIMESTAMP
 );
 
-comment on table contact_submissions is 'Stores contact form submissions from CoderVai homepage';
+comment on table contact_submissions is 'Stores contact form submissions from Math Pro homepage';
 
 comment on column contact_submissions.status is 'Status: new, read, or replied';
 

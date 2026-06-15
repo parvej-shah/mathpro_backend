@@ -13,7 +13,7 @@ module.exports = {
           properties: {
             name: { type: 'string', example: 'Arghya Pal' },
             login: { type: 'string', example: '01712345678' },
-            role: { type: 'string', example: 'Instructor at CoderVai' },
+            role: { type: 'string', example: 'Instructor at Math Pro' },
             university: { type: 'string', example: 'BUET' },
             bio: { type: 'string', example: 'Software Engineer at Google' },
             image: { type: 'string', example: '/CP instructors/arghya_pal_linkedin.jpeg' },

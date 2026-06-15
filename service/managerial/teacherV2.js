@@ -424,7 +424,7 @@ class TeacherServiceV2 extends TeacherService {
 
             // Send credentials only if privileged
             if (hasAdminPanelAccess && password) {
-                const text = `Dear ${teacherData.name}, your login credentials for https://teachers.codervai.com is, login:${teacherData.login} and password:${password}`;
+                const text = `Dear ${teacherData.name}, your login credentials for https://teachers.mathpro.com is, login:${teacherData.login} and password:${password}`;
                 await messagingService.sendMessage(teacherData.login, text);
             }
 

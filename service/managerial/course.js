@@ -910,14 +910,14 @@ ORDER BY
           await Promise.all([
             messagingService.sendMessage(
               reqObj.phone,
-              `Dear ${reqObj.name}, welcome to CoderVai, you have successfully prebooked the "${courseResult.data[0].title}" course, we'll send your coupon when the course gets available.`
+              `Dear ${reqObj.name}, welcome to Math Pro, you have successfully prebooked the "${courseResult.data[0].title}" course, we'll send your coupon when the course gets available.`
             ),
             messagingService.sendMail(
               reqObj.email,
               "Prebooking Successful !!!",
               `
                             <div>
-                                Dear ${reqObj.name}, welcome to CoderVai, you have successfully prebooked the "${courseResult.data[0].title}" course, we'll send your coupon when the course gets available.
+                                Dear ${reqObj.name}, welcome to Math Pro, you have successfully prebooked the "${courseResult.data[0].title}" course, we'll send your coupon when the course gets available.
                             </div>
                         `
             ),
@@ -967,14 +967,14 @@ ORDER BY
           await Promise.all([
             messagingService.sendMessage(
               reqObj.phone,
-              `Dear ${reqObj.name}, welcome to CoderVai, you have successfully prebooked the "${bundleResult.data[0].title}" bundle, we'll send your coupon when the course gets available.`
+              `Dear ${reqObj.name}, welcome to Math Pro, you have successfully prebooked the "${bundleResult.data[0].title}" bundle, we'll send your coupon when the course gets available.`
             ),
             messagingService.sendMail(
               reqObj.email,
               "Prebooking Successful !!!",
               `
                             <div>
-                                Dear ${reqObj.name}, welcome to CoderVai, you have successfully prebooked the "${bundleResult.data[0].title}" bundle, we'll send your coupon when the course gets available.
+                                Dear ${reqObj.name}, welcome to Math Pro, you have successfully prebooked the "${bundleResult.data[0].title}" bundle, we'll send your coupon when the course gets available.
                             </div>
                         `
             ),

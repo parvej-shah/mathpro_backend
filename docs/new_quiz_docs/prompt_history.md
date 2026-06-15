@@ -1,6 +1,6 @@
 1:
 okay so in this branch, i want you to work on the QUIZ.
-- this is a backend repo of a ed tech platform called codervai.
+- this is a backend repo of a ed tech platform called Math Pro.
 - first of all learn from this codebase.
 - what are the features, why its made, whats the context behind making it, how things are connected to each other (if we code somewhere, will anything else needs any modification or attention, check that), what are the apis, what are previuos apis, what are new (why they are new), what are their documentation, what are database schemas, what are error messages, expected value and input value, their behaiviour.
 - search online about industry standard and get enough knowledge to solve any problem. search google, github, forums all.
@@ -25,7 +25,7 @@ based on my answer, if you think if this feature is frontend heavy, then we will
 3:
 hey let me answer to the merge_mode of yours now: please always replace!
 
-if this answer is necessary write that in "/Users/shafiswapnil/Desktop/CoderVaiRepo/Binary-School-Backend/QUIZ_IMPORT_EXPORT_REDESIGN_FRONTEND_COORDINATION.md" file.
+if this answer is necessary write that in "/Users/shafiswapnil/Desktop/Math Pro Repo/Math Pro Backend/QUIZ_IMPORT_EXPORT_REDESIGN_FRONTEND_COORDINATION.md" file.
 
 and yes, about this whole thread i am talking with you, create another md file with our context, target, problem, solutions, my answers, decisions, frontend Coordination.
 
@@ -42,4 +42,3 @@ another thing is please keep using the redesign doc for everything. update the r
 
 6:
 the frontend actually now changed few decisions! read the @QUIZ_IMPORT_EXPORT_FRONTEND_RESPONSE.md file again. also yes, update our redesign doc. and i saw you did not add any context behind why we are even redesigning? what were the pain points. i think you did not read the prompt_history.md file.
-

@@ -10,7 +10,7 @@ module.exports = {
             url:'https://3de0-103-72-212-235.ngrok-free.app/'
         },
         {
-            url:'https://binary-school-dev.onrender.com/'
+            url:'https://Math Pro-dev.onrender.com/'
         }
     ]
 }

@@ -155,7 +155,7 @@ module.exports = {
                         thumbnails: {
                           type: "object",
                           properties: {
-                            course_thumbnail_16_9: { type: "string", example: "https://codervaimedia.s3.ap-south-1.amazonaws.com/DM-169.png" },
+                            course_thumbnail_16_9: { type: "string", example: "https://Math Promedia.s3.ap-south-1.amazonaws.com/DM-169.png" },
                             trailer_video_thumb_16_9: { type: "string", nullable: true },
                             facebook_community_thumb_16_9: { type: "string", nullable: true },
                           },
@@ -180,20 +180,20 @@ module.exports = {
                           type: "object",
                           properties: {
                             name: { type: "string", example: "Farhan Feroz" },
-                            credibility: { type: "string", example: "- Program Owner and Instructor @ CoderVai\\n- CSE'15, BUET..." },
+                            credibility: { type: "string", example: "- Program Owner and Instructor @ Math Pro\\n- CSE'15, BUET..." },
                           },
                         },
                         community: {
                           type: "object",
                           description: "Private links (facebook_private_group, telegram_group) are returned only to enrolled students; this endpoint is enrolled-only.",
                           properties: {
-                            facebook_community: { type: "string", example: "https://www.facebook.com/groups/codervaicommunity" },
-                            facebook_page: { type: "string", nullable: true, example: "https://www.facebook.com/codervaibd" },
-                            facebook_private_group: { type: "string", nullable: true, example: "https://www.facebook.com/groups/codervai.csefundamental.dm.batch01" },
+                            facebook_community: { type: "string", example: "https://www.facebook.com/groups/mathprocommunity" },
+                            facebook_page: { type: "string", nullable: true, example: "https://www.facebook.com/mathprobd" },
+                            facebook_private_group: { type: "string", nullable: true, example: "https://www.facebook.com/groups/mathpro.csefundamental.dm.batch01" },
                             telegram_group: { type: "string", nullable: true, example: "https://t.me/+abcdEFGhij" },
                             whatsapp: { type: "string", example: "https://wa.me/8801768976036" },
                             phone: { type: "string", example: "tel:+8801768976036" },
-                            email: { type: "string", example: "mailto:support@codervai.com" },
+                            email: { type: "string", example: "mailto:support@mathpro.com" },
                           },
                         },
                         enrollment: {
@@ -219,7 +219,7 @@ module.exports = {
                           properties: {
                             is_live: { type: "boolean", example: true },
                             language: { type: "string", example: "বাংলা" },
-                            url: { type: "string", example: "https://courses.codervai.com/course-details/10" },
+                            url: { type: "string", example: "https://courses.mathpro.com/course-details/10" },
                             slug: { type: "string", nullable: true, example: "discrete-math" },
                             tags: { type: "array", items: { type: "string" }, example: ["CSE", "Math"] },
                             course_outline: { type: "string", nullable: true, example: "https://drive.google.com/file/d/.../view" },
@@ -897,7 +897,7 @@ module.exports = {
                       properties: {
                         routine_image_url: {
                           type: "string",
-                          example: "https://codervaimedia.s3.ap-south-1.amazonaws.com/routines/course-15-week-1.jpg",
+                          example: "https://Math Promedia.s3.ap-south-1.amazonaws.com/routines/course-15-week-1.jpg",
                         },
                         week_number: {
                           type: "integer",
