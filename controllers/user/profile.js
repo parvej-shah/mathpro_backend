@@ -48,6 +48,9 @@ class ProfileController extends Controller {
     updateProfile = async (req, res) => {
         try {
             const userId = req.body.user_id; // Set by authenticateUser middleware
+            const incomingProfile = req.body.profile && typeof req.body.profile === 'object' && !Array.isArray(req.body.profile)
+                ? req.body.profile
+                : {};
             
             if (!userId) {
                 return res.status(401).json({
@@ -56,7 +59,7 @@ class ProfileController extends Controller {
                 });
             }
             
-            const { name, email, phone, currentInstitution, department, currentAcademicLevel } = req.body;
+            const { name, email, phone } = req.body;
             
             // Basic validation (frontend handles most validation, but we check required fields)
             if (!name || name.trim() === '') {
@@ -70,9 +73,23 @@ class ProfileController extends Controller {
                 name: name.trim(),
                 email: email ? email.trim() : null,
                 phone: phone ? phone.trim() : null,
-                currentInstitution: currentInstitution ? currentInstitution.trim() : null,
-                department: department ? department.trim() : null,
-                currentAcademicLevel: currentAcademicLevel ? currentAcademicLevel.toUpperCase() : null
+                facebookId: req.body.facebookId ?? req.body.facebookid ?? incomingProfile.facebookId ?? incomingProfile.facebookid ?? null,
+                address: req.body.address ?? req.body.Address ?? incomingProfile.address ?? incomingProfile.Address ?? null,
+                schoolCollege:
+                    req.body.schoolCollege ??
+                    req.body.school_college ??
+                    incomingProfile.schoolCollege ??
+                    incomingProfile.schoolCollegeName ??
+                    null,
+                group: req.body.group ?? incomingProfile.group ?? null,
+                guardianName: req.body.guardianName ?? incomingProfile.guardianName ?? null,
+                guardianMobile: req.body.guardianMobile ?? incomingProfile.guardianMobile ?? null,
+                relationWithGuardian:
+                    req.body.relationWithGuardian ?? incomingProfile.relationWithGuardian ?? null,
+                gender: req.body.gender ?? incomingProfile.gender ?? null,
+                classLevel: req.body.classLevel ?? req.body.class ?? incomingProfile.classLevel ?? null,
+                version: req.body.version ?? incomingProfile.version ?? null,
+                department: req.body.department ?? incomingProfile.department ?? null
             };
             
             const result = await profileService.updateUserProfileForCheckout(userId, updateData);

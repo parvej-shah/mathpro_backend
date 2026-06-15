@@ -53,15 +53,21 @@ module.exports = {
                                                 "example": "John Doe",
                                                 "description": "Full name of the user"
                                             },
-                                            "cf_handle": {
-                                                "type": "string",
-                                                "example": "john_cf",
-                                                "description": "Codeforces handle"
-                                            },
                                             "profile": {
                                                 "type": "object",
-                                                "example": { "bio": "Software Developer", "avatar": "url_here" },
-                                                "description": "JSON object storing custom profile data"
+                                                "example": {
+                                                    "facebookId": "john.fb",
+                                                    "address": "Dhaka, Bangladesh",
+                                                    "schoolCollege": "Dhaka College",
+                                                    "group": "Science",
+                                                    "guardianName": "Abdul Karim",
+                                                    "guardianMobile": "01712345678",
+                                                    "relationWithGuardian": "Father",
+                                                    "gender": "Male",
+                                                    "classLevel": "HSC",
+                                                    "version": "Bangla"
+                                                },
+                                                "description": "JSON object storing structured profile data"
                                             },
                                             "phone": {
                                                 "type": "string",

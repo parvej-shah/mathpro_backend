@@ -183,7 +183,18 @@ module.exports = {
           profile: {
             type: "object",
             description: "profile data",
-            example: { institution: "NDC" },
+            example: {
+              facebookId: "john.fb",
+              address: "Dhaka, Bangladesh",
+              schoolCollege: "Dhaka College",
+              group: "Science",
+              guardianName: "Abdul Karim",
+              guardianMobile: "01712345678",
+              relationWithGuardian: "Father",
+              gender: "Male",
+              classLevel: "HSC",
+              version: "Bangla",
+            },
           },
         },
       },
@@ -378,18 +389,20 @@ module.exports = {
             description: "Phone number (11 digits)",
             example: "01712345678"
           },
-          cf_handle: {
-            type: "string",
-            nullable: true,
-            description: "Codeforces handle",
-            example: "johndoe"
-          },
           profile: {
             type: "object",
             description: "Additional profile data (JSON object)",
             example: {
-              bio: "Software Developer",
-              location: "Dhaka"
+              facebookId: "john.fb",
+              address: "Dhaka, Bangladesh",
+              schoolCollege: "Dhaka College",
+              group: "Science",
+              guardianName: "Abdul Karim",
+              guardianMobile: "01712345678",
+              relationWithGuardian: "Father",
+              gender: "Male",
+              classLevel: "HSC",
+              version: "Bangla"
             }
           },
           created_at: {

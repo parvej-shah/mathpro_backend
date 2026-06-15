@@ -21,27 +21,28 @@ module.exports = {
                 "application/json": {
                     schema: {
                         type: "object",
-                        required: ["name", "cf_handle", "profile"],
+                        required: ["name", "profile"],
                         properties: {
                             "name": {
                                 "type": "string",
                                 "example": "John Doe",
                                 "description": "Full name of the user (required)"
                             },
-                            "cf_handle": {
-                                "type": "string",
-                                "example": "john_cf",
-                                "description": "Codeforces handle (required)"
-                            },
                             "profile": {
                                 "type": "object",
                                 "example": {
-                                    "bio": "Senior Software Engineer",
-                                    "avatar": "https://example.com/avatar.jpg",
-                                    "location": "Bangladesh",
-                                    "experience": "5 years"
+                                    "facebookId": "john.fb",
+                                    "address": "Dhaka, Bangladesh",
+                                    "schoolCollege": "Dhaka College",
+                                    "group": "Science",
+                                    "guardianName": "Abdul Karim",
+                                    "guardianMobile": "01712345678",
+                                    "relationWithGuardian": "Father",
+                                    "gender": "Male",
+                                    "classLevel": "HSC",
+                                    "version": "Bangla"
                                 },
-                                "description": "Custom JSON object for flexible profile data. Can contain any properties needed by your application (required)"
+                                "description": "Structured JSON object for fixed profile data. Additional custom properties are still allowed."
                             }
                         }
                     }

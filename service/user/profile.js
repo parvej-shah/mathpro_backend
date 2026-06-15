@@ -7,6 +7,36 @@ class ProfileService extends Service {
         super();
     }
 
+    trimToNull = (value) => {
+        if (value === undefined || value === null) {
+            return null;
+        }
+
+        const text = `${value}`.trim();
+        return text || null;
+    };
+
+    pickFirstProfileValue = (...values) => {
+        for (const value of values) {
+            const normalized = this.trimToNull(value);
+            if (normalized) {
+                return normalized;
+            }
+        }
+
+        return null;
+    };
+
+    pickEnumProfileValue = (allowedValues, ...values) => {
+        const candidate = this.pickFirstProfileValue(...values);
+        if (!candidate) {
+            return null;
+        }
+
+        const matchedValue = allowedValues.find((allowed) => allowed.toLowerCase() === candidate.toLowerCase());
+        return matchedValue || candidate;
+    };
+
     getSafeProfile = (profile) => (
         profile && typeof profile === 'object' && !Array.isArray(profile) ? { ...profile } : {}
     );
@@ -59,7 +89,9 @@ class ProfileService extends Service {
                 user.profile,
                 Boolean(user.password)
             );
-            
+            const schoolCollege = this.pickFirstProfileValue(profileData.schoolCollege);
+            const classLevel = this.pickEnumProfileValue(['JSC', 'SSC', 'HSC'], profileData.classLevel);
+
             // Format response to match requirements
             return {
                 success: true,
@@ -74,9 +106,17 @@ class ProfileService extends Service {
                     profile: {
                         email: profileData.email || user.email || null,
                         phone: profileData.phone || user.phone || null,
-                        currentInstitution: profileData.currentInstitution || null,
-                        department: profileData.department || null,
-                        currentAcademicLevel: profileData.currentAcademicLevel || null
+                        facebookId: this.pickFirstProfileValue(profileData.facebookId, profileData.facebookid),
+                        address: this.pickFirstProfileValue(profileData.address, profileData.Address),
+                        schoolCollege,
+                        group: this.pickEnumProfileValue(['Science', 'Arts', 'Commerce'], profileData.group),
+                        guardianName: this.pickFirstProfileValue(profileData.guardianName),
+                        guardianMobile: this.pickFirstProfileValue(profileData.guardianMobile),
+                        relationWithGuardian: this.pickFirstProfileValue(profileData.relationWithGuardian),
+                        gender: this.pickFirstProfileValue(profileData.gender),
+                        classLevel,
+                        version: this.pickEnumProfileValue(['Bangla', 'English'], profileData.version),
+                        department: profileData.department || null
                     }
                 }
             };
@@ -117,7 +157,22 @@ class ProfileService extends Service {
             );
             
             // 2. Enforce business rules
-            const { name, email, phone, currentInstitution, department, currentAcademicLevel } = updateData;
+            const {
+                name,
+                email,
+                phone,
+                facebookId,
+                address,
+                schoolCollege,
+                group,
+                guardianName,
+                guardianMobile,
+                relationWithGuardian,
+                gender,
+                classLevel,
+                version,
+                department
+            } = updateData;
             
             // Email is the canonical login identifier and cannot be changed here.
             if (email && email !== currentUser.email) {
@@ -147,9 +202,27 @@ class ProfileService extends Service {
                 password_set: passwordSet,
                 email: finalEmail || currentProfile.email || null,
                 phone: finalPhone || currentProfile.phone || null,
-                currentInstitution: currentInstitution || currentProfile.currentInstitution || null,
-                department: department || currentProfile.department || null,
-                currentAcademicLevel: currentAcademicLevel || currentProfile.currentAcademicLevel || null
+                facebookId: this.pickFirstProfileValue(facebookId, currentProfile.facebookId, currentProfile.facebookid),
+                address: this.pickFirstProfileValue(address, currentProfile.address, currentProfile.Address),
+                schoolCollege: this.pickFirstProfileValue(
+                    schoolCollege,
+                    currentProfile.schoolCollege
+                ),
+                group: this.pickEnumProfileValue(['Science', 'Arts', 'Commerce'], group, currentProfile.group),
+                guardianName: this.pickFirstProfileValue(guardianName, currentProfile.guardianName),
+                guardianMobile: this.pickFirstProfileValue(guardianMobile, currentProfile.guardianMobile),
+                relationWithGuardian: this.pickFirstProfileValue(
+                    relationWithGuardian,
+                    currentProfile.relationWithGuardian
+                ),
+                gender: this.pickFirstProfileValue(gender, currentProfile.gender),
+                classLevel: this.pickEnumProfileValue(
+                    ['JSC', 'SSC', 'HSC'],
+                    classLevel,
+                    currentProfile.classLevel
+                ),
+                version: this.pickEnumProfileValue(['Bangla', 'English'], version, currentProfile.version),
+                department: this.pickFirstProfileValue(department, currentProfile.department)
             };
             
             // 4. Update database
@@ -198,9 +271,17 @@ class ProfileService extends Service {
                     profile: {
                         email: updatedProfileData.email || updatedUser.email || null,
                         phone: updatedProfileData.phone || updatedUser.phone || null,
-                        currentInstitution: updatedProfileData.currentInstitution || null,
-                        department: updatedProfileData.department || null,
-                        currentAcademicLevel: updatedProfileData.currentAcademicLevel || null
+                        facebookId: updatedProfileData.facebookId || null,
+                        address: updatedProfileData.address || null,
+                        schoolCollege: updatedProfileData.schoolCollege || null,
+                        group: updatedProfileData.group || null,
+                        guardianName: updatedProfileData.guardianName || null,
+                        guardianMobile: updatedProfileData.guardianMobile || null,
+                        relationWithGuardian: updatedProfileData.relationWithGuardian || null,
+                        gender: updatedProfileData.gender || null,
+                        classLevel: updatedProfileData.classLevel || null,
+                        version: updatedProfileData.version || null,
+                        department: updatedProfileData.department || null
                     }
                 },
                 message: 'Profile updated successfully'

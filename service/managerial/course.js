@@ -618,12 +618,19 @@ ORDER BY
           `, [reqBody.user_id, id])
         );
 
-        // Query 4: Get enrollment info
+        // Query 4: Get enrollment info. Enrollment can come from a direct
+        // purchase (takes) OR a combo/bundle purchase (bundle_purchase ->
+        // bundle_course), so both sources must be checked.
         queries.push(
           this.query(`
             SELECT timestamp as enrollment_date
             FROM takes
             WHERE user_id = $1 AND course_id = $2
+            UNION ALL
+            SELECT bp.timestamp as enrollment_date
+            FROM bundle_purchase bp
+            JOIN bundle_course bc ON bc.bundle_id = bp.bundle_id
+            WHERE bp.user_id = $1 AND bc.course_id = $2
             LIMIT 1
           `, [reqBody.user_id, id])
         );
@@ -653,14 +660,19 @@ ORDER BY
         }
       }
 
-      // Check if user is authenticated
+      // Check if user is authenticated. Distinguish why auth failed so the
+      // client can react correctly (e.g. silently re-login on an expired token
+      // vs. show "please log in"), instead of one generic message.
       if (!reqBody.auth || !reqBody.user_id) {
-        return {
-          success: false,
-          error: "Authentication required. Please login and enroll in the course to access dashboard."
-        };
+        if (reqBody.auth_error === 'expired') {
+          return { success: false, error: "Your session has expired. Please log in again." };
+        }
+        if (reqBody.auth_error === 'invalid') {
+          return { success: false, error: "Your session is invalid. Please log in again." };
+        }
+        return { success: false, error: "Please log in to access this course dashboard." };
       }
-      
+
       // Check if user is enrolled - return error if not
       if (!isEnrolled) {
         return {

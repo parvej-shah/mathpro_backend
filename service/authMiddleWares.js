@@ -42,7 +42,7 @@ var authenticateUser=(req, res, next)=>{
 var optAuthenticateUser=(req, res, next)=>{
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
-    if (token == null) req.body['auth']=false
+    if (token == null) { req.body['auth']=false; req.body['auth_error']='no_token' }
     else{
         try{
             var decoded=jwt.verify(token, process.env.JWT_SECRET);
@@ -50,6 +50,9 @@ var optAuthenticateUser=(req, res, next)=>{
             req.body['user_id']=parseInt(decoded.id)
         }catch(err){
             req.body['auth']=false
+            // Distinguish an expired token from a malformed/wrong-signature one so
+            // callers can surface a meaningful message instead of a generic one.
+            req.body['auth_error'] = err.name === 'TokenExpiredError' ? 'expired' : 'invalid'
         }
     }
     next()

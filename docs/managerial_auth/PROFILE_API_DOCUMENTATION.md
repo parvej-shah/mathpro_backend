@@ -38,11 +38,17 @@ GET /admin/auth/getProfile
       "email": "john@example.com",
       "phone": "+880123456789",
       "role": "admin",
-      "cf_handle": "john_cf",
       "profile": {
-        "bio": "Senior Software Engineer",
-        "avatar": "https://example.com/avatar.jpg",
-        "location": "Bangladesh"
+        "facebookId": "john.fb",
+        "address": "Dhaka, Bangladesh",
+        "schoolCollege": "Dhaka College",
+        "group": "Science",
+        "guardianName": "Abdul Karim",
+        "guardianMobile": "01712345678",
+        "relationWithGuardian": "Father",
+        "gender": "Male",
+        "classLevel": "HSC",
+        "version": "Bangla"
       },
       "is_verified": true,
       "created_at": "2024-01-01T10:00:00Z"
@@ -77,8 +83,7 @@ GET /admin/auth/getProfile
 | `rows[0].email` | string | Email address |
 | `rows[0].phone` | string | Phone number |
 | `rows[0].role` | string | User role (admin, moderator, etc.) |
-| `rows[0].cf_handle` | string | Codeforces handle |
-| `rows[0].profile` | object | Custom JSON object storing additional profile data |
+| `rows[0].profile` | object | Structured JSON object storing profile data |
 | `rows[0].is_verified` | boolean | Account verification status |
 | `rows[0].created_at` | string | Account creation timestamp |
 
@@ -104,12 +109,17 @@ PUT /admin/auth/setProfile
 ```json
 {
   "name": "John Doe",
-  "cf_handle": "john_cf",
   "profile": {
-    "bio": "Senior Software Engineer",
-    "avatar": "https://example.com/avatar.jpg",
-    "location": "Bangladesh",
-    "experience": "5 years"
+    "facebookId": "john.fb",
+    "address": "Dhaka, Bangladesh",
+    "schoolCollege": "Dhaka College",
+    "group": "Science",
+    "guardianName": "Abdul Karim",
+    "guardianMobile": "01712345678",
+    "relationWithGuardian": "Father",
+    "gender": "Male",
+    "classLevel": "HSC",
+    "version": "Bangla"
   }
 }
 ```
@@ -118,8 +128,7 @@ PUT /admin/auth/setProfile
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `name` | string | Yes | Full name of the user |
-| `cf_handle` | string | Yes | Codeforces handle |
-| `profile` | object | Yes | JSON object for custom profile data. Can contain any properties your app needs |
+| `profile` | object | Yes | JSON object for structured profile data. Can contain any properties your app needs |
 
 ### Success Response (200)
 ```json
@@ -204,7 +213,6 @@ fetch('/admin/auth/getProfile', {
   if (data.success) {
     const profile = data.rows[0];
     console.log('Name:', profile.name);
-    console.log('CF Handle:', profile.cf_handle);
     console.log('Profile Data:', profile.profile);
   } else {
     console.error('Error:', data.error);
@@ -219,11 +227,17 @@ const token = 'your_jwt_token_here';
 
 const updateData = {
   name: "Jane Doe",
-  cf_handle: "jane_cf",
   profile: {
-    bio: "Full Stack Developer",
-    avatar: "https://example.com/jane-avatar.jpg",
-    location: "USA"
+    facebookId: "jane.fb",
+    address: "Dhaka, Bangladesh",
+    schoolCollege: "Dhaka College",
+    group: "Science",
+    guardianName: "Abdul Karim",
+    guardianMobile: "01712345678",
+    relationWithGuardian: "Father",
+    gender: "Female",
+    classLevel: "HSC",
+    version: "Bangla"
   }
 };
 
@@ -276,10 +290,17 @@ const token = 'your_jwt_token_here';
 
 const updateData = {
   name: "Jane Doe",
-  cf_handle: "jane_cf",
   profile: {
-    bio: "Full Stack Developer",
-    avatar: "https://example.com/jane-avatar.jpg"
+    facebookId: "jane.fb",
+    address: "Dhaka, Bangladesh",
+    schoolCollege: "Dhaka College",
+    group: "Science",
+    guardianName: "Abdul Karim",
+    guardianMobile: "01712345678",
+    relationWithGuardian: "Father",
+    gender: "Female",
+    classLevel: "HSC",
+    version: "Bangla"
   }
 };
 
@@ -302,7 +323,7 @@ axios.put('/admin/auth/setProfile', updateData, {
 
 1. **Authentication Required**: Both endpoints require a valid JWT token. Ensure the token is stored securely and included in all requests.
 
-2. **Profile JSON Structure**: The `profile` field is a flexible JSON object. You can store any custom data structure suitable for your application.
+2. **Profile JSON Structure**: The `profile` field now has fixed keys for student identity and guardian details, but it still accepts additional custom properties.
 
 3. **User ID Auto-Injection**: The user ID is automatically extracted from the JWT token, so you don't need to send it in the request body.
 
