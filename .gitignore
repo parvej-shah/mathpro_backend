@@ -1,0 +1,8 @@
+node_modules
+.vscode
+.env
+test.js
+dev.js
+.DS_Store
+.codex
+.kiro

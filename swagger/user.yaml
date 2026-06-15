@@ -1,0 +1,670 @@
+/user/contest/leave/{contestId}:
+  post:
+    tags:
+      - User Contest
+    summary: Unregister (leave) a contest
+    description: Allows a user to unregister (remove themselves) from a contest they previously joined
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: contestId
+        required: true
+        schema:
+          type: integer
+        description: ID of the contest to unregister from
+    responses:
+      "200":
+        description: Successfully unregistered from the contest
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Successfully left the contest
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+
+/user/contest/participants/{contestId}:
+  get:
+    tags:
+      - User Contest
+    summary: Get contest participants
+    description: Retrieves the list of participants for a specific contest
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: contestId
+        required: true
+        schema:
+          type: integer
+        description: ID of the contest
+    responses:
+      "200":
+        description: Successfully retrieved participants
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                        example: 1
+                      user_name:
+                        type: string
+                        example: John Doe
+                      email:
+                        type: string
+                        example: john@example.com
+                      phone:
+                        type: string
+                        example: "+1234567890"
+                      photo:
+                        type: string
+                        example: "https://example.com/photo.jpg"
+                      score:
+                        type: number
+                        example: 85.5
+                      joining_date:
+                        type: string
+                        format: date-time
+                        example: "2024-03-20T10:00:00Z"
+                      is_current_user:
+                        type: boolean
+                        example: true
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+
+/user/contest/join/{contestId}:
+  post:
+    tags:
+      - User Contest
+    summary: Join a contest
+    description: Allows a user to join a contest if eligible
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: contestId
+        required: true
+        schema:
+          type: integer
+        description: ID of the contest to join
+    responses:
+      "200":
+        description: Successfully joined the contest
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Successfully joined the contest
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+
+/user/contest/leaderboard/{contestId}:
+  get:
+    tags:
+      - User Contest
+    summary: Get contest leaderboard
+    description: Retrieves the leaderboard for a specific contest
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: contestId
+        required: true
+        schema:
+          type: integer
+        description: ID of the contest
+    responses:
+      "200":
+        description: Successfully retrieved leaderboard
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                        example: 1
+                      user_name:
+                        type: string
+                        example: John Doe
+                      score:
+                        type: number
+                        example: 85.5
+                      joining_date:
+                        type: string
+                        format: date-time
+                        example: "2024-03-20T10:00:00Z"
+                      is_current_user:
+                        type: boolean
+                        example: true
+                user_rank:
+                  type: integer
+                  example: 2
+                contest_id:
+                  type: integer
+                  example: 5
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+
+/user/contest/course/{courseId}:
+  get:
+    tags:
+      - User Contest
+    summary: Get all contests for a course
+    description: Retrieves all contests for a specific course that the user is enrolled in
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: courseId
+        required: true
+        schema:
+          type: integer
+        description: ID of the course
+    responses:
+      "200":
+        description: Successfully retrieved contests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      title:
+                        type: string
+                        example: "Contest Title"
+                      description:
+                        type: string
+                        example: "Contest Description"
+                      start_date:
+                        type: string
+                        format: date-time
+                        example: "2024-03-20T10:00:00Z"
+                      end_date:
+                        type: string
+                        format: date-time
+                        example: "2024-03-21T10:00:00Z"
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+
+/user/contest/my-contests:
+  get:
+    tags:
+      - User Contest
+    summary: Get all contests user has participated in
+    description: Retrieves all contests that the user has participated in
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Successfully retrieved contests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      title:
+                        type: string
+                        example: "Contest Title"
+                      description:
+                        type: string
+                        example: "Contest Description"
+                      user_score:
+                        type: number
+                        example: 85.5
+                      joining_date:
+                        type: string
+                        format: date-time
+                        example: "2024-03-20T10:00:00Z"
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+/user/contest/leave/{contestId}:
+  post:
+    tags:
+      - User Contest
+    summary: Unregister (leave) a contest
+    description: Allows a user to unregister (remove themselves) from a contest they previously joined
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: contestId
+        required: true
+        schema:
+          type: integer
+        description: ID of the contest to unregister from
+    responses:
+      "200":
+        description: Successfully unregistered from the contest
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: Successfully left the contest
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: You are not enrolled in this course
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+
+/user/payment/history:
+  get:
+    tags:
+      - User Payment
+    summary: Get payment history and enrollment details
+    description: Returns the authenticated user's full purchase history - individual course enrollments, bundle purchases, applied coupons, and a combined/sorted transaction list with summary totals.
+    security:
+      - bearerAuth: []
+    responses:
+      "200":
+        description: Successfully retrieved payment history
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    user_info:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: John Doe
+                        phone:
+                          type: string
+                          example: "+8801234567890"
+                        email:
+                          type: string
+                          example: john@example.com
+                        profile:
+                          type: string
+                          example: https://cdn.example.com/profile.jpg
+                    summary:
+                      type: object
+                      properties:
+                        total_spent:
+                          type: number
+                          example: 4500
+                        total_individual_spent:
+                          type: number
+                          example: 1500
+                        total_bundle_spent:
+                          type: number
+                          example: 3000
+                        total_courses_enrolled:
+                          type: integer
+                          example: 2
+                        total_bundles_purchased:
+                          type: integer
+                          example: 1
+                        total_transactions:
+                          type: integer
+                          example: 3
+                    individual_courses:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          course_id:
+                            type: integer
+                            example: 12
+                          title:
+                            type: string
+                            example: SSC Math Final Suggestion
+                          paid_amount:
+                            type: number
+                            example: 500
+                          original_price:
+                            type: number
+                            example: 800
+                          transaction_id:
+                            type: string
+                            example: TXN123456
+                          enrollment_date:
+                            type: integer
+                            example: 1718000000
+                          course_url:
+                            type: string
+                            example: ssc-math-final-suggestion
+                          purchase_type:
+                            type: string
+                            example: individual
+                          coupon:
+                            type: object
+                            nullable: true
+                            properties:
+                              id:
+                                type: integer
+                                example: 4
+                              code:
+                                type: string
+                                example: WELCOME10
+                              name:
+                                type: string
+                                example: Welcome Discount
+                              discount_type:
+                                type: string
+                                example: percentage
+                              discount_value:
+                                type: number
+                                example: 10
+                              discount_amount:
+                                type: number
+                                example: 80
+                              original_price:
+                                type: number
+                                example: 800
+                              final_price:
+                                type: number
+                                example: 720
+                    bundle_purchases:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          bundle_id:
+                            type: integer
+                            example: 3
+                          title:
+                            type: string
+                            example: HSC Combo Package
+                          paid_amount:
+                            type: number
+                            example: 3000
+                          original_price:
+                            type: number
+                            example: 4000
+                          transaction_id:
+                            type: string
+                            example: TXN654321
+                          purchase_date:
+                            type: integer
+                            example: 1717000000
+                          bundle_url:
+                            type: string
+                            example: hsc-combo-package
+                          purchase_type:
+                            type: string
+                            example: bundle
+                          courses:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                  example: 12
+                                title:
+                                  type: string
+                                  example: SSC Math Final Suggestion
+                                url:
+                                  type: string
+                                  example: ssc-math-final-suggestion
+                                price:
+                                  type: number
+                                  example: 800
+                                enrollment_date:
+                                  type: integer
+                                  example: 1717000000
+                          coupon:
+                            type: object
+                            nullable: true
+                    all_transactions:
+                      type: array
+                      description: Individual course and bundle transactions merged and sorted by transaction_date descending.
+                      items:
+                        type: object
+                        properties:
+                          transaction_date:
+                            type: integer
+                            example: 1718000000
+                          item_type:
+                            type: string
+                            enum: [course, bundle]
+                            example: course
+      "400":
+        description: User ID missing or invalid
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: User ID is required
+      "401":
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Error"

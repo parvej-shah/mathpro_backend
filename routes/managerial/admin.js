@@ -1,0 +1,22 @@
+const { requirePermission } = require("../../service/authMiddleWares");
+const { PERMISSIONS } = require("../../util/permissions");
+const router = require("express-promise-router")();
+const { AdminController } = require("../../controllers/managerial/admin");
+
+const adminController = new AdminController();
+
+// Phase 5: Admin Management - require admin.manage.all
+const requireAdminManage = requirePermission(PERMISSIONS.ADMIN.MANAGE.ALL);
+
+// Admin CRUD operations
+router.route("/").get(requireAdminManage, adminController.list);
+router.route("/").post(requireAdminManage, adminController.create);
+router.route("/:id").get(requireAdminManage, adminController.get);
+router.route("/:id").put(requireAdminManage, adminController.update);
+router.route("/:id").delete(requireAdminManage, adminController.delete);
+
+// Set password endpoint
+router.route("/:id/set-password").post(requireAdminManage, adminController.setPassword);
+
+module.exports = router;
+
