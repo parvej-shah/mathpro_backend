@@ -1,6 +1,5 @@
 const managerialRegistration = require('./registration');
 const managerialLogin = require('./login');
-const managerialActivity = require('./activity');
 const requestOTP = require('./request_otp');
 const forgotPassword = require('./forgot_password');
 const resetPassword = require('./reset_password');
@@ -29,9 +28,6 @@ module.exports = {
         },
         '/admin/auth/setProfile':{
             ...setProfile
-        },
-        '/user/activity':{
-            ...managerialActivity
         },
         // '/todos/{id}':{
         //     ...getTodo,

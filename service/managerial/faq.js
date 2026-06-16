@@ -5,7 +5,6 @@ const VALID_CATEGORIES = new Set([
   "enrollment",
   "payment",
   "support",
-  "certificate",
 ]);
 
 class FAQService extends Service {

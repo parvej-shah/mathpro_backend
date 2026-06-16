@@ -377,8 +377,11 @@ class PaymentService extends Service {
             )
         ])
 
-        // Get original price
-        var originalPrice = Object.keys(body).indexOf('eventId') >= 0 ? (body.eventId / 6251) : parseFloat(dbResults[1].data[0].price);
+        // Get original price from the database row — never trust a client-supplied
+        // price. (Previously the client could pass `eventId` to set an arbitrary
+        // price; SSLCommerz only validates that paid == requested, so that let a
+        // user buy at any price they chose.)
+        var originalPrice = parseFloat(dbResults[1].data[0].price);
         var finalPrice = originalPrice;
         var couponId = null;
         var couponData = null;
@@ -589,8 +592,11 @@ class PaymentService extends Service {
             )
         ])
 
-        // Get original price
-        var originalPrice = Object.keys(body).indexOf('eventId') >= 0 ? (body.eventId / 6251) : parseFloat(dbResults[1].data[0].price);
+        // Get original price from the database row — never trust a client-supplied
+        // price. (Previously the client could pass `eventId` to set an arbitrary
+        // price; SSLCommerz only validates that paid == requested, so that let a
+        // user buy at any price they chose.)
+        var originalPrice = parseFloat(dbResults[1].data[0].price);
         var finalPrice = originalPrice;
         var couponId = null;
         var couponData = null;
@@ -777,118 +783,6 @@ class PaymentService extends Service {
                 discount_amount: couponId ? (originalPrice - (finalPrice - bookSelection.booksTotal)) : 0,
                 books_included: bookSelection.include,
                 books_total: bookSelection.booksTotal
-            }
-        } catch (e) {
-            console.log(e)
-            return {
-                success: false,
-                data: 'error occurred'
-            }
-        }
-
-    }
-
-    initiatePaymentTmpBkash = async (body) => {
-
-
-        // console.log(body)
-        // console.log(dbResults[1].data[0].price)
-        // var price=dbResults[1].data[0].price.toFixed(2)
-        var pgwData = {
-            total_amount: body.total_amount,
-            currency: 'BDT',
-            tran_id: `REF123`, // use unique tran_id for each api call
-            success_url: body.success_url,
-            fail_url: body.fail_url,
-            cancel_url: body.cancel_url,
-            ipn_url: body.ipn_url,
-            shipping_method: 'Courier',
-            product_name: 'Trading PDF Package',
-            product_category: 'Education',
-            product_profile: 'digital-goods', // "physical-goods"
-            cus_name: 'Customer',
-            cus_email: 'customer@gmail.com',
-            cus_add1: 'Dhaka',
-            cus_city: 'Dhaka',
-            cus_state: 'Dhaka',
-            cus_postcode: '1216',
-            cus_country: 'Bangladesh',
-            cus_phone: body.phone,
-            cus_fax: '01729743807',
-            ship_name: '01729743807',
-            ship_add1: 'Dhaka',
-            ship_city: 'Dhaka',
-            ship_state: 'Dhaka',
-            ship_postcode: '1000',
-            ship_country: 'Bangladesh',
-            multi_card_name: 'bkash',
-            value_c: body.visitId,
-            value_d: body.saleId,
-        };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, true);
-        try {
-            var apiResponse = await sslcz.init(pgwData)
-            // console.log(apiResponse)
-            // console.log(apiResponse.GatewayPageURL)
-            return {
-                success: true,
-                data: apiResponse.GatewayPageURL
-            }
-        } catch (e) {
-            console.log(e)
-            return {
-                success: false,
-                data: 'error occurred'
-            }
-        }
-
-    }
-
-    initiatePaymentTmpNagad = async (body) => {
-
-
-        // console.log(body)
-        // console.log(dbResults[1].data[0].price)
-        // var price=dbResults[1].data[0].price.toFixed(2)
-        var pgwData = {
-            total_amount: body.total_amount,
-            currency: 'BDT',
-            tran_id: `REF123`, // use unique tran_id for each api call
-            success_url: body.success_url,
-            fail_url: body.fail_url,
-            cancel_url: body.cancel_url,
-            ipn_url: body.ipn_url,
-            shipping_method: 'Courier',
-            product_name: 'Trading PDF Package',
-            product_category: 'Education',
-            product_profile: 'digital-goods', // "physical-goods"
-            cus_name: 'Customer',
-            cus_email: 'customer@gmail.com',
-            cus_add1: 'Dhaka',
-            cus_city: 'Dhaka',
-            cus_state: 'Dhaka',
-            cus_postcode: '1216',
-            cus_country: 'Bangladesh',
-            cus_phone: body.phone,
-            cus_fax: '01729743807',
-            ship_name: '01729743807',
-            ship_add1: 'Dhaka',
-            ship_city: 'Dhaka',
-            ship_state: 'Dhaka',
-            ship_postcode: '1000',
-            ship_country: 'Bangladesh',
-            multi_card_name: 'nagad',
-            value_c: body.visitId,
-            value_d: body.saleId,
-        };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, true);
-        try {
-            var apiResponse = await sslcz.init(pgwData)
-            // console.log(apiResponse)
-            // console.log(apiResponse.GatewayPageURL)
-            return {
-                success: true,
-                data: apiResponse.GatewayPageURL
             }
         } catch (e) {
             console.log(e)

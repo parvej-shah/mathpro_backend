@@ -166,27 +166,6 @@ const PERMISSIONS = {
   },
 
   // ========================================
-  // CONTEST PERMISSIONS (child of COURSE)
-  // ========================================
-  CONTEST: {
-    CREATE: {
-      ALL: 'contest.create.all'
-    },
-    READ: {
-      ALL: 'contest.read.all'
-    },
-    UPDATE: {
-      ALL: 'contest.update.all'
-    },
-    DELETE: {
-      ALL: 'contest.delete.all'
-    },
-    MANAGE: {
-      ALL: 'contest.manage.all'
-    }
-  },
-
-  // ========================================
   // ANNOUNCEMENT PERMISSIONS (child of COURSE)
   // ========================================
   ANNOUNCEMENT: {
@@ -207,33 +186,6 @@ const PERMISSIONS = {
     },
     MANAGE: {
       ALL: 'announcement.manage.all'
-    }
-  },
-
-  // ========================================
-  // LIVE SESSION PERMISSIONS (child of COURSE)
-  // ========================================
-  LIVE: {
-    CREATE: {
-      ALL: 'live.create.all'
-    },
-    READ: {
-      ALL: 'live.read.all'
-    },
-    UPDATE: {
-      ALL: 'live.update.all'
-    },
-    DELETE: {
-      ALL: 'live.delete.all'
-    },
-    IMPORT: {
-      ALL: 'live.import.all'
-    },
-    EXPORT: {
-      ALL: 'live.export.all'
-    },
-    MANAGE: {
-      ALL: 'live.manage.all'
     }
   },
 
@@ -559,30 +511,6 @@ const PERMISSIONS = {
   },
 
   // ========================================
-  // LEVEL/GAMIFICATION PERMISSIONS
-  // ========================================
-  LEVEL: {
-    CREATE: {
-      ALL: 'level.create.all'
-    },
-    READ: {
-      ALL: 'level.read.all'
-    },
-    UPDATE: {
-      ALL: 'level.update.all'
-    },
-    DELETE: {
-      ALL: 'level.delete.all'
-    },
-    APPROVE: {
-      ALL: 'level.approve.all'
-    },
-    MANAGE: {
-      ALL: 'level.manage.all'
-    }
-  },
-
-  // ========================================
   // ROLE PERMISSIONS (for role management)
   // ========================================
   ROLE: {
@@ -755,11 +683,8 @@ const RESOURCE_HIERARCHY = {
   'module': 'course',
   'quiz': 'course',
   'submission': 'course',
-  'contest': 'course',
   'announcement': 'course',
-  'live': 'course',
   'routine': 'course',     // NEW: Routines/schedules belong to courses
-  'level': 'course',       // NEW: Gamification levels belong to courses
 };
 
 /**

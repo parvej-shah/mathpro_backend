@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS contest_participants;
+DROP TABLE IF EXISTS gift;
+DROP TABLE IF EXISTS live_feed;
+DROP TABLE IF EXISTS interest;
+DROP TABLE IF EXISTS response;
+DROP TABLE IF EXISTS certificate;
+DROP TABLE IF EXISTS issue;
+DROP TABLE IF EXISTS level;
+DROP TABLE IF EXISTS live;
+DROP TABLE IF EXISTS contest;
+DROP TABLE IF EXISTS contact_submissions;
+DROP TABLE IF EXISTS homepage_data;
+DROP TABLE IF EXISTS system_config;

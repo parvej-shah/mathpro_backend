@@ -24,9 +24,6 @@ router.route('/bulk-assign-course')
 router.route('/replace-course-instructors')
     .post(requireTeacherManage, teacherControllerV2.replaceInstructorsForCourse);
 
-router.route('/bulk-assign-bundle')
-    .post(requireTeacherManage, teacherControllerV2.bulkAssignToBundle);
-
 // List teachers (names only)
 router.route('/list-names')
     .get(requireTeacherManage, teacherControllerV2.listNames);
@@ -38,10 +35,6 @@ router.route('/list-full')
 // Get teachers by course
 router.route('/by-course/:courseId')
     .get(requireTeacherManage, teacherControllerV2.getTeachersByCourse);
-
-// Get teachers by bundle
-router.route('/by-bundle/:bundleId')
-    .get(requireTeacherManage, teacherControllerV2.getTeachersByBundle);
 
 // Create teacher (enhanced)
 router.route('/create-enhanced')
@@ -73,15 +66,5 @@ router.route('/:teacherId/courses')
 
 router.route('/:teacherId/course/:courseId')
     .delete(requireTeacherManage, teacherControllerV2.removeFromCourse);
-
-// Bundle associations
-router.route('/:teacherId/assign-bundle')
-    .post(requireTeacherManage, teacherControllerV2.assignToBundle);
-
-router.route('/:teacherId/bundles')
-    .get(requireTeacherManage, teacherControllerV2.getTeacherBundles);
-
-router.route('/:teacherId/bundle/:bundleId')
-    .delete(requireTeacherManage, teacherControllerV2.removeFromBundle);
 
 module.exports = router;

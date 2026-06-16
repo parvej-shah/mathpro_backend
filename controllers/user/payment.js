@@ -25,14 +25,6 @@ class PaymentController extends Controller {
       var result=await paymentService.initiatePaymentForBundle(req.body,parseInt(req.params.id))
       return res.status(result.success?200:400).json(result)
     }
-    initiatePaymentTmpBkash =async (req,res)=>{
-      var result=await paymentService.initiatePaymentTmpBkash(req.body)
-      return res.status(result.success?200:400).json(result)
-  }
-  initiatePaymentTmpNagad =async (req,res)=>{
-    var result=await paymentService.initiatePaymentTmpNagad(req.body)
-    return res.status(result.success?200:400).json(result)
-}
     redirect =async (req,res)=>{
         // console.log(req.query.url)
         return res.redirect(`${req.query.url}/post-payment/${req.params.status}`)
@@ -321,29 +313,34 @@ class PaymentController extends Controller {
                     }
                 }
 
-                // Verify amount matches (use validated amount from SSLCommerz)
-                if (amount && validationResult.amount) {
-                    const amountDiff = Math.abs(parseFloat(amount) - validationResult.amount);
-                    if (amountDiff > 0.01) { // Allow 0.01 BDT difference for rounding
-                        const errorMsg = `Amount mismatch: IPN amount (${amount}) != Validated amount (${validationResult.amount})`;
-                        console.error('IPN Amount Mismatch:', errorMsg);
-                        
-                        if (auditLogId) {
-                            await paymentService.updatePaymentLog(auditLogId, {
-                                processing_status: 'ERROR',
-                                error_message: errorMsg,
-                                processing_result: validationResult
+                // Verify amount and adopt the validated amount from SSLCommerz.
+                // The validated amount is authoritative; enforce it whenever it is
+                // present, regardless of whether the IPN body carried value_c (a
+                // forged/legacy IPN can omit value_c, and we must not skip the check).
+                if (validationResult.amount) {
+                    if (amount) {
+                        const amountDiff = Math.abs(parseFloat(amount) - validationResult.amount);
+                        if (amountDiff > 0.01) { // Allow 0.01 BDT difference for rounding
+                            const errorMsg = `Amount mismatch: IPN amount (${amount}) != Validated amount (${validationResult.amount})`;
+                            console.error('IPN Amount Mismatch:', errorMsg);
+
+                            if (auditLogId) {
+                                await paymentService.updatePaymentLog(auditLogId, {
+                                    processing_status: 'ERROR',
+                                    error_message: errorMsg,
+                                    processing_result: validationResult
+                                });
+                            }
+
+                            return res.status(200).json({
+                                success: false,
+                                error: errorMsg,
+                                ipn_amount: amount,
+                                validated_amount: validationResult.amount
                             });
                         }
-                        
-                        return res.status(200).json({ 
-                            success: false, 
-                            error: errorMsg,
-                            ipn_amount: amount,
-                            validated_amount: validationResult.amount
-                        });
                     }
-                    
+
                     // Use validated amount from SSLCommerz (more reliable)
                     amount = validationResult.amount;
                 }

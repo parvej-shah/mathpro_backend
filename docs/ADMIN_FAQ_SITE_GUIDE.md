@@ -40,7 +40,6 @@ Admin endpoints currently require the existing `course.manage.all` permission.
 - `enrollment`
 - `payment`
 - `support`
-- `certificate`
 
 `category` is optional, but the `/courses` page uses it for filter chips. If it is omitted, the FAQ still appears in the full list and on pages that do not filter.
 

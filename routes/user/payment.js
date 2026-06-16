@@ -7,8 +7,6 @@ const paymentController=new PaymentController()
 
 router.route("/initiate/:id").post(authenticateUser,paymentController.initiatePayment);
 router.route("/initiate-for-bundle/:id").post(authenticateUser,paymentController.initiatePaymentForBundle);
-router.route("/initiate-tmp-bkash").post(paymentController.initiatePaymentTmpBkash);
-router.route("/initiate-tmp-nagad").post(paymentController.initiatePaymentTmpNagad);
 router.route("/redirect/:status").post(paymentController.redirect);
 router.route("/redirectNew/").post(paymentController.redirectNew);
 // SSLCommerz payment callback handlers (POST -> GET redirect to frontend)

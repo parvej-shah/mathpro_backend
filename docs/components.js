@@ -1,17 +1,13 @@
 const { CourseService } = require("../service/managerial/course");
 const { ChapterService } = require("../service/managerial/chapter");
-const { LiveService } = require("../service/managerial/live");
-const { LevelService } = require("../service/managerial/level");
 const { ModuleService } = require("../service/managerial/module");
 const { TeacherService } = require("../service/managerial/teacher");
 const { RoutineService } = require("../service/managerial/routine");
 
 var courseService = new CourseService();
 var chapterService = new ChapterService();
-var liveService = new LiveService();
 var moduleService = new ModuleService();
 var teacherService = new TeacherService();
-var levelService = new LevelService();
 var routineService = new RoutineService();
 
 // Per-field documentation overlaid on the auto-generated course schema. Keys not
@@ -54,26 +50,6 @@ const getChapterProperties = () => {
   chapterService.cols.map((c, i) => {
     properties[c] = {
       type: chapterService.types[i],
-    };
-  });
-  return properties;
-};
-
-const getLiveProperties = () => {
-  var properties = {};
-  liveService.cols.map((c, i) => {
-    properties[c] = {
-      type: liveService.types[i],
-    };
-  });
-  return properties;
-};
-
-const getLevelProperties = () => {
-  var properties = {};
-  levelService.cols.map((c, i) => {
-    properties[c] = {
-      type: levelService.types[i],
     };
   });
   return properties;
@@ -271,88 +247,6 @@ module.exports = {
           ...getChapterProperties(),
         },
       },
-      contest: {
-        type: "object",
-        properties: {
-          title: {
-            type: "string",
-            description: "Title of the contest",
-            example: "Weekly Programming Contest",
-          },
-          description: {
-            type: "string",
-            description: "Description of the contest",
-            example: "A weekly programming contest for beginners",
-          },
-          contestLink: {
-            type: "string",
-            description: "Link to the contest platform",
-            example: "https://codeforces.com/contest/123",
-          },
-          contestVideoLink: {
-            type: "string",
-            description: "Link to contest explanation video",
-            example: "https://youtube.com/watch?v=abc123",
-          },
-          startDate: {
-            type: "string",
-            format: "date-time",
-            description: "Start date and time of the contest",
-            example: "2024-03-20T10:00:00Z",
-          },
-          endDate: {
-            type: "string",
-            format: "date-time",
-            description: "End date and time of the contest",
-            example: "2024-03-20T13:00:00Z",
-          },
-          thumbnailLink: {
-            type: "string",
-            description: "Link to contest thumbnail image",
-            example: "https://example.com/thumbnail.jpg",
-          },
-          numberOfProblems: {
-            type: "string",
-            description: "Number of problems in the contest",
-            example: "5",
-          },
-          contestDuration: {
-            type: "string",
-            description: "Duration of the contest",
-            example: "3 hours",
-          },
-          facebookGroupLink: {
-            type: "string",
-            description: "Link to contest discussion group",
-            example: "https://facebook.com/groups/contest123",
-          },
-          rules: {
-            type: "array",
-            items: {
-              type: "string",
-            },
-            description: "List of contest rules",
-            example: ["No plagiarism", "Individual participation only"],
-          },
-          faqs: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                question: {
-                  type: "string",
-                  example: "Can I participate if I'm a beginner?",
-                },
-                answer: {
-                  type: "string",
-                  example: "Yes, this contest is beginner-friendly",
-                },
-              },
-            },
-            description: "List of frequently asked questions",
-          },
-        },
-      },
       admin: {
         type: "object",
         properties: {
@@ -424,20 +318,6 @@ module.exports = {
         type: "object",
         properties: {
           ...getModuleProperties(),
-        },
-      },
-      live: {
-        hidden: true,
-        type: "object",
-        properties: {
-          ...getLiveProperties(),
-        },
-      },
-      level: {
-        hidden: true,
-        type: "object",
-        properties: {
-          ...getLevelProperties(),
         },
       },
       teacher: {
@@ -600,121 +480,6 @@ module.exports = {
           created_at: { type: "string", format: "date-time" },
         },
       },
-      afterMessage: {
-        type: "object",
-        properties: {
-          id: {
-            type: "integer",
-            description: "Unique identifier for the message",
-            example: 1,
-          },
-          type: {
-            type: "string",
-            description: "Type of message",
-            example: "afterPurchaseMessage",
-          },
-          course_ids: {
-            type: "string",
-            nullable: true,
-            description: "Comma-separated course IDs",
-            example: "1,2,3",
-          },
-          bundle_ids: {
-            type: "string",
-            nullable: true,
-            description: "Comma-separated bundle IDs",
-            example: "5,6",
-          },
-          messages: {
-            type: "array",
-            items: {
-              type: "string",
-            },
-            description: "Array of message strings",
-            example: [
-              "আমাদের Bundle এ তোমার আগ্রহ দেখে আমরা অত্যন্ত খুশী! 🔥",
-              "প্রি-বুকিং এর মেয়াদ শেষ হলে তোমার ফোন নাম্বার ও ইমেইলে আমরা বিস্তারিত জানিয়ে দেব!",
-            ],
-          },
-          created_at: {
-            type: "string",
-            format: "date-time",
-            description: "Timestamp when the message was created",
-            example: "2025-11-23T10:30:00Z",
-          },
-          updated_at: {
-            type: "string",
-            format: "date-time",
-            description: "Timestamp when the message was last updated",
-            example: "2025-11-23T10:30:00Z",
-          },
-        },
-      },
-      createAfterMessage: {
-        type: "object",
-        required: ["type", "messages"],
-        properties: {
-          type: {
-            type: "string",
-            description: "Type of message (use 'afterPurchaseMessage')",
-            example: "afterPurchaseMessage",
-          },
-          course_ids: {
-            type: "string",
-            nullable: true,
-            description: "Comma-separated course IDs (e.g., '1,2,3')",
-            example: "1,2,3",
-          },
-          bundle_ids: {
-            type: "string",
-            nullable: true,
-            description: "Comma-separated bundle IDs (e.g., '5,6')",
-            example: null,
-          },
-          messages: {
-            type: "array",
-            items: {
-              type: "string",
-            },
-            description: "Array of message strings to display",
-            example: [
-              "Welcome to the course!",
-              "Check your email for more details",
-              "Start learning today!",
-            ],
-          },
-        },
-      },
-      updateAfterMessage: {
-        type: "object",
-        properties: {
-          type: {
-            type: "string",
-            description: "Type of message (optional)",
-            example: "afterPurchaseMessage",
-          },
-          course_ids: {
-            type: "string",
-            nullable: true,
-            description: "Comma-separated course IDs (optional)",
-            example: "1,2,3,4",
-          },
-          bundle_ids: {
-            type: "string",
-            nullable: true,
-            description: "Comma-separated bundle IDs (optional)",
-            example: null,
-          },
-          messages: {
-            type: "array",
-            items: {
-              type: "string",
-            },
-            description: "Array of message strings (optional)",
-            example: ["Updated message 1", "Updated message 2"],
-          },
-        },
-      },
       routine: {
         type: "object",
         properties: {
@@ -781,131 +546,6 @@ module.exports = {
           error: { type: "string", example: "Error message" },
           code: { type: "string", example: "ERROR_CODE" },
         },
-      },
-      contact_submission: {
-        type: "object",
-        required: ["fullName", "email", "whatsappNumber", "projectDetails"],
-        properties: {
-          fullName: {
-            type: "string",
-            description: "Full name of the contact",
-            minLength: 2,
-            maxLength: 100,
-            example: "John Doe"
-          },
-          email: {
-            type: "string",
-            format: "email",
-            description: "Email address",
-            example: "john.doe@example.com"
-          },
-          whatsappNumber: {
-            type: "string",
-            description: "WhatsApp phone number (international format with country code)",
-            example: "+880 1712 345678"
-          },
-          projectDetails: {
-            type: "string",
-            description: "Project description/details",
-            minLength: 10,
-            maxLength: 2000,
-            example: "আমি আমার ওয়েবসাইট রিডিজাইন করতে চাই..."
-          }
-        }
-      },
-      contact_submission_response: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "Submission ID with 'contact_' prefix",
-            example: "contact_123"
-          },
-          fullName: {
-            type: "string",
-            example: "John Doe"
-          },
-          email: {
-            type: "string",
-            format: "email",
-            example: "john.doe@example.com"
-          },
-          whatsappNumber: {
-            type: "string",
-            example: "+8801712345678"
-          },
-          projectDetails: {
-            type: "string",
-            example: "Project description..."
-          },
-          status: {
-            type: "string",
-            enum: ["new", "read", "replied"],
-            example: "new"
-          },
-          submittedAt: {
-            type: "string",
-            format: "date-time",
-            example: "2024-01-15T10:30:00Z"
-          },
-          updatedAt: {
-            type: "string",
-            format: "date-time",
-            example: "2024-01-15T10:30:00Z"
-          }
-        }
-      },
-      contact_submission_detail: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "Submission ID with 'contact_' prefix",
-            example: "contact_123"
-          },
-          fullName: {
-            type: "string",
-            example: "John Doe"
-          },
-          email: {
-            type: "string",
-            format: "email",
-            example: "john.doe@example.com"
-          },
-          whatsappNumber: {
-            type: "string",
-            example: "+8801712345678"
-          },
-          projectDetails: {
-            type: "string",
-            example: "Project description..."
-          },
-          ipAddress: {
-            type: "string",
-            description: "Client IP address",
-            example: "123.456.789.0"
-          },
-          userAgent: {
-            type: "string",
-            description: "Browser user agent string",
-            example: "Mozilla/5.0..."
-          },
-          status: {
-            type: "string",
-            enum: ["new", "read", "replied"],
-            example: "new"
-          },
-          submittedAt: {
-            type: "string",
-            format: "date-time",
-            example: "2024-01-15T10:30:00Z"
-          },
-          updatedAt: {
-            type: "string",
-            format: "date-time",
-            example: "2024-01-15T10:30:00Z"
-          }
-        }
       },
       coupon: {
         type: "object",

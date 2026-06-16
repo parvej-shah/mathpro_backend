@@ -103,16 +103,6 @@ class TeacherServiceV2 extends TeacherService {
             `;
             const coursesResult = await this.query(coursesQuery, [teacherId]);
 
-            // Get bundles teaching (if any) - optional association
-            const bundlesQuery = `
-                SELECT b.id, b.title, b.url, b.price
-                FROM bundle b
-                INNER JOIN bundle_instructor bi ON b.id = bi.bundle_id
-                WHERE bi.instructor_id = $1
-                ORDER BY b.title ASC
-            `;
-            const bundlesResult = await this.query(bundlesQuery, [teacherId]);
-
             // Format response with enhanced fields
             const teacherFull = {
                 id: teacher.id,
@@ -125,8 +115,6 @@ class TeacherServiceV2 extends TeacherService {
                 social: profile.social || {},
                 courses_teaching: coursesResult.success ? coursesResult.data.map(c => c.id) : [],
                 courses_teaching_details: coursesResult.success ? coursesResult.data : [],
-                bundles_teaching: bundlesResult.success ? bundlesResult.data.map(b => b.id) : [],
-                bundles_teaching_details: bundlesResult.success ? bundlesResult.data : [],
                 category: profile.category || 'instructor',
                 isActive: profile.isActive !== undefined ? profile.isActive : true,
                 login: teacher.login,
@@ -211,77 +199,6 @@ class TeacherServiceV2 extends TeacherService {
             return result;
         } catch (error) {
             console.error('Error getting teachers by course:', error);
-            return {
-                success: false,
-                error: 'Failed to get teachers',
-                code: 'INTERNAL_SERVER_ERROR'
-            };
-        }
-    }
-
-    /**
-     * Get teachers by bundle_id
-     * @param {number} bundleId - Bundle ID
-     * @returns {Promise<object>} List of teachers teaching this bundle
-     */
-    async getTeachersByBundle(bundleId) {
-        try {
-            // Verify bundle exists
-            const bundleQuery = `SELECT id FROM bundle WHERE id = $1`;
-            const bundleResult = await this.query(bundleQuery, [bundleId]);
-
-            if (!bundleResult.success || bundleResult.data.length === 0) {
-                return {
-                    success: false,
-                    error: 'Bundle not found',
-                    code: 'BUNDLE_NOT_FOUND'
-                };
-            }
-
-            const query = `
-                SELECT 
-                    ma.id,
-                    ma.name,
-                    ma.login,
-                    ma.type,
-                    ma.profile,
-                    ma.created_at,
-                    ma.updated_at
-                FROM managerial_auth ma
-                INNER JOIN bundle_instructor bi ON ma.id = bi.instructor_id
-                WHERE bi.bundle_id = $1
-                ORDER BY ma.name ASC
-            `;
-            const result = await this.query(query, [bundleId]);
-
-            if (result.success) {
-                const teachers = await Promise.all(
-                    result.data.map(async (teacher) => {
-                        const profile = teacher.profile || {};
-                        return {
-                            id: teacher.id,
-                            name: teacher.name,
-                            role: profile.role || null,
-                            university: profile.university || null,
-                            bio: profile.bio || null,
-                            image: profile.image || null,
-                            achievements: profile.achievements || [],
-                            social: profile.social || {},
-                            category: profile.category || 'instructor',
-                            isActive: profile.isActive !== undefined ? profile.isActive : true
-                        };
-                    })
-                );
-
-                return {
-                    success: true,
-                    data: teachers
-                };
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Error getting teachers by bundle:', error);
             return {
                 success: false,
                 error: 'Failed to get teachers',
@@ -401,22 +318,6 @@ class TeacherServiceV2 extends TeacherService {
                     // Insert using parameterized query
                     const insertPromises = teacherData.courses_teaching.map(courseId => 
                         this.query(`INSERT INTO instructor(user_id, course_id) VALUES ($1, $2)`, [teacherId, courseId])
-                    );
-                    await Promise.all(insertPromises);
-                }
-            }
-
-            // Link to bundles if provided (optional - teachers can exist without bundles)
-            if (teacherData.bundles_teaching && Array.isArray(teacherData.bundles_teaching) && teacherData.bundles_teaching.length > 0) {
-                // Validate bundles exist using parameterized query
-                const placeholders = teacherData.bundles_teaching.map((_, i) => `$${i + 1}`).join(',');
-                const validateBundlesQuery = `SELECT id FROM bundle WHERE id IN (${placeholders})`;
-                const validateResult = await this.query(validateBundlesQuery, teacherData.bundles_teaching);
-                
-                if (validateResult.success && validateResult.data.length === teacherData.bundles_teaching.length) {
-                    // Insert using parameterized query
-                    const insertPromises = teacherData.bundles_teaching.map(bundleId => 
-                        this.query(`INSERT INTO bundle_instructor(bundle_id, instructor_id) VALUES ($1, $2)`, [bundleId, teacherId])
                     );
                     await Promise.all(insertPromises);
                 }
@@ -642,20 +543,6 @@ class TeacherServiceV2 extends TeacherService {
                     }
                 }
 
-                // Update bundle associations
-                if (teacherData.bundles_teaching !== undefined) {
-                    // Delete existing
-                    await this.query(`DELETE FROM bundle_instructor WHERE instructor_id = $1`, [teacherId]);
-
-                    // Insert new using parameterized queries
-                    if (Array.isArray(teacherData.bundles_teaching) && teacherData.bundles_teaching.length > 0) {
-                        const insertPromises = teacherData.bundles_teaching.map(bundleId => 
-                            this.query(`INSERT INTO bundle_instructor(bundle_id, instructor_id) VALUES ($1, $2)`, [bundleId, teacherId])
-                        );
-                        await Promise.all(insertPromises);
-                    }
-                }
-
                 return {
                     success: true,
                     data: {
@@ -722,15 +609,6 @@ class TeacherServiceV2 extends TeacherService {
                         `;
                         const coursesResult = await this.query(coursesQuery, [teacher.id]);
 
-                        // Get bundles
-                        const bundlesQuery = `
-                            SELECT b.id, b.title
-                            FROM bundle b
-                            INNER JOIN bundle_instructor bi ON b.id = bi.bundle_id
-                            WHERE bi.instructor_id = $1
-                        `;
-                        const bundlesResult = await this.query(bundlesQuery, [teacher.id]);
-
                         return {
                             id: teacher.id,
                             name: teacher.name,
@@ -741,7 +619,6 @@ class TeacherServiceV2 extends TeacherService {
                             achievements: profile.achievements || [],
                             social: profile.social || {},
                             courses_teaching: coursesResult.success ? coursesResult.data.map(c => c.id) : [],
-                            bundles_teaching: bundlesResult.success ? bundlesResult.data.map(b => b.id) : [],
                             category: profile.category || 'instructor',
                             isActive: profile.isActive !== undefined ? profile.isActive : true,
                             login: teacher.login,
@@ -904,147 +781,6 @@ class TeacherServiceV2 extends TeacherService {
             return {
                 success: false,
                 error: 'Failed to get teacher courses',
-                code: 'INTERNAL_SERVER_ERROR'
-            };
-        }
-    }
-
-    /**
-     * Assign teacher to bundle
-     * @param {number} teacherId - Teacher ID
-     * @param {number} bundleId - Bundle ID
-     * @returns {Promise<object>} Assignment result
-     */
-    async assignToBundle(teacherId, bundleId) {
-        try {
-            // Validate teacher exists
-            const teacherCheck = await this.query('SELECT id FROM managerial_auth WHERE id = $1', [teacherId]);
-            if (!teacherCheck.success || teacherCheck.data.length === 0) {
-                return {
-                    success: false,
-                    error: 'Teacher not found',
-                    code: 'TEACHER_NOT_FOUND'
-                };
-            }
-
-            // Validate bundle exists
-            const bundleCheck = await this.query('SELECT id FROM bundle WHERE id = $1', [bundleId]);
-            if (!bundleCheck.success || bundleCheck.data.length === 0) {
-                return {
-                    success: false,
-                    error: 'Bundle not found',
-                    code: 'BUNDLE_NOT_FOUND'
-                };
-            }
-
-            // Check if already assigned
-            const existingCheck = await this.query(
-                'SELECT id FROM bundle_instructor WHERE instructor_id = $1 AND bundle_id = $2',
-                [teacherId, bundleId]
-            );
-
-            if (existingCheck.success && existingCheck.data.length > 0) {
-                return {
-                    success: false,
-                    error: 'Teacher is already assigned to this bundle',
-                    code: 'ALREADY_ASSIGNED'
-                };
-            }
-
-            // Assign
-            const result = await this.query(
-                'INSERT INTO bundle_instructor(bundle_id, instructor_id) VALUES ($1, $2) RETURNING id',
-                [bundleId, teacherId]
-            );
-
-            if (result.success) {
-                return {
-                    success: true,
-                    data: {
-                        teacher_id: teacherId,
-                        bundle_id: bundleId,
-                        message: 'Teacher assigned to bundle successfully'
-                    }
-                };
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Error assigning teacher to bundle:', error);
-            return {
-                success: false,
-                error: 'Failed to assign teacher to bundle',
-                code: 'INTERNAL_SERVER_ERROR'
-            };
-        }
-    }
-
-    /**
-     * Remove teacher from bundle
-     * @param {number} teacherId - Teacher ID
-     * @param {number} bundleId - Bundle ID
-     * @returns {Promise<object>} Removal result
-     */
-    async removeFromBundle(teacherId, bundleId) {
-        try {
-            const result = await this.query(
-                'DELETE FROM bundle_instructor WHERE instructor_id = $1 AND bundle_id = $2 RETURNING id',
-                [teacherId, bundleId]
-            );
-
-            if (result.success && result.data.length > 0) {
-                return {
-                    success: true,
-                    data: {
-                        message: 'Teacher removed from bundle successfully'
-                    }
-                };
-            }
-
-            return {
-                success: false,
-                error: 'Assignment not found',
-                code: 'ASSIGNMENT_NOT_FOUND'
-            };
-        } catch (error) {
-            console.error('Error removing teacher from bundle:', error);
-            return {
-                success: false,
-                error: 'Failed to remove teacher from bundle',
-                code: 'INTERNAL_SERVER_ERROR'
-            };
-        }
-    }
-
-    /**
-     * Get all bundles for a teacher
-     * @param {number} teacherId - Teacher ID
-     * @returns {Promise<object>} List of bundles
-     */
-    async getTeacherBundles(teacherId) {
-        try {
-            const query = `
-                SELECT b.id, b.title, b.url, b.price, b.description
-                FROM bundle b
-                INNER JOIN bundle_instructor bi ON b.id = bi.bundle_id
-                WHERE bi.instructor_id = $1
-                ORDER BY b.title ASC
-            `;
-            const result = await this.query(query, [teacherId]);
-
-            if (result.success) {
-                return {
-                    success: true,
-                    data: result.data
-                };
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Error getting teacher bundles:', error);
-            return {
-                success: false,
-                error: 'Failed to get teacher bundles',
                 code: 'INTERNAL_SERVER_ERROR'
             };
         }
@@ -1287,15 +1023,6 @@ class TeacherServiceV2 extends TeacherService {
             const coursesResult = await this.query(coursesQuery, [teacherId]);
             const totalCourses = coursesResult.success ? parseInt(coursesResult.data[0]?.count || 0) : 0;
 
-            // Get bundle count
-            const bundlesQuery = `
-                SELECT COUNT(DISTINCT bundle_id) as count
-                FROM bundle_instructor
-                WHERE instructor_id = $1
-            `;
-            const bundlesResult = await this.query(bundlesQuery, [teacherId]);
-            const totalBundles = bundlesResult.success ? parseInt(bundlesResult.data[0]?.count || 0) : 0;
-
             // Get module count
             const modulesQuery = `
                 SELECT COUNT(*) as count
@@ -1320,7 +1047,6 @@ class TeacherServiceV2 extends TeacherService {
                 data: {
                     teacher_id: teacherId,
                     total_courses: totalCourses,
-                    total_bundles: totalBundles,
                     total_modules: totalModules,
                     total_students: totalStudents,
                     average_rating: null // Can be added later if rating system exists
@@ -1492,70 +1218,6 @@ class TeacherServiceV2 extends TeacherService {
     }
 
     /**
-     * Bulk assign teachers to bundle
-     * @param {number} bundleId - Bundle ID
-     * @param {number[]} teacherIds - Array of teacher IDs
-     * @returns {Promise<object>} Bulk assignment result
-     */
-    async bulkAssignToBundle(bundleId, teacherIds) {
-        try {
-            // Validate bundle exists
-            const bundleCheck = await this.query('SELECT id FROM bundle WHERE id = $1', [bundleId]);
-            if (!bundleCheck.success || bundleCheck.data.length === 0) {
-                return {
-                    success: false,
-                    error: 'Bundle not found',
-                    code: 'BUNDLE_NOT_FOUND'
-                };
-            }
-
-            if (!Array.isArray(teacherIds) || teacherIds.length === 0) {
-                return {
-                    success: false,
-                    error: 'Teacher IDs array is required',
-                    code: 'INVALID_INPUT'
-                };
-            }
-
-            const results = {
-                success: [],
-                failed: []
-            };
-
-            for (const teacherId of teacherIds) {
-                const result = await this.assignToBundle(teacherId, bundleId);
-                if (result.success) {
-                    results.success.push(teacherId);
-                } else {
-                    results.failed.push({
-                        teacher_id: teacherId,
-                        error: result.error,
-                        code: result.code
-                    });
-                }
-            }
-
-            return {
-                success: true,
-                data: {
-                    bundle_id: bundleId,
-                    total: teacherIds.length,
-                    successful: results.success.length,
-                    failed: results.failed.length,
-                    results: results
-                }
-            };
-        } catch (error) {
-            console.error('Error in bulk assign to bundle:', error);
-            return {
-                success: false,
-                error: 'Failed to bulk assign teachers to bundle',
-                code: 'INTERNAL_SERVER_ERROR'
-            };
-        }
-    }
-
-    /**
      * Get all instructors for public display (courses page)
      * Returns unique instructors with their profile data, assigned courses, and statistics
      * Only returns active instructors with at least one live course
@@ -1563,44 +1225,22 @@ class TeacherServiceV2 extends TeacherService {
      */
     async getPublicInstructors() {
         try {
-            // Step 1: Get unique instructor IDs who are teachers and have at least one live course
-            // Also filter for active teachers only
-            const instructorIdsQuery = `
-                SELECT DISTINCT i.user_id
-                FROM instructor i
-                INNER JOIN managerial_auth ma ON i.user_id = ma.id
-                INNER JOIN course c ON i.course_id = c.id
-                WHERE (
-                    ma.type IN (1, 2)
-                    OR (ma.profile->>'category' = 'teacher' OR ma.profile->>'category' = 'instructor')
-                )
-                AND (ma.profile->>'isActive')::boolean = true
-                AND c.is_live = true
-            `;
-            
-            const idsResult = await this.query(instructorIdsQuery, []);
-            
-            if (!idsResult.success || idsResult.data.length === 0) {
-                return {
-                    success: true,
-                    data: []
-                };
-            }
-            
-            const instructorIds = idsResult.data.map(row => row.user_id);
-            const placeholders = instructorIds.map((_, i) => `$${i + 1}`).join(',');
-            
-            // Step 2: Fetch full data for these instructors
+            // Get all active teachers/instructors
             const query = `
                 SELECT
                     id,
                     name,
                     profile
                 FROM managerial_auth
-                WHERE id IN (${placeholders})
+                WHERE (
+                    type IN (1, 2)
+                    OR (profile->>'category' = 'teacher' OR profile->>'category' = 'instructor')
+                )
+                AND (profile->>'isActive')::boolean = true
+                ORDER BY id ASC
             `;
-            
-            const result = await this.query(query, instructorIds);
+
+            const result = await this.query(query, []);
 
             if (!result.success) {
                 return result;
@@ -1615,7 +1255,7 @@ class TeacherServiceV2 extends TeacherService {
                     const image = profile.image || null;
                     const role = profile.role || null;
                     const university = profile.university || null;
-                    const bio = profile.bio || null;
+                    const credibility = profile.credibility || null;
                     const achievements = Array.isArray(profile.achievements) ? profile.achievements : [];
                     const social = profile.social || {};
                     const isActive = profile.isActive !== undefined ? profile.isActive : true;
@@ -1654,7 +1294,7 @@ class TeacherServiceV2 extends TeacherService {
                         image: image,
                         role: role,
                         university: university,
-                        bio: bio,
+                        credibility: credibility,
                         achievements: achievements,
                         social: social,
                         assignedCourses: assignedCourses,

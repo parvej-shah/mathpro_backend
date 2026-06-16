@@ -130,39 +130,6 @@ class TeacherControllerV2 extends Controller {
     };
 
     /**
-     * GET /v2/admin/teacher/by-bundle/{bundleId}
-     */
-    getTeachersByBundle = async (req, res) => {
-        try {
-            const bundleId = parseInt(req.params.bundleId);
-            if (isNaN(bundleId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    bundleId: 'Bundle ID must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await teacherServiceV2.getTeachersByBundle(bundleId);
-
-            if (!result.success) {
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    result.details,
-                    result.code === 'BUNDLE_NOT_FOUND' ? 404 : 400
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in getTeachersByBundle:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    /**
      * POST /v2/admin/teacher/create-enhanced
      */
     createEnhanced = async (req, res) => {
@@ -327,117 +294,6 @@ class TeacherControllerV2 extends Controller {
             return res.status(200).json(result);
         } catch (error) {
             console.error('Error in getTeacherCourses:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    /**
-     * POST /v2/admin/teacher/{teacherId}/assign-bundle
-     */
-    assignToBundle = async (req, res) => {
-        try {
-            const teacherId = parseInt(req.params.teacherId);
-            const { bundle_id } = req.body;
-
-            if (isNaN(teacherId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    teacherId: 'Teacher ID must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            if (!bundle_id || isNaN(parseInt(bundle_id))) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    bundle_id: 'Bundle ID is required and must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await teacherServiceV2.assignToBundle(teacherId, parseInt(bundle_id));
-
-            if (!result.success) {
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    result.details,
-                    result.code === 'TEACHER_NOT_FOUND' || result.code === 'BUNDLE_NOT_FOUND' ? 404 : 400
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in assignToBundle:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    /**
-     * DELETE /v2/admin/teacher/{teacherId}/bundle/{bundleId}
-     */
-    removeFromBundle = async (req, res) => {
-        try {
-            const teacherId = parseInt(req.params.teacherId);
-            const bundleId = parseInt(req.params.bundleId);
-
-            if (isNaN(teacherId) || isNaN(bundleId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    teacherId: 'Teacher ID must be a valid number',
-                    bundleId: 'Bundle ID must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await teacherServiceV2.removeFromBundle(teacherId, bundleId);
-
-            if (!result.success) {
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    result.details,
-                    result.code === 'ASSIGNMENT_NOT_FOUND' ? 404 : 400
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in removeFromBundle:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    /**
-     * GET /v2/admin/teacher/{teacherId}/bundles
-     */
-    getTeacherBundles = async (req, res) => {
-        try {
-            const teacherId = parseInt(req.params.teacherId);
-            if (isNaN(teacherId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    teacherId: 'Teacher ID must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await teacherServiceV2.getTeacherBundles(teacherId);
-
-            if (!result.success) {
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    result.details,
-                    400
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in getTeacherBundles:', error);
             const { response, statusCode } = ErrorHandler.serverError();
             return res.status(statusCode).json(response);
         }
@@ -706,46 +562,6 @@ class TeacherControllerV2 extends Controller {
         }
     };
 
-    /**
-     * POST /v2/admin/teacher/bulk-assign-bundle
-     */
-    bulkAssignToBundle = async (req, res) => {
-        try {
-            const { bundle_id, teacher_ids } = req.body;
-
-            if (!bundle_id || isNaN(parseInt(bundle_id))) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    bundle_id: 'Bundle ID is required and must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            if (!Array.isArray(teacher_ids) || teacher_ids.length === 0) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    teacher_ids: 'teacher_ids must be a non-empty array'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await teacherServiceV2.bulkAssignToBundle(parseInt(bundle_id), teacher_ids);
-
-            if (!result.success) {
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    result.details,
-                    result.code === 'BUNDLE_NOT_FOUND' ? 404 : 400
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in bulkAssignToBundle:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
 }
 
 module.exports = { TeacherControllerV2 };

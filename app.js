@@ -11,28 +11,18 @@ const adminCourseRoutes = require("./routes/managerial/course");
 const adminTeachersRoutes = require("./routes/managerial/teacher");
 const userCourseRoutes = require("./routes/user/course");
 const adminChapterRoutes = require("./routes/managerial/chapter");
-const adminLevelRoutes = require("./routes/managerial/level");
-const adminLiveRoutes = require("./routes/managerial/live");
-const userLiveRoutes = require("./routes/user/live");
-const userSupportRoutes = require("./routes/user/support");
 const adminModuleRoutes = require("./routes/managerial/module");
 const userModuleRoutes = require("./routes/user/module");
-const userMeetingRoutes = require("./routes/user/meeting");
 const userPaymentRoutes = require("./routes/user/payment");
 const userNotificationRoutes = require("./routes/user/notification");
 const adminAnnouncementRoutes = require("./routes/managerial/announcement");
-const userActivityRoutes = require("./routes/user/activity");
 const adminRoutineRoutes = require("./routes/managerial/routine");
 const adminFaqRoutes = require("./routes/managerial/faq");
 const userFaqRoutes = require("./routes/user/faq");
 const adminTestimonialRoutes = require("./routes/managerial/testimonial");
 const userTestimonialRoutes = require("./routes/user/testimonial");
 
-const DBService = require("./service/base").Service;
-const dbService = new DBService();
-
 const inAuthRoutes = require("./routes/in/auth");
-const inItemRoutes = require("./routes/in/item");
 const { user } = require("pg/lib/defaults");
 
 const app = express();
@@ -95,9 +85,6 @@ app.use("/admin/course", adminCourseRoutes);
 app.use("/admin/teacher", adminTeachersRoutes);
 app.use("/user/course", userCourseRoutes);
 app.use("/admin/chapter", adminChapterRoutes);
-app.use("/admin/level", adminLevelRoutes);
-app.use("/admin/live", adminLiveRoutes);
-app.use("/user/live", userLiveRoutes);
 app.use("/admin/module", adminModuleRoutes);
 app.use("/user/module", userModuleRoutes);
 // V2 Phase 8 routes
@@ -106,8 +93,6 @@ app.use("/v2/admin/course", require("./routes/managerial/courseV2"));
 app.use("/v2/admin/teacher", require("./routes/managerial/teacherV2"));
 app.use("/v2/admin/upload", require("./routes/managerial/uploadV2"));
 app.use("/v2/user/upload", require("./routes/user/uploadV2"));
-app.use("/user/support", userSupportRoutes);
-app.use("/user/meeting", userMeetingRoutes);
 app.use("/user/payment", userPaymentRoutes);
 app.use("/admin/payment", require("./routes/managerial/payment"));
 app.use("/user/profile", require("./routes/user/profile"));
@@ -116,7 +101,6 @@ app.use("/admin/coupon", require("./routes/managerial/coupon"));
 app.use("/user/coupon", require("./routes/user/coupon"));
 
 app.use("/user/notification", userNotificationRoutes);
-app.use("/user/activity", userActivityRoutes);
 app.use("/admin/announcement", adminAnnouncementRoutes);
 app.use("/admin/routine", adminRoutineRoutes);
 app.use("/admin/faq", adminFaqRoutes);
@@ -134,66 +118,11 @@ app.use("/admin/book", require("./routes/managerial/book"));
 // Instructor routes (public)
 app.use("/user/instructor", require("./routes/user/instructor"));
 
-// After-purchase message routes
-app.use("/admin/aftermessage", require("./routes/managerial/aftermessage"));
-app.use("/user/aftermessage", require("./routes/user/aftermessage"));
-
 // Streak tracking routes
 app.use("/user/streak", require("./routes/user/streak"));
 app.use("/admin/streak", require("./routes/managerial/streak"));
 
 app.use("/in/auth", inAuthRoutes);
-app.use("/in/item", inItemRoutes);
-
-app.post("/homepageData", async (req, res) => {
-  const pageName = req.query.page_name;
-  const data = req.body;
-
-  if (!pageName || !data) {
-    return res.status(400).json({ message: "Missing page name or data" });
-  }
-
-  try {
-    // Using UPSERT to insert or update existing data
-    const query = `
-          INSERT INTO homepage_data (page_name, data)
-          VALUES ($1, $2)
-          ON CONFLICT (page_name) DO UPDATE
-          SET data = EXCLUDED.data;
-      `;
-
-    // Run the query
-    const result = await dbService.query(query, [pageName, data]);
-    if (result.success)
-      res.status(200).json({ message: "Data updated successfully" });
-    else res.status(500).json({ message: "Error updating the database" });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating the database" });
-  }
-});
-
-app.get("/homepageData", async (req, res) => {
-  const pageName = req.query.page_name;
-
-  if (!pageName) {
-    return res.status(400).json({ message: "Missing page name" });
-  }
-
-  try {
-    // Using UPSERT to insert or update existing data
-    const query = `
-          SELECT * FROM homepage_data WHERE page_name=$1
-      `;
-
-    // Run the query
-    const result = await dbService.query(query, [pageName]);
-    if (result.success) res.status(200).json(result.data[0].data);
-    else
-      res.status(500).json({ message: "Error getting data from the database" });
-  } catch (error) {
-    res.status(500).json({ message: "Error getting data from the database" });
-  }
-});
 
 // Import the new route modules
 const revenueRoutes = require("./routes/managerial/revenue");
@@ -202,10 +131,6 @@ const analyticsRoutes = require("./routes/managerial/analytics");
 // Mount the new routes
 app.use("/admin/revenue", revenueRoutes);
 app.use("/admin/analytics", analyticsRoutes);
-
-// Contact form routes (public POST, admin GET)
-const contactRoutes = require("./routes/contact");
-app.use("/api/contact", contactRoutes);
 
 // Feedback routes
 const userFeedbackRoutes = require("./routes/user/feedback");

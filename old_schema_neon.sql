@@ -1,31 +1,6 @@
 -- we don't know how to generate root <with-no-name> (class Root) :(
 
 
-
-
-create table aftermessage
-(
-    id         serial
-        primary key,
-    type       varchar(100) not null,
-    course_ids text,
-    bundle_ids text,
-    messages   jsonb        not null,
-    created_at timestamp default CURRENT_TIMESTAMP,
-    updated_at timestamp default CURRENT_TIMESTAMP
-);
-
-
-
-
-create index idx_aftermessage_created_at
-    on aftermessage (created_at);
-
-create index idx_aftermessage_type
-    on aftermessage (type);
-
-
-
 create table ambassador_tiers
 (
     id                serial
@@ -112,46 +87,6 @@ create table chapter_clone
     is_live       boolean,
     serial        integer
 );
-
-
-
-
-create table contact_submissions
-(
-    id              serial
-        primary key,
-    full_name       varchar(100) not null,
-    email           varchar(255) not null,
-    whatsapp_number varchar(50)  not null,
-    project_details text         not null,
-    ip_address      varchar(45),
-    user_agent      text,
-    status          varchar(20) default 'new'::character varying,
-    created_at      timestamp   default CURRENT_TIMESTAMP,
-    updated_at      timestamp   default CURRENT_TIMESTAMP
-);
-
-comment on table contact_submissions is 'Stores contact form submissions from Math Pro homepage';
-
-comment on column contact_submissions.status is 'Status: new, read, or replied';
-
-
-
-
-create index idx_contact_submissions_created_at
-    on contact_submissions (created_at);
-
-create index idx_contact_submissions_email
-    on contact_submissions (email);
-
-create index idx_contact_submissions_ip_address
-    on contact_submissions (ip_address);
-
-create index idx_contact_submissions_status
-    on contact_submissions (status);
-
-
-
 create table coupon_restrictions
 (
     id                serial
@@ -255,30 +190,6 @@ create table chapter
     phase          varchar(20) default 'easy'::character varying not null,
     allowed_unlock boolean     default false
 );
-
-
-
-
-
-
-create table contest
-(
-    id        serial
-        primary key,
-    course_id integer
-        constraint fk_contest_course
-            references course
-            on delete cascade,
-    data      json
-);
-
-
-
-
-
-
-
-
 create table course_commissions
 (
     id               serial
@@ -411,16 +322,6 @@ create index idx_feedbacks_user
 
 
 
-create table homepage_data
-(
-    page_name varchar not null
-        primary key,
-    data      json
-);
-
-
-
-
 create table in_auth
 (
     id       serial
@@ -448,25 +349,6 @@ create table in_pr
             references in_pr
             on delete cascade,
     timestamp integer
-);
-
-
-
-
-
-
-create table level
-(
-    id        serial
-        primary key,
-    course_id integer
-        constraint fk_level_course
-            references course
-            on delete cascade,
-    title     varchar,
-    threshold integer,
-    logo      varchar,
-    data      json
 );
 
 
@@ -514,17 +396,6 @@ comment on column managerial_auth.is_privileged is 'Whether teacher has admin pa
 
 
 
-create table activity
-(
-    id            serial
-        primary key,
-    user_id       integer not null
-        references managerial_auth
-            on update cascade on delete cascade,
-    date          date    not null,
-    duration      integer not null,
-    activity_logs jsonb   not null
-);
 
 
 
@@ -767,50 +638,6 @@ create index idx_bundle_instructor_bundle_id
 
 create index idx_bundle_instructor_instructor_id
     on bundle_instructor (instructor_id);
-
-
-
-create table certificate
-(
-    user_id           integer not null
-        constraint fk_certificate_user
-            references managerial_auth
-            on delete cascade,
-    course_id         integer not null
-        constraint fk_certificate_course
-            references course
-            on delete cascade,
-    request_timestamp integer,
-    certificate_link  varchar,
-    issue_timestamp   integer,
-    id                varchar
-        unique,
-    primary key (user_id, course_id)
-);
-
-
-
-
-create table contest_participants
-(
-    id           serial
-        primary key,
-    contest_id   integer not null
-        constraint fk_contest_participants_contest
-            references contest
-            on delete cascade,
-    user_id      integer not null
-        constraint fk_contest_participants_user
-            references managerial_auth
-            on delete cascade,
-    score        integer                  default 0,
-    joining_date timestamp with time zone default CURRENT_TIMESTAMP,
-    constraint unique_contest_participant
-        unique (contest_id, user_id)
-);
-
-
-
 
 
 
@@ -1205,65 +1032,6 @@ create index idx_import_tracking_status
 
 
 
-create table device_tokens
-(
-    user_id           integer
-                                                             references managerial_auth
-                                                                 on delete set null,
-    token             varchar(500)                           not null
-        primary key,
-    platform          varchar(20),
-    device_info       varchar(500),
-    created_at        timestamp with time zone default now() not null,
-    updated_at        timestamp with time zone default now() not null,
-    anonymous_id      uuid,
-    consent_marketing boolean                  default false,
-    last_seen_at      timestamp with time zone default now(),
-    constraint chk_device_identity
-        check ((user_id IS NOT NULL) OR (anonymous_id IS NOT NULL))
-);
-
-comment on table device_tokens is 'Stores FCM device tokens for both registered users and anonymous visitors';
-
-comment on column device_tokens.user_id is 'NULL for anonymous devices; populated when user logs in';
-
-comment on column device_tokens.anonymous_id is 'UUID from frontend for anonymous device tracking (optional)';
-
-comment on column device_tokens.consent_marketing is 'Whether device owner consented to receive marketing notifications';
-
-
-create index idx_device_tokens_anonymous_id
-    on device_tokens (anonymous_id)
-    where (anonymous_id IS NOT NULL);
-
-create index idx_device_tokens_consent
-    on device_tokens (consent_marketing asc, last_seen_at desc)
-    where (consent_marketing = true);
-
-create index idx_device_tokens_user_id
-    on device_tokens (user_id)
-    where (user_id IS NOT NULL);
-
-
-
-create table gift
-(
-    user_id           integer not null
-        constraint fk_gift_user
-            references managerial_auth
-            on delete cascade,
-    level_id          integer not null
-        constraint fk_gift_level
-            references level
-            on delete cascade,
-    request_timestamp integer,
-    confirm_timestamp integer,
-    primary key (user_id, level_id)
-);
-
-
-
-
 create table instructor
 (
     user_id   integer not null
@@ -1276,89 +1044,6 @@ create table instructor
             on delete cascade,
     primary key (user_id, course_id)
 );
-
-
-
-
-create table issue
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_issue_user
-            references managerial_auth
-            on delete cascade,
-    data      json,
-    status    varchar,
-    timestamp integer
-);
-
-
-
-
-
-
-create table live
-(
-    id           serial
-        primary key,
-    course_id    integer
-        constraint fk_course_live
-            references course
-            on delete cascade,
-    title        varchar(1000),
-    description  varchar(1000),
-    thumbnail    varchar(1000),
-    can_join     boolean,
-    scheduled_at integer,
-    duration     varchar(100),
-    meeting_id   varchar(100),
-    meeting_pass varchar(100),
-    teacher_id   integer
-        constraint fk_live_teacher
-            references managerial_auth
-            on delete cascade,
-    data         json
-);
-
-
-
-
-create table interest
-(
-    user_id integer not null
-        constraint fk_interest_user
-            references managerial_auth
-            on delete cascade,
-    live_id integer not null
-        constraint fk_interest_live
-            references live
-            on delete cascade,
-    primary key (user_id, live_id)
-);
-
-
-
-
-
-
-create table live_feed
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_feed_user
-            references managerial_auth
-            on delete cascade,
-    live_id   integer
-        constraint fk_feed_live
-            references live
-            on delete cascade,
-    timestamp integer,
-    feed      json
-);
-
-
 
 
 
@@ -2059,27 +1744,6 @@ create index idx_public_notifications_created_by
 
 
 
-create table response
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_response_user
-            references managerial_auth
-            on delete cascade,
-    issue_id  integer
-        constraint fk_response_issue
-            references issue
-            on delete cascade,
-    data      json,
-    timestamp integer
-);
-
-
-
-
-
-
 create table roles
 (
     id           serial
@@ -2325,28 +1989,6 @@ create index idx_submission_user_module
 
 
 
-create table system_config
-(
-    id           serial
-        primary key,
-    config_key   varchar(100) not null
-        unique,
-    config_value jsonb        not null,
-    description  text,
-    updated_by   integer
-        references managerial_auth,
-    created_at   timestamp default now(),
-    updated_at   timestamp default now()
-);
-
-
-
-
-create index idx_system_config_key
-    on system_config (config_key);
-
-
-
 create table takes
 (
     user_id        integer not null
@@ -2555,37 +2197,8 @@ create index idx_user_roles_user_id
 
 
 
-create table user_tags
-(
-    user_id    integer                                not null
-        references managerial_auth
-            on delete cascade,
-    tag        varchar(100)                           not null,
-    created_at timestamp with time zone default now() not null,
-    primary key (user_id, tag)
-);
 
 
-create index idx_user_tags_tag
-    on user_tags (tag);
-
-
-
-create table users
-(
-    id               serial
-        primary key,
-    full_name        varchar(255)          not null,
-    registration_no  varchar(50)           not null
-        unique,
-    phone            varchar(20)           not null
-        unique,
-    password         varchar(255)          not null,
-    role_technician  boolean default false not null,
-    role_radiologist boolean default false not null,
-    hospital         varchar(255),
-    image_url        text
-);
 
 
 
@@ -2887,5 +2500,3 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-

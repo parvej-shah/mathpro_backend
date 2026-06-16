@@ -1,34 +1,7 @@
 -- Base schema imported from the latest working production-style dump.
 -- This is the canonical bootstrap state before the current auth cleanup migrations.
 
-
-
-
-create table aftermessage
-(
-    id         serial
-        primary key,
-    type       varchar(100) not null,
-    course_ids text,
-    bundle_ids text,
-    messages   jsonb        not null,
-    created_at timestamp default CURRENT_TIMESTAMP,
-    updated_at timestamp default CURRENT_TIMESTAMP
-);
-
-
-
-
-create index idx_aftermessage_created_at
-    on aftermessage (created_at);
-
-create index idx_aftermessage_type
-    on aftermessage (type);
-
-
-
 create table bundle
-(
     id                serial
         primary key,
     title             varchar,
@@ -69,56 +42,6 @@ create index idx_bundle_is_active
 create index idx_bundle_is_live
     on bundle (is_live);
 
-
-
-create table chapter_clone
-(
-    id            integer,
-    course_id     integer,
-    title         varchar(1000),
-    serial_string varchar(100),
-    chips_list    json,
-    is_free       boolean,
-    is_live       boolean,
-    serial        integer
-);
-
-
-
-
-create table contact_submissions
-(
-    id              serial
-        primary key,
-    full_name       varchar(100) not null,
-    email           varchar(255) not null,
-    whatsapp_number varchar(50)  not null,
-    project_details text         not null,
-    ip_address      varchar(45),
-    user_agent      text,
-    status          varchar(20) default 'new'::character varying,
-    created_at      timestamp   default CURRENT_TIMESTAMP,
-    updated_at      timestamp   default CURRENT_TIMESTAMP
-);
-
-comment on table contact_submissions is 'Stores contact form submissions from Math Pro homepage';
-
-comment on column contact_submissions.status is 'Status: new, read, or replied';
-
-
-
-
-create index idx_contact_submissions_created_at
-    on contact_submissions (created_at);
-
-create index idx_contact_submissions_email
-    on contact_submissions (email);
-
-create index idx_contact_submissions_ip_address
-    on contact_submissions (ip_address);
-
-create index idx_contact_submissions_status
-    on contact_submissions (status);
 
 
 
@@ -235,16 +158,6 @@ create table chapter
 
 
 
-create table contest
-(
-    id        serial
-        primary key,
-    course_id integer
-        constraint fk_contest_course
-            references course
-            on delete cascade,
-    data      json
-);
 
 
 
@@ -349,16 +262,6 @@ create index idx_feedbacks_user
 
 
 
-create table homepage_data
-(
-    page_name varchar not null
-        primary key,
-    data      json
-);
-
-
-
-
 create table in_auth
 (
     id       serial
@@ -372,40 +275,6 @@ create table in_auth
 
 
 
-
-
-create table in_pr
-(
-    id        serial
-        primary key,
-    platform  integer not null,
-    level     integer not null,
-    data      json    not null,
-    parent_id integer
-        constraint fk_in_pr_in_pr
-            references in_pr
-            on delete cascade,
-    timestamp integer
-);
-
-
-
-
-
-
-create table level
-(
-    id        serial
-        primary key,
-    course_id integer
-        constraint fk_level_course
-            references course
-            on delete cascade,
-    title     varchar,
-    threshold integer,
-    logo      varchar,
-    data      json
-);
 
 
 
@@ -451,95 +320,8 @@ comment on column managerial_auth.is_privileged is 'Whether teacher has admin pa
 
 
 
-create table activity
-(
-    id            serial
-        primary key,
-    user_id       integer not null
-        references managerial_auth
-            on update cascade on delete cascade,
-    date          date    not null,
-    duration      integer not null,
-    activity_logs jsonb   not null
-);
 
 
-
-
-
-
-create table bundle_instructor
-(
-    id            serial
-        primary key,
-    bundle_id     integer not null
-        constraint fk_bundle_instructor_bundle
-            references bundle
-            on delete cascade,
-    instructor_id integer not null
-        constraint fk_bundle_instructor_instructor
-            references managerial_auth
-            on delete cascade,
-    created_at    timestamp default now(),
-    constraint uk_bundle_instructor
-        unique (bundle_id, instructor_id)
-);
-
-comment on table bundle_instructor is 'Linking table: Associates teachers (from managerial_auth) with bundles. Teachers exist independently and can be linked to multiple bundles.';
-
-comment on column bundle_instructor.bundle_id is 'Foreign key to bundle table';
-
-comment on column bundle_instructor.instructor_id is 'Foreign key to managerial_auth table (teacher). Teachers are platform-wide entities.';
-
-
-
-
-create index idx_bundle_instructor_bundle_id
-    on bundle_instructor (bundle_id);
-
-create index idx_bundle_instructor_instructor_id
-    on bundle_instructor (instructor_id);
-
-
-
-create table certificate
-(
-    user_id           integer not null
-        constraint fk_certificate_user
-            references managerial_auth
-            on delete cascade,
-    course_id         integer not null
-        constraint fk_certificate_course
-            references course
-            on delete cascade,
-    request_timestamp integer,
-    certificate_link  varchar,
-    issue_timestamp   integer,
-    id                varchar
-        unique,
-    primary key (user_id, course_id)
-);
-
-
-
-
-create table contest_participants
-(
-    id           serial
-        primary key,
-    contest_id   integer not null
-        constraint fk_contest_participants_contest
-            references contest
-            on delete cascade,
-    user_id      integer not null
-        constraint fk_contest_participants_user
-            references managerial_auth
-            on delete cascade,
-    score        integer                  default 0,
-    joining_date timestamp with time zone default CURRENT_TIMESTAMP,
-    constraint unique_contest_participant
-        unique (contest_id, user_id)
-);
 
 
 
@@ -836,65 +618,6 @@ create index idx_import_tracking_status
 
 
 
-create table device_tokens
-(
-    user_id           integer
-                                                             references managerial_auth
-                                                                 on delete set null,
-    token             varchar(500)                           not null
-        primary key,
-    platform          varchar(20),
-    device_info       varchar(500),
-    created_at        timestamp with time zone default now() not null,
-    updated_at        timestamp with time zone default now() not null,
-    anonymous_id      uuid,
-    consent_marketing boolean                  default false,
-    last_seen_at      timestamp with time zone default now(),
-    constraint chk_device_identity
-        check ((user_id IS NOT NULL) OR (anonymous_id IS NOT NULL))
-);
-
-comment on table device_tokens is 'Stores FCM device tokens for both registered users and anonymous visitors';
-
-comment on column device_tokens.user_id is 'NULL for anonymous devices; populated when user logs in';
-
-comment on column device_tokens.anonymous_id is 'UUID from frontend for anonymous device tracking (optional)';
-
-comment on column device_tokens.consent_marketing is 'Whether device owner consented to receive marketing notifications';
-
-
-create index idx_device_tokens_anonymous_id
-    on device_tokens (anonymous_id)
-    where (anonymous_id IS NOT NULL);
-
-create index idx_device_tokens_consent
-    on device_tokens (consent_marketing asc, last_seen_at desc)
-    where (consent_marketing = true);
-
-create index idx_device_tokens_user_id
-    on device_tokens (user_id)
-    where (user_id IS NOT NULL);
-
-
-
-create table gift
-(
-    user_id           integer not null
-        constraint fk_gift_user
-            references managerial_auth
-            on delete cascade,
-    level_id          integer not null
-        constraint fk_gift_level
-            references level
-            on delete cascade,
-    request_timestamp integer,
-    confirm_timestamp integer,
-    primary key (user_id, level_id)
-);
-
-
-
-
 create table instructor
 (
     user_id   integer not null
@@ -907,89 +630,6 @@ create table instructor
             on delete cascade,
     primary key (user_id, course_id)
 );
-
-
-
-
-create table issue
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_issue_user
-            references managerial_auth
-            on delete cascade,
-    data      json,
-    status    varchar,
-    timestamp integer
-);
-
-
-
-
-
-
-create table live
-(
-    id           serial
-        primary key,
-    course_id    integer
-        constraint fk_course_live
-            references course
-            on delete cascade,
-    title        varchar(1000),
-    description  varchar(1000),
-    thumbnail    varchar(1000),
-    can_join     boolean,
-    scheduled_at integer,
-    duration     varchar(100),
-    meeting_id   varchar(100),
-    meeting_pass varchar(100),
-    teacher_id   integer
-        constraint fk_live_teacher
-            references managerial_auth
-            on delete cascade,
-    data         json
-);
-
-
-
-
-create table interest
-(
-    user_id integer not null
-        constraint fk_interest_user
-            references managerial_auth
-            on delete cascade,
-    live_id integer not null
-        constraint fk_interest_live
-            references live
-            on delete cascade,
-    primary key (user_id, live_id)
-);
-
-
-
-
-
-
-create table live_feed
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_feed_user
-            references managerial_auth
-            on delete cascade,
-    live_id   integer
-        constraint fk_feed_live
-            references live
-            on delete cascade,
-    timestamp integer,
-    feed      json
-);
-
-
 
 
 
@@ -1053,120 +693,12 @@ comment on column module.assignment_question_doc_type is 'Type of document stora
 
 
 
-create table assignment
-(
-    id                                   serial
-        primary key,
-    module_id                            integer not null
-        unique
-        references module
-            on delete cascade,
-    will_evaluated                       boolean       default true,
-    assignment_start_date                timestamp,
-    assignment_end_date                  timestamp,
-    late_submission_deduction_percentage numeric(5, 2) default 10.00
-        constraint chk_late_deduction_percentage
-            check ((late_submission_deduction_percentage >= (0)::numeric) AND
-                   (late_submission_deduction_percentage <= (50)::numeric)),
-    allowed_submission_types             jsonb,
-    max_file_size_mb                     integer       default 50
-        constraint chk_max_file_size_positive
-            check (max_file_size_mb > 0),
-    max_total_size_mb                    integer       default 200
-        constraint chk_max_total_size_positive
-            check (max_total_size_mb > 0),
-    max_files_count                      integer       default 1
-        constraint chk_max_files_count_positive
-            check (max_files_count > 0),
-    is_published                         boolean       default false,
-    created_at                           timestamp     default CURRENT_TIMESTAMP,
-    updated_at                           timestamp     default CURRENT_TIMESTAMP,
-    solution_video_url                   text,
-    solution_text                        text,
-    constraint chk_assignment_dates
-        check ((assignment_start_date IS NULL) OR (assignment_end_date IS NULL) OR
-               (assignment_end_date >= assignment_start_date))
-);
-
-comment on table assignment is 'Stores assignment-specific configuration and settings (one-to-one with module)';
-
-comment on column assignment.module_id is 'Foreign key to module table (unique - one assignment per module)';
-
-comment on column assignment.will_evaluated is 'Whether assignment will be evaluated (TRUE) or self-paced (FALSE)';
-
-comment on column assignment.assignment_start_date is 'Start date/time for evaluated assignments (NULL for non-evaluated)';
-
-comment on column assignment.assignment_end_date is 'End date/time (deadline) for evaluated assignments (NULL for non-evaluated)';
-
-comment on column assignment.late_submission_deduction_percentage is 'Late submission deduction percentage per day (default 10%, max 50%)';
-
-comment on column assignment.allowed_submission_types is 'JSONB array of allowed file types: ["pdf", "doc", "zip"]';
-
-comment on column assignment.max_file_size_mb is 'Maximum file size per file in MB (default 50MB)';
-
-comment on column assignment.max_total_size_mb is 'Maximum total size for all files in MB (default 200MB)';
-
-comment on column assignment.max_files_count is 'Maximum number of files allowed (default 1)';
-
-comment on column assignment.is_published is 'Whether assignment is published and visible to students';
-
-comment on column assignment.solution_video_url is 'Solution video URL (YouTube, Vimeo, etc.) - URL-based only, optional';
-
-comment on column assignment.solution_text is 'Solution text/description in rich text/HTML format - optional';
-
-
-
-
-create index idx_assignment_end_date
-    on assignment (assignment_end_date);
-
-create index idx_assignment_is_published
-    on assignment (is_published);
-
-create index idx_assignment_module_id
-    on assignment (module_id);
-
-create index idx_assignment_start_date
-    on assignment (assignment_start_date);
-
-create index idx_assignment_will_evaluated
-    on assignment (will_evaluated);
-
-
-
-create table compilation
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_compilation_user
-            references managerial_auth
-            on delete cascade,
-    module_id integer
-        constraint fk_compilaton_module
-            references module
-            on delete cascade,
-    timestamp integer,
-    data      json
-);
 
 
 
 
 
 
-create table editorial_view
-(
-    user_id   integer not null
-        constraint fk_editorial_user
-            references managerial_auth
-            on delete cascade,
-    module_id integer not null
-        constraint fk_editorial_module
-            references module
-            on delete cascade,
-    primary key (user_id, module_id)
-);
 
 
 
@@ -1187,19 +719,6 @@ create index idx_modules_will_evaluated
 
 
 
-create table module_clone
-(
-    id          integer,
-    chapter_id  integer,
-    title       varchar(1000),
-    description varchar(4000),
-    metadata    json,
-    data        json,
-    is_live     boolean,
-    is_free     boolean,
-    serial      integer,
-    score       integer
-);
 
 
 
@@ -1342,137 +861,6 @@ create index idx_notification_unread_count
 
 
 
-create table notification_event_channel_config
-(
-    id         serial
-        primary key,
-    event_code varchar(100)                           not null,
-    channel    varchar(50)                            not null,
-    is_enabled boolean                  default true  not null,
-    created_at timestamp with time zone default now() not null,
-    updated_at timestamp with time zone default now() not null,
-    unique (event_code, channel)
-);
-
-comment on table notification_event_channel_config is 'Per-event per-channel enable/disable; frontend toggles; worker filters by this before sending.';
-
-
-
-
-create index idx_notification_event_channel_config_event
-    on notification_event_channel_config (event_code);
-
-create index idx_notification_event_channel_config_lookup
-    on notification_event_channel_config (event_code, channel)
-    where (is_enabled = true);
-
-
-
-create table notification_jobs
-(
-    id            serial
-        primary key,
-    payload       jsonb                                                         not null,
-    status        varchar(50)              default 'pending'::character varying not null
-        constraint chk_notification_jobs_status
-            check ((status)::text = ANY
-                   (ARRAY [('pending'::character varying)::text, ('processing'::character varying)::text, ('sent'::character varying)::text, ('failed'::character varying)::text, ('exhausted'::character varying)::text])),
-    retry_count   integer                  default 0                            not null,
-    next_retry_at timestamp with time zone,
-    created_at    timestamp with time zone default now()                        not null,
-    claimed_at    timestamp with time zone
-);
-
-
-
-
-create index idx_notification_jobs_status_next_retry
-    on notification_jobs (status, next_retry_at)
-    where ((status)::text = ANY (ARRAY [('pending'::character varying)::text, ('failed'::character varying)::text]));
-
-
-
-create table notification_log
-(
-    id                serial
-        primary key,
-    event_code        varchar(100)                           not null,
-    channel           varchar(50)                            not null,
-    recipient_id      integer
-        references managerial_auth,
-    recipient_contact varchar(255),
-    template_id       integer,
-    idempotency_key   varchar(255),
-    status            varchar(50)                            not null,
-    error_code        varchar(100),
-    provider_response text,
-    created_at        timestamp with time zone default now() not null
-);
-
-
-
-
-create index idx_notification_log_event_channel_created
-    on notification_log (event_code, channel, created_at);
-
-create unique index idx_notification_log_idempotency_key
-    on notification_log (idempotency_key)
-    where (idempotency_key IS NOT NULL);
-
-create index idx_notification_log_recipient_id
-    on notification_log (recipient_id);
-
-
-
-create table notification_providers
-(
-    id          serial
-        primary key,
-    channel     varchar(50)           not null,
-    name        varchar(100)          not null,
-    adapter_key varchar(100)          not null,
-    config      jsonb   default '{}'::jsonb,
-    is_default  boolean default false not null
-);
-
-
-
-
-create index idx_notification_providers_channel_default
-    on notification_providers (channel, is_default);
-
-
-
-create table notification_templates
-(
-    id                        serial
-        primary key,
-    name                      varchar(255)                           not null,
-    code                      varchar(100)                           not null,
-    channel                   varchar(50)                            not null,
-    subject                   varchar(500),
-    body_html                 text,
-    body_plain                text,
-    variables                 jsonb                    default '[]'::jsonb,
-    sms_encoding              varchar(50),
-    sms_max_segments          integer                  default 2,
-    sms_max_chars_per_segment integer,
-    tags                      jsonb                    default '[]'::jsonb,
-    is_active                 boolean                  default true  not null,
-    version                   integer                  default 1     not null,
-    content_type              varchar(100),
-    language                  varchar(20),
-    created_at                timestamp with time zone default now() not null,
-    updated_at                timestamp with time zone default now() not null,
-    created_by                integer
-        references managerial_auth
-);
-
-
-
-
-create unique index idx_notification_templates_code_channel
-    on notification_templates (code, channel);
 
 
 
@@ -1647,60 +1035,9 @@ create table progress
 
 
 
-create table public_notifications
-(
-    id         serial
-        primary key,
-    type       varchar(50)  not null,
-    title      varchar(255) not null,
-    body       text         not null,
-    data       jsonb                    default '{}'::jsonb,
-    priority   integer                  default 0,
-    is_active  boolean                  default true,
-    created_by integer
-                            references managerial_auth
-                                on delete set null,
-    created_at timestamp with time zone default now(),
-    updated_at timestamp with time zone default now()
-);
-
-comment on table public_notifications is 'Marketing/promotional notifications visible to all users (registered and anonymous). Not tied to individual users.';
-
-comment on column public_notifications.type is 'Notification category: PROMO, ANNOUNCEMENT, COURSE_LAUNCH, COUPON, etc.';
-
-comment on column public_notifications.data is 'JSON payload: imageUrl, ctaLink, courseId, couponCode, validUntil, etc.';
-
-comment on column public_notifications.priority is 'Display order (higher numbers shown first). Default: 0';
-
-comment on column public_notifications.is_active is 'Whether notification is currently shown to users. False = soft deleted.';
 
 
 
-
-create index idx_public_notifications_active_list
-    on public_notifications (is_active asc, priority desc, created_at desc)
-    where (is_active = true);
-
-create index idx_public_notifications_created_by
-    on public_notifications (created_by asc, created_at desc);
-
-
-
-create table response
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_response_user
-            references managerial_auth
-            on delete cascade,
-    issue_id  integer
-        constraint fk_response_issue
-            references issue
-            on delete cascade,
-    data      json,
-    timestamp integer
-);
 
 
 
@@ -1741,237 +1078,17 @@ create index idx_roles_permissions
 
 
 
-create table sms_history
-(
-    id          serial
-        primary key,
-    message     text        not null,
-    course_id   integer
-        references course,
-    class_id    integer,
-    timestamp   integer     not null,
-    status      varchar(50) not null,
-    retry_count integer default 0,
-    metadata    jsonb
-);
 
 
 
 
-create index idx_sms_history_class_id
-    on sms_history (class_id);
 
-create index idx_sms_history_course_id
-    on sms_history (course_id);
 
 
 
-create table sms_recipients
-(
-    id            serial
-        primary key,
-    sms_id        integer
-        references sms_history
-            on delete cascade,
-    student_id    integer
-        references managerial_auth,
-    phone         varchar(20) not null,
-    status        varchar(50) not null,
-    error_message text,
-    timestamp     integer     not null
-);
 
 
 
-
-create index idx_sms_recipients_sms_id
-    on sms_recipients (sms_id);
-
-create index idx_sms_recipients_student_id
-    on sms_recipients (student_id);
-
-
-
-
-create table submission
-(
-    user_id                integer                                               not null
-        constraint fk_progress_user
-            references managerial_auth
-            on delete cascade,
-    module_id              integer                                               not null
-        constraint fk_progress_module
-            references module
-            on delete cascade,
-    status                 varchar(20)    default 'SUBMITTED'::character varying not null,
-    submission             json,
-    evaluation             json,
-    updated_at             integer                                               not null,
-    is_late                boolean        default false,
-    late_deduction_applied numeric(10, 2) default 0.00,
-    submitted_at           timestamp,
-    evaluated_at           timestamp,
-    evaluated_by           integer
-        constraint fk_submission_evaluated_by
-            references managerial_auth
-            on delete set null,
-    submitted_files_count  integer        default 0,
-    solution_released_at   timestamp,
-    solution_released_by   integer
-        constraint fk_submission_solution_released_by
-            references managerial_auth
-            on delete set null,
-    primary key (user_id, module_id)
-);
-
-comment on column submission.is_late is 'Whether submission was made after deadline';
-
-comment on column submission.late_deduction_applied is 'Deduction amount applied for late submission';
-
-comment on column submission.submitted_at is 'Exact timestamp when submission was made';
-
-comment on column submission.evaluated_at is 'Timestamp when evaluation was completed';
-
-comment on column submission.evaluated_by is 'Foreign key to managerial_auth (instructor who evaluated)';
-
-comment on column submission.submitted_files_count is 'Number of files submitted';
-
-comment on column submission.solution_released_at is 'Timestamp when assignment solution was released for this student submission';
-
-comment on column submission.solution_released_by is 'Admin/instructor id who released solution (auto on evaluate)';
-
-
-create table assignment_files
-(
-    id                   serial
-        primary key,
-    submission_user_id   integer,
-    submission_module_id integer,
-    module_id            integer
-        references module
-            on delete cascade,
-    file_type            varchar(20)  not null
-        constraint chk_assignment_files_file_type
-            check ((file_type)::text = ANY
-                   (ARRAY [('instruction'::character varying)::text, ('submission'::character varying)::text, ('solution'::character varying)::text])),
-    file_name            varchar(255) not null,
-    file_size            bigint       not null,
-    file_url             text         not null,
-    file_mime_type       varchar(100) not null,
-    uploaded_at          timestamp default CURRENT_TIMESTAMP,
-    uploaded_by          integer
-                                      references managerial_auth
-                                          on delete set null,
-    assignment_id        integer
-        references assignment
-            on delete cascade,
-    foreign key (submission_user_id, submission_module_id) references submission
-        on delete cascade,
-    constraint chk_assignment_files_reference
-        check (((submission_user_id IS NOT NULL) AND (submission_module_id IS NOT NULL) AND (module_id IS NULL) AND
-                (assignment_id IS NULL)) OR ((submission_user_id IS NULL) AND (submission_module_id IS NULL) AND
-                                             ((module_id IS NOT NULL) OR (assignment_id IS NOT NULL))))
-);
-
-comment on table assignment_files is 'Stores metadata for uploaded assignment files (instructions, submissions, and solutions)';
-
-comment on column assignment_files.submission_user_id is 'User ID part of submission composite key (for submission files)';
-
-comment on column assignment_files.submission_module_id is 'Module ID part of submission composite key (for submission files)';
-
-comment on column assignment_files.module_id is 'Foreign key to module (for instruction files)';
-
-comment on column assignment_files.file_type is 'Type of file: instruction, submission, or solution';
-
-comment on column assignment_files.file_name is 'Original file name';
-
-comment on column assignment_files.file_size is 'File size in bytes';
-
-comment on column assignment_files.file_url is 'S3 URL of the file';
-
-comment on column assignment_files.file_mime_type is 'MIME type of the file';
-
-comment on column assignment_files.uploaded_by is 'Foreign key to managerial_auth (for instruction files) or user_id (for submissions)';
-
-
-
-
-create index idx_assignment_files_assignment_id
-    on assignment_files (assignment_id);
-
-create index idx_assignment_files_assignment_type
-    on assignment_files (assignment_id, file_type)
-    where (assignment_id IS NOT NULL);
-
-create index idx_assignment_files_file_type
-    on assignment_files (file_type);
-
-create index idx_assignment_files_module_id
-    on assignment_files (module_id);
-
-create index idx_assignment_files_solution
-    on assignment_files (assignment_id, file_type)
-    where ((file_type)::text = 'solution'::text);
-
-create index idx_assignment_files_submission
-    on assignment_files (submission_user_id, submission_module_id);
-
-create index idx_assignment_files_uploaded_at
-    on assignment_files (uploaded_at);
-
-
-
-create index idx_submission_evaluated_at
-    on submission (evaluated_at);
-
-create index idx_submission_evaluated_by
-    on submission (evaluated_by);
-
-create index idx_submission_is_late
-    on submission (is_late)
-    where (is_late = true);
-
-create index idx_submission_module_status
-    on submission (module_id, status);
-
-create index idx_submission_solution_released_at
-    on submission (solution_released_at)
-    where (solution_released_at IS NOT NULL);
-
-create index idx_submission_solution_released_by
-    on submission (solution_released_by)
-    where (solution_released_by IS NOT NULL);
-
-create index idx_submission_status
-    on submission (status);
-
-create index idx_submission_submitted_at
-    on submission (submitted_at);
-
-create index idx_submission_user_module
-    on submission (user_id, module_id);
-
-
-
-create table system_config
-(
-    id           serial
-        primary key,
-    config_key   varchar(100) not null
-        unique,
-    config_value jsonb        not null,
-    description  text,
-    updated_by   integer
-        references managerial_auth,
-    created_at   timestamp default now(),
-    updated_at   timestamp default now()
-);
-
-
-
-
-create index idx_system_config_key
-    on system_config (config_key);
 
 
 
@@ -2183,37 +1300,10 @@ create index idx_user_roles_user_id
 
 
 
-create table user_tags
 (
-    user_id    integer                                not null
-        references managerial_auth
-            on delete cascade,
-    tag        varchar(100)                           not null,
-    created_at timestamp with time zone default now() not null,
-    primary key (user_id, tag)
-);
-
-
-create index idx_user_tags_tag
-    on user_tags (tag);
 
 
 
-create table users
-(
-    id               serial
-        primary key,
-    full_name        varchar(255)          not null,
-    registration_no  varchar(50)           not null
-        unique,
-    phone            varchar(20)           not null
-        unique,
-    password         varchar(255)          not null,
-    role_technician  boolean default false not null,
-    role_radiologist boolean default false not null,
-    hospital         varchar(255),
-    image_url        text
-);
 
 
 

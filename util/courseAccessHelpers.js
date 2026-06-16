@@ -147,9 +147,6 @@ const resolveCourseId = async (resourceType, resourceId) => {
             announcement: 'SELECT course_id FROM announcements WHERE id = $1',
             chapter: 'SELECT course_id FROM chapter WHERE id = $1',
             routine: 'SELECT course_id FROM course_routine WHERE id = $1',
-            contest: 'SELECT course_id FROM contest WHERE id = $1',
-            live: 'SELECT course_id FROM live WHERE id = $1',
-            level: 'SELECT course_id FROM level WHERE id = $1',
             // Multi-hop lookups for nested resources
             module: `
                 SELECT c.course_id 

@@ -6,35 +6,6 @@ grant connect, create, temporary on database Math Pro to app_user;
 
 grant connect, create, temporary on database Math Pro to dev_user;
 
-create table aftermessage
-(
-    id         serial
-        primary key,
-    type       varchar(100) not null,
-    course_ids text,
-    bundle_ids text,
-    messages   jsonb        not null,
-    created_at timestamp default CURRENT_TIMESTAMP,
-    updated_at timestamp default CURRENT_TIMESTAMP
-);
-
-alter table aftermessage
-    owner to postgres;
-
-grant select, update, usage on sequence aftermessage_id_seq to app_user;
-
-grant select, update, usage on sequence aftermessage_id_seq to dev_user;
-
-create index idx_aftermessage_created_at
-    on aftermessage (created_at);
-
-create index idx_aftermessage_type
-    on aftermessage (type);
-
-grant delete, insert, references, select, trigger, truncate, update on aftermessage to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on aftermessage to dev_user;
-
 create table ambassador_tiers
 (
     id                serial
@@ -140,48 +111,6 @@ alter table chapter_clone
 grant delete, insert, references, select, trigger, truncate, update on chapter_clone to app_user;
 
 grant delete, insert, references, select, trigger, truncate, update on chapter_clone to dev_user;
-
-create table contact_submissions
-(
-    id              serial
-        primary key,
-    full_name       varchar(100) not null,
-    email           varchar(255) not null,
-    whatsapp_number varchar(50)  not null,
-    project_details text         not null,
-    ip_address      varchar(45),
-    user_agent      text,
-    status          varchar(20) default 'new'::character varying,
-    created_at      timestamp   default CURRENT_TIMESTAMP,
-    updated_at      timestamp   default CURRENT_TIMESTAMP
-);
-
-comment on table contact_submissions is 'Stores contact form submissions from Math Pro homepage';
-
-comment on column contact_submissions.status is 'Status: new, read, or replied';
-
-alter table contact_submissions
-    owner to postgres;
-
-grant select, update, usage on sequence contact_submissions_id_seq to app_user;
-
-grant select, update, usage on sequence contact_submissions_id_seq to dev_user;
-
-create index idx_contact_submissions_created_at
-    on contact_submissions (created_at);
-
-create index idx_contact_submissions_email
-    on contact_submissions (email);
-
-create index idx_contact_submissions_ip_address
-    on contact_submissions (ip_address);
-
-create index idx_contact_submissions_status
-    on contact_submissions (status);
-
-grant delete, insert, references, select, trigger, truncate, update on contact_submissions to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on contact_submissions to dev_user;
 
 create table coupon_restrictions
 (
@@ -317,32 +246,6 @@ grant select, update, usage on sequence chapter_id_seq to dev_user;
 grant delete, insert, references, select, trigger, truncate, update on chapter to app_user;
 
 grant delete, insert, references, select, trigger, truncate, update on chapter to dev_user;
-
-create table contest
-(
-    id        serial
-        primary key,
-    course_id integer
-        constraint fk_contest_course
-            references course
-            on delete cascade,
-    data      json
-);
-
-alter table contest
-    owner to postgres;
-
-grant select, update, usage on sequence contest_id_seq to app_user;
-
-grant select, update, usage on sequence contest_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on contest to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on contest to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on course to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on course to dev_user;
 
 create table course_commissions
 (
@@ -492,20 +395,6 @@ grant delete, insert, references, select, trigger, truncate, update on feedbacks
 
 grant delete, insert, references, select, trigger, truncate, update on feedbacks to dev_user;
 
-create table homepage_data
-(
-    page_name varchar not null
-        primary key,
-    data      json
-);
-
-alter table homepage_data
-    owner to postgres;
-
-grant delete, insert, references, select, trigger, truncate, update on homepage_data to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on homepage_data to dev_user;
-
 create table in_auth
 (
     id       serial
@@ -551,31 +440,6 @@ grant select, update, usage on sequence in_pr_id_seq to dev_user;
 grant delete, insert, references, select, trigger, truncate, update on in_pr to app_user;
 
 grant delete, insert, references, select, trigger, truncate, update on in_pr to dev_user;
-
-create table level
-(
-    id        serial
-        primary key,
-    course_id integer
-        constraint fk_level_course
-            references course
-            on delete cascade,
-    title     varchar,
-    threshold integer,
-    logo      varchar,
-    data      json
-);
-
-alter table level
-    owner to postgres;
-
-grant select, update, usage on sequence level_id_seq to app_user;
-
-grant select, update, usage on sequence level_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on level to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on level to dev_user;
 
 create table log
 (
@@ -627,28 +491,6 @@ grant select, update, usage on sequence managerial_auth_id_seq to app_user;
 
 grant select, update, usage on sequence managerial_auth_id_seq to dev_user;
 
-create table activity
-(
-    id            serial
-        primary key,
-    user_id       integer not null
-        references managerial_auth
-            on update cascade on delete cascade,
-    date          date    not null,
-    duration      integer not null,
-    activity_logs jsonb   not null
-);
-
-alter table activity
-    owner to postgres;
-
-grant select, update, usage on sequence activity_id_seq to app_user;
-
-grant select, update, usage on sequence activity_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on activity to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on activity to dev_user;
 
 create table ambassador_milestones
 (
@@ -918,60 +760,6 @@ create index idx_bundle_instructor_instructor_id
 grant delete, insert, references, select, trigger, truncate, update on bundle_instructor to app_user;
 
 grant delete, insert, references, select, trigger, truncate, update on bundle_instructor to dev_user;
-
-create table certificate
-(
-    user_id           integer not null
-        constraint fk_certificate_user
-            references managerial_auth
-            on delete cascade,
-    course_id         integer not null
-        constraint fk_certificate_course
-            references course
-            on delete cascade,
-    request_timestamp integer,
-    certificate_link  varchar,
-    issue_timestamp   integer,
-    id                varchar
-        unique,
-    primary key (user_id, course_id)
-);
-
-alter table certificate
-    owner to postgres;
-
-grant delete, insert, references, select, trigger, truncate, update on certificate to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on certificate to dev_user;
-
-create table contest_participants
-(
-    id           serial
-        primary key,
-    contest_id   integer not null
-        constraint fk_contest_participants_contest
-            references contest
-            on delete cascade,
-    user_id      integer not null
-        constraint fk_contest_participants_user
-            references managerial_auth
-            on delete cascade,
-    score        integer                  default 0,
-    joining_date timestamp with time zone default CURRENT_TIMESTAMP,
-    constraint unique_contest_participant
-        unique (contest_id, user_id)
-);
-
-alter table contest_participants
-    owner to postgres;
-
-grant select, update, usage on sequence contest_participants_id_seq to app_user;
-
-grant select, update, usage on sequence contest_participants_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on contest_participants to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on contest_participants to dev_user;
 
 create table coupons
 (
@@ -1418,73 +1206,6 @@ grant delete, insert, references, select, trigger, truncate, update on course_im
 
 grant delete, insert, references, select, trigger, truncate, update on course_import_tracking to dev_user;
 
-create table device_tokens
-(
-    user_id           integer
-                                                             references managerial_auth
-                                                                 on delete set null,
-    token             varchar(500)                           not null
-        primary key,
-    platform          varchar(20),
-    device_info       varchar(500),
-    created_at        timestamp with time zone default now() not null,
-    updated_at        timestamp with time zone default now() not null,
-    anonymous_id      uuid,
-    consent_marketing boolean                  default false,
-    last_seen_at      timestamp with time zone default now(),
-    constraint chk_device_identity
-        check ((user_id IS NOT NULL) OR (anonymous_id IS NOT NULL))
-);
-
-comment on table device_tokens is 'Stores FCM device tokens for both registered users and anonymous visitors';
-
-comment on column device_tokens.user_id is 'NULL for anonymous devices; populated when user logs in';
-
-comment on column device_tokens.anonymous_id is 'UUID from frontend for anonymous device tracking (optional)';
-
-comment on column device_tokens.consent_marketing is 'Whether device owner consented to receive marketing notifications';
-
-alter table device_tokens
-    owner to postgres;
-
-create index idx_device_tokens_anonymous_id
-    on device_tokens (anonymous_id)
-    where (anonymous_id IS NOT NULL);
-
-create index idx_device_tokens_consent
-    on device_tokens (consent_marketing asc, last_seen_at desc)
-    where (consent_marketing = true);
-
-create index idx_device_tokens_user_id
-    on device_tokens (user_id)
-    where (user_id IS NOT NULL);
-
-grant delete, insert, references, select, trigger, truncate, update on device_tokens to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on device_tokens to dev_user;
-
-create table gift
-(
-    user_id           integer not null
-        constraint fk_gift_user
-            references managerial_auth
-            on delete cascade,
-    level_id          integer not null
-        constraint fk_gift_level
-            references level
-            on delete cascade,
-    request_timestamp integer,
-    confirm_timestamp integer,
-    primary key (user_id, level_id)
-);
-
-alter table gift
-    owner to postgres;
-
-grant delete, insert, references, select, trigger, truncate, update on gift to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on gift to dev_user;
-
 create table instructor
 (
     user_id   integer not null
@@ -1504,111 +1225,6 @@ alter table instructor
 grant delete, insert, references, select, trigger, truncate, update on instructor to app_user;
 
 grant delete, insert, references, select, trigger, truncate, update on instructor to dev_user;
-
-create table issue
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_issue_user
-            references managerial_auth
-            on delete cascade,
-    data      json,
-    status    varchar,
-    timestamp integer
-);
-
-alter table issue
-    owner to postgres;
-
-grant select, update, usage on sequence issue_id_seq to app_user;
-
-grant select, update, usage on sequence issue_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on issue to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on issue to dev_user;
-
-create table live
-(
-    id           serial
-        primary key,
-    course_id    integer
-        constraint fk_course_live
-            references course
-            on delete cascade,
-    title        varchar(1000),
-    description  varchar(1000),
-    thumbnail    varchar(1000),
-    can_join     boolean,
-    scheduled_at integer,
-    duration     varchar(100),
-    meeting_id   varchar(100),
-    meeting_pass varchar(100),
-    teacher_id   integer
-        constraint fk_live_teacher
-            references managerial_auth
-            on delete cascade,
-    data         json
-);
-
-alter table live
-    owner to postgres;
-
-grant select, update, usage on sequence live_id_seq to app_user;
-
-grant select, update, usage on sequence live_id_seq to dev_user;
-
-create table interest
-(
-    user_id integer not null
-        constraint fk_interest_user
-            references managerial_auth
-            on delete cascade,
-    live_id integer not null
-        constraint fk_interest_live
-            references live
-            on delete cascade,
-    primary key (user_id, live_id)
-);
-
-alter table interest
-    owner to postgres;
-
-grant delete, insert, references, select, trigger, truncate, update on interest to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on interest to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on live to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on live to dev_user;
-
-create table live_feed
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_feed_user
-            references managerial_auth
-            on delete cascade,
-    live_id   integer
-        constraint fk_feed_live
-            references live
-            on delete cascade,
-    timestamp integer,
-    feed      json
-);
-
-alter table live_feed
-    owner to postgres;
-
-grant select, update, usage on sequence live_feed_id_seq to app_user;
-
-grant select, update, usage on sequence live_feed_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on live_feed to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on live_feed to dev_user;
 
 create index idx_is_ambassador
     on managerial_auth (is_ambassador)
@@ -2422,33 +2038,6 @@ grant delete, insert, references, select, trigger, truncate, update on public_no
 
 grant delete, insert, references, select, trigger, truncate, update on public_notifications to dev_user;
 
-create table response
-(
-    id        serial
-        primary key,
-    user_id   integer
-        constraint fk_response_user
-            references managerial_auth
-            on delete cascade,
-    issue_id  integer
-        constraint fk_response_issue
-            references issue
-            on delete cascade,
-    data      json,
-    timestamp integer
-);
-
-alter table response
-    owner to postgres;
-
-grant select, update, usage on sequence response_id_seq to app_user;
-
-grant select, update, usage on sequence response_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on response to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on response to dev_user;
-
 create table roles
 (
     id           serial
@@ -2722,34 +2311,6 @@ grant delete, insert, references, select, trigger, truncate, update on submissio
 
 grant delete, insert, references, select, trigger, truncate, update on submission to dev_user;
 
-create table system_config
-(
-    id           serial
-        primary key,
-    config_key   varchar(100) not null
-        unique,
-    config_value jsonb        not null,
-    description  text,
-    updated_by   integer
-        references managerial_auth,
-    created_at   timestamp default now(),
-    updated_at   timestamp default now()
-);
-
-alter table system_config
-    owner to postgres;
-
-grant select, update, usage on sequence system_config_id_seq to app_user;
-
-grant select, update, usage on sequence system_config_id_seq to dev_user;
-
-create index idx_system_config_key
-    on system_config (config_key);
-
-grant delete, insert, references, select, trigger, truncate, update on system_config to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on system_config to dev_user;
-
 create table takes
 (
     user_id        integer not null
@@ -2984,52 +2545,11 @@ grant delete, insert, references, select, trigger, truncate, update on user_role
 
 grant delete, insert, references, select, trigger, truncate, update on user_roles to dev_user;
 
-create table user_tags
-(
-    user_id    integer                                not null
-        references managerial_auth
-            on delete cascade,
-    tag        varchar(100)                           not null,
-    created_at timestamp with time zone default now() not null,
-    primary key (user_id, tag)
-);
 
-alter table user_tags
-    owner to postgres;
 
-create index idx_user_tags_tag
-    on user_tags (tag);
 
-grant delete, insert, references, select, trigger, truncate, update on user_tags to app_user;
 
-grant delete, insert, references, select, trigger, truncate, update on user_tags to dev_user;
 
-create table users
-(
-    id               serial
-        primary key,
-    full_name        varchar(255)          not null,
-    registration_no  varchar(50)           not null
-        unique,
-    phone            varchar(20)           not null
-        unique,
-    password         varchar(255)          not null,
-    role_technician  boolean default false not null,
-    role_radiologist boolean default false not null,
-    hospital         varchar(255),
-    image_url        text
-);
-
-alter table users
-    owner to postgres;
-
-grant select, update, usage on sequence users_id_seq to app_user;
-
-grant select, update, usage on sequence users_id_seq to dev_user;
-
-grant delete, insert, references, select, trigger, truncate, update on users to app_user;
-
-grant delete, insert, references, select, trigger, truncate, update on users to dev_user;
 
 create function deactivate_ambassador_coupons() returns trigger
     language plpgsql
