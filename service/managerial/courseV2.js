@@ -162,6 +162,30 @@ class CourseServiceV2 extends Service {
             resultObject.books = [];
         }
 
+        // Overwrite instructor_list with normalized data from the junction table
+        try {
+            const instructorsResult = await this.query(
+                `SELECT ma.id, ma.name, ma.profile->>'credibility' AS credibility, ma.profile->>'image' AS image
+                 FROM managerial_auth ma
+                 INNER JOIN instructor i ON ma.id = i.user_id
+                 WHERE i.course_id = $1
+                 ORDER BY ma.name ASC`,
+                [id]
+            );
+            resultObject.instructor_list = {
+                instructors: instructorsResult.success
+                    ? instructorsResult.data.map((t) => ({
+                          id: t.id,
+                          name: t.name,
+                          credibility: t.credibility || "",
+                          imageUploadedLink: t.image || "",
+                      }))
+                    : [],
+            };
+        } catch (error) {
+            console.error('Error fetching instructors for course (getFull):', error);
+        }
+
         return {
             success: true,
             ...resultObject,

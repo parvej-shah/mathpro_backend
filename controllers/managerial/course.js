@@ -23,7 +23,9 @@ class CourseController extends Controller {
     return res.status(result.success ? 200 : 400).json(result);
   };
   update = async (req, res) => {
-    var result = await courseService.update(req.params.id, req.body);
+    // instructor_list is now managed via the instructor junction table — ignore it on save
+    const { instructor_list: _ignored, ...body } = req.body;
+    var result = await courseService.update(req.params.id, body);
     return res.status(result.success ? 200 : 400).json(result);
   };
   updateFull = async (req, res) => {

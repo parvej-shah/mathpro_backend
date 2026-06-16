@@ -250,18 +250,9 @@ class BundleService extends Service {
         const activeCouponsResult = await couponService.getActiveCouponsForBundle(bundleData.id);
         
         if (activeCouponsResult.success && activeCouponsResult.data) {
-          bundleData.active_coupons = activeCouponsResult.data.map(coupon => ({
-            id: coupon.id,
-            code: coupon.code,
-            name: coupon.name,
-            discount_type: coupon.discount_type,
-            discount_value: coupon.discount_value,
-            description: coupon.description,
-            // Calculate potential savings for this bundle
-            potential_savings: coupon.discount_type === 'percentage' 
-              ? (parseFloat(bundleData.price || 0) * parseFloat(coupon.discount_value) / 100)
-              : Math.min(parseFloat(coupon.discount_value), parseFloat(bundleData.price || 0))
-          }));
+          bundleData.active_coupons = activeCouponsResult.data.map((coupon) =>
+            couponService.formatPublicCouponPreview(coupon, bundleData.price)
+          );
         } else {
           result.data[0].active_coupons = [];
         }

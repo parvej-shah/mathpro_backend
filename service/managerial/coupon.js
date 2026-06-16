@@ -633,15 +633,390 @@ class CouponService extends Service {
     }
   };
 
+  getItemConfig = (itemType) => {
+    if (itemType === "course") {
+      return {
+        itemLabel: "course",
+        itemKey: "course_id",
+        linkTable: "coupon_courses",
+        linkKey: "course_id",
+        itemTable: "course",
+      };
+    }
+
+    if (itemType === "bundle") {
+      return {
+        itemLabel: "bundle",
+        itemKey: "bundle_id",
+        linkTable: "coupon_bundles",
+        linkKey: "bundle_id",
+        itemTable: "bundle",
+      };
+    }
+
+    return null;
+  };
+
+  getCouponByCode = async (code, notFoundError = "Invalid coupon code") => {
+    const codeValidation = this.validateCouponCode(code);
+    if (!codeValidation.valid) {
+      return codeValidation;
+    }
+
+    const couponResult = await this.query(
+      `
+      SELECT c.*
+      FROM coupons c
+      WHERE c.code = $1 AND c.status = 'active'
+      `,
+      [codeValidation.code]
+    );
+
+    if (!couponResult.success || couponResult.data.length === 0) {
+      return {
+        valid: false,
+        error: notFoundError,
+      };
+    }
+
+    return {
+      valid: true,
+      coupon: couponResult.data[0],
+      normalizedCode: codeValidation.code,
+    };
+  };
+
+  formatValidatedCoupon = (coupon) => {
+    return {
+      id: coupon.id,
+      name: coupon.name,
+      code: coupon.code,
+      discountType: coupon.discount_type,
+      discountValue: coupon.discount_value,
+      description: coupon.description,
+      usage_limit: coupon.usage_limit,
+      usage_count: coupon.usage_count,
+      start_time: coupon.start_time,
+      end_time: coupon.end_time,
+      status: coupon.status,
+      created_at: coupon.created_at,
+      updated_at: coupon.updated_at,
+      metadata: coupon.metadata,
+    };
+  };
+
+  getItemPrice = async (itemType, itemId) => {
+    const itemConfig = this.getItemConfig(itemType);
+    if (!itemConfig) {
+      return {
+        success: false,
+        error: "Invalid item type",
+      };
+    }
+
+    const result = await this.query(
+      `
+      SELECT price
+      FROM ${itemConfig.itemTable}
+      WHERE id = $1
+      `,
+      [itemId]
+    );
+
+    if (!result.success || result.data.length === 0) {
+      return {
+        success: false,
+        error: `${itemConfig.itemLabel.charAt(0).toUpperCase() + itemConfig.itemLabel.slice(1)} not found`,
+      };
+    }
+
+    const price = parseFloat(result.data[0].price);
+    if (Number.isNaN(price) || price < 0) {
+      return {
+        success: false,
+        error: `Invalid ${itemConfig.itemLabel} price`,
+      };
+    }
+
+    return {
+      success: true,
+      data: price,
+    };
+  };
+
+  checkItemEligibility = async (couponId, itemType, itemId) => {
+    try {
+      const itemConfig = this.getItemConfig(itemType);
+      if (!itemConfig) {
+        return {
+          valid: false,
+          error: "Invalid item type",
+        };
+      }
+
+      const result = await this.query(
+        `
+        SELECT coupon_id
+        FROM ${itemConfig.linkTable}
+        WHERE coupon_id = $1 AND ${itemConfig.linkKey} = $2
+        `,
+        [couponId, itemId]
+      );
+
+      if (!result.success || result.data.length === 0) {
+        return {
+          valid: false,
+          error: `Coupon not applicable for this ${itemConfig.itemLabel}`,
+        };
+      }
+
+      return {
+        valid: true,
+      };
+    } catch (error) {
+      console.error(`Error checking ${itemType} eligibility:`, error);
+      return {
+        valid: false,
+        error: `Failed to check ${itemType} eligibility`,
+      };
+    }
+  };
+
+  checkUserItemEligibility = async (
+    couponId,
+    userId,
+    itemType,
+    itemId,
+    options = {}
+  ) => {
+    try {
+      const itemConfig = this.getItemConfig(itemType);
+      if (!itemConfig) {
+        return {
+          valid: false,
+          error: "Invalid item type",
+        };
+      }
+
+      const whereConditions = [
+        "coupon_id = $1",
+        "user_id = $2",
+        `${itemConfig.itemKey} = $3`,
+      ];
+      const params = [couponId, userId, itemId];
+
+      if (options.completedOnly) {
+        whereConditions.push("payment_status = 'completed'");
+      }
+
+      const usageCheck = await this.query(
+        `
+        SELECT id
+        FROM coupon_usage
+        WHERE ${whereConditions.join(" AND ")}
+        `,
+        params
+      );
+
+      if (usageCheck.success && usageCheck.data.length > 0) {
+        return {
+          valid: false,
+          error: `You have already used this coupon for this ${itemConfig.itemLabel}`,
+        };
+      }
+
+      return {
+        valid: true,
+      };
+    } catch (error) {
+      console.error(`Error checking user ${itemType} eligibility:`, error);
+      return {
+        valid: false,
+        error: "Failed to check user eligibility",
+      };
+    }
+  };
+
+  validateCouponForItem = async (
+    code,
+    itemType,
+    itemId,
+    userId = null,
+    options = {}
+  ) => {
+    try {
+      const itemConfig = this.getItemConfig(itemType);
+      if (!itemConfig || !code || !itemId) {
+        return {
+          valid: false,
+          error: `Coupon code and ${itemConfig ? itemConfig.itemLabel : "item"} ID are required`,
+        };
+      }
+
+      const couponLookup = await this.getCouponByCode(
+        code,
+        options.notFoundError || "Invalid coupon code"
+      );
+      if (!couponLookup.valid) {
+        return couponLookup;
+      }
+
+      const coupon = couponLookup.coupon;
+
+      const expiryCheck = this.checkCouponExpiry(coupon);
+      if (!expiryCheck.valid) {
+        if (options.expiryError) {
+          return {
+            valid: false,
+            error: options.expiryError(coupon, expiryCheck.error),
+          };
+        }
+        return expiryCheck;
+      }
+
+      const usageLimitCheck = this.checkUsageLimit(coupon);
+      if (!usageLimitCheck.valid) {
+        return {
+          valid: false,
+          error: options.usageLimitError || usageLimitCheck.error,
+        };
+      }
+
+      const itemEligibilityCheck = await this.checkItemEligibility(
+        coupon.id,
+        itemType,
+        itemId
+      );
+      if (!itemEligibilityCheck.valid) {
+        if (options.itemEligibilityError) {
+          return {
+            valid: false,
+            error: options.itemEligibilityError,
+          };
+        }
+        return itemEligibilityCheck;
+      }
+
+      if (userId) {
+        const userEligibilityCheck = await this.checkUserItemEligibility(
+          coupon.id,
+          userId,
+          itemType,
+          itemId,
+          {
+            completedOnly: options.completedOnly === true,
+          }
+        );
+        if (!userEligibilityCheck.valid) {
+          return userEligibilityCheck;
+        }
+      }
+
+      return {
+        valid: true,
+        coupon: this.formatValidatedCoupon(coupon),
+      };
+    } catch (error) {
+      console.error(`Error validating coupon for ${itemType}:`, error);
+      return {
+        valid: false,
+        error: options.failureError || "Failed to validate coupon",
+      };
+    }
+  };
+
+  getActiveCouponsForItem = async (itemType, itemId, options = {}) => {
+    try {
+      const itemConfig = this.getItemConfig(itemType);
+      if (!itemConfig || !itemId) {
+        return {
+          success: false,
+          error: `${itemConfig ? itemConfig.itemLabel : "Item"} ID is required`,
+        };
+      }
+
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      const endTimeOperator = options.includeEndTime === true ? ">=" : ">";
+
+      const result = await this.query(
+        `
+        SELECT
+          c.id,
+          c.name,
+          c.description,
+          c.discount_type,
+          c.discount_value,
+          c.usage_limit,
+          c.usage_count,
+          c.start_time,
+          c.end_time
+        FROM coupons c
+        INNER JOIN ${itemConfig.linkTable} ci ON c.id = ci.coupon_id
+        WHERE ci.${itemConfig.linkKey} = $1
+          AND c.status = 'active'
+          AND c.start_time <= $2
+          AND c.end_time ${endTimeOperator} $2
+          AND (c.usage_limit IS NULL OR c.usage_count < c.usage_limit)
+        ORDER BY c.discount_value DESC, c.created_at DESC
+        `,
+        [itemId, currentTime]
+      );
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: `Failed to retrieve active coupons for ${itemConfig.itemLabel}`,
+        };
+      }
+
+      return {
+        success: true,
+        data: result.data,
+        totalCoupons: result.data.length,
+      };
+    } catch (error) {
+      console.error(`Error getting active coupons for ${itemType}:`, error);
+      return {
+        success: false,
+        error: `Failed to retrieve active coupons for ${itemType}`,
+      };
+    }
+  };
+
+  formatPublicCouponPreview = (coupon, basePrice) => {
+    const numericBasePrice = parseFloat(basePrice || 0);
+    const numericDiscountValue = parseFloat(coupon.discount_value || 0);
+
+    return {
+      id: coupon.id,
+      name: coupon.name,
+      discount_type: coupon.discount_type,
+      discount_value: coupon.discount_value,
+      description: coupon.description,
+      potential_savings:
+        coupon.discount_type === "percentage"
+          ? (numericBasePrice * numericDiscountValue) / 100
+          : Math.min(numericDiscountValue, numericBasePrice),
+    };
+  };
+
+  getCoursePrice = async (courseId) => {
+    return this.getItemPrice("course", courseId);
+  };
+
+  getBundlePrice = async (bundleId) => {
+    return this.getItemPrice("bundle", bundleId);
+  };
+
   /**
    * Apply coupon to a course purchase (validate and calculate price)
    * @param {string} code - Coupon code
    * @param {number} courseId - Course ID
    * @param {number} userId - User ID
-   * @param {number} originalPrice - Original course price
    * @returns {Object} Application result with price details
    */
-  applyCouponToPrice = async (code, courseId, userId, originalPrice) => {
+  applyCouponToPrice = async (code, courseId, userId) => {
     try {
       // Validate coupon first
       const validation = await this.validateCoupon(code, courseId, userId);
@@ -653,10 +1028,15 @@ class CouponService extends Service {
         };
       }
 
-      // Calculate discount
+      const coursePriceResult = await this.getCoursePrice(courseId);
+      if (!coursePriceResult.success) {
+        return coursePriceResult;
+      }
+
+      // Calculate discount using the authoritative backend price
       const priceCalculation = this.calculateDiscount(
         validation.coupon,
-        originalPrice
+        coursePriceResult.data
       );
 
       if (!priceCalculation.success) {
@@ -686,10 +1066,9 @@ class CouponService extends Service {
    * @param {string} code - Coupon code
    * @param {number} bundleId - Bundle ID
    * @param {number} userId - User ID
-   * @param {number} originalPrice - Original bundle price
    * @returns {Object} Application result with price details
    */
-  applyCouponToPriceForBundle = async (code, bundleId, userId, originalPrice) => {
+  applyCouponToPriceForBundle = async (code, bundleId, userId) => {
     try {
       // Validate coupon first
       const validation = await this.validateCouponForBundle(code, bundleId, userId);
@@ -701,10 +1080,15 @@ class CouponService extends Service {
         };
       }
 
-      // Calculate discount
+      const bundlePriceResult = await this.getBundlePrice(bundleId);
+      if (!bundlePriceResult.success) {
+        return bundlePriceResult;
+      }
+
+      // Calculate discount using the authoritative backend price
       const priceCalculation = this.calculateDiscount(
         validation.coupon,
-        originalPrice
+        bundlePriceResult.data
       );
 
       if (!priceCalculation.success) {
@@ -2246,33 +2630,7 @@ class CouponService extends Service {
    * @returns {Object} Validation result
    */
   checkCourseEligibility = async (couponId, courseId) => {
-    try {
-      const result = await this.query(
-        `
-        SELECT cc.coupon_id 
-        FROM coupon_courses cc 
-        WHERE cc.coupon_id = $1 AND cc.course_id = $2
-      `,
-        [couponId, courseId]
-      );
-
-      if (!result.success || result.data.length === 0) {
-        return {
-          valid: false,
-          error: "Coupon not applicable for this course",
-        };
-      }
-
-      return {
-        valid: true,
-      };
-    } catch (error) {
-      console.error("Error checking course eligibility:", error);
-      return {
-        valid: false,
-        error: "Failed to check course eligibility",
-      };
-    }
+    return this.checkItemEligibility(couponId, "course", courseId);
   };
 
   /**
@@ -2283,33 +2641,7 @@ class CouponService extends Service {
    * @returns {Object} Validation result
    */
   checkUserEligibility = async (couponId, userId, courseId) => {
-    try {
-      // Check if user has already used this coupon for this course
-      const usageCheck = await this.query(
-        `
-        SELECT id FROM coupon_usage 
-        WHERE coupon_id = $1 AND user_id = $2 AND course_id = $3
-      `,
-        [couponId, userId, courseId]
-      );
-
-      if (usageCheck.success && usageCheck.data.length > 0) {
-        return {
-          valid: false,
-          error: "You have already used this coupon for this course",
-        };
-      }
-
-      return {
-        valid: true,
-      };
-    } catch (error) {
-      console.error("Error checking user eligibility:", error);
-      return {
-        valid: false,
-        error: "Failed to check user eligibility",
-      };
-    }
+    return this.checkUserItemEligibility(couponId, userId, "course", courseId);
   };
 
   /**
@@ -2330,91 +2662,10 @@ class CouponService extends Service {
    * @returns {Object} Comprehensive validation result
    */
   validateCouponEligibility = async (code, courseId, userId = null) => {
-    try {
-      // Validate input parameters
-      if (!code || !courseId) {
-        return {
-          valid: false,
-          error: "Coupon code and course ID are required",
-        };
-      }
-
-      // Validate coupon code format
-      const codeValidation = this.validateCouponCode(code);
-      if (!codeValidation.valid) {
-        return codeValidation;
-      }
-
-      // Get coupon from database
-      const couponResult = await this.query(
-        `
-        SELECT c.* 
-        FROM coupons c
-        WHERE c.code = $1 AND c.status = 'active'
-      `,
-        [codeValidation.code]
-      );
-
-      if (!couponResult.success || couponResult.data.length === 0) {
-        return {
-          valid: false,
-          error: "Invalid coupon code",
-        };
-      }
-
-      const coupon = couponResult.data[0];
-
-      // Check expiry dates
-      const expiryCheck = this.checkCouponExpiry(coupon);
-      if (!expiryCheck.valid) {
-        return expiryCheck;
-      }
-
-      // Check usage limit
-      const usageLimitCheck = this.checkUsageLimit(coupon);
-      if (!usageLimitCheck.valid) {
-        return usageLimitCheck;
-      }
-
-      // Check course eligibility
-      const courseEligibilityCheck = await this.checkCourseEligibility(
-        coupon.id,
-        courseId
-      );
-      if (!courseEligibilityCheck.valid) {
-        return courseEligibilityCheck;
-      }
-
-      // Check user eligibility if userId provided
-      if (userId) {
-        const userEligibilityCheck = await this.checkUserEligibility(
-          coupon.id,
-          userId,
-          courseId
-        );
-        if (!userEligibilityCheck.valid) {
-          return userEligibilityCheck;
-        }
-      }
-
-      return {
-        valid: true,
-        coupon: {
-          id: coupon.id,
-          name: coupon.name,
-          code: coupon.code,
-          discountType: coupon.discount_type,
-          discountValue: coupon.discount_value,
-          description: coupon.description,
-        },
-      };
-    } catch (error) {
-      console.error("Error validating coupon eligibility:", error);
-      return {
-        valid: false,
-        error: "Failed to validate coupon eligibility",
-      };
-    }
+    return this.validateCouponForItem(code, "course", courseId, userId, {
+      notFoundError: "Invalid coupon code",
+      failureError: "Failed to validate coupon eligibility",
+    });
   };
 
   /**
@@ -3218,52 +3469,7 @@ class CouponService extends Service {
    * @returns {Object} Result object with applicable coupons
    */
   getActiveCouponsForCourse = async (courseId) => {
-    try {
-      if (!courseId) {
-        return {
-          success: false,
-          error: "Course ID is required",
-        };
-      }
-
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      const result = await this.query(
-        `
-        SELECT c.id, c.name, c.code, c.description, c.discount_type, 
-               c.discount_value, c.usage_limit, c.usage_count,
-               c.start_time, c.end_time
-        FROM coupons c
-        JOIN coupon_courses cc ON c.id = cc.coupon_id
-        WHERE cc.course_id = $1 
-          AND c.status = 'active'
-          AND c.start_time <= $2
-          AND c.end_time > $2
-          AND (c.usage_limit IS NULL OR c.usage_count < c.usage_limit)
-        ORDER BY c.discount_value DESC
-      `,
-        [courseId, currentTime]
-      );
-
-      if (result.success) {
-        return {
-          success: true,
-          data: result.data,
-          totalCoupons: result.data.length,
-        };
-      }
-
-      return {
-        success: false,
-        error: "Failed to retrieve applicable coupons",
-      };
-    } catch (error) {
-      console.error("Error getting active coupons for course:", error);
-      return {
-        success: false,
-        error: "Failed to retrieve active coupons for course",
-      };
-    }
+    return this.getActiveCouponsForItem("course", courseId);
   };
 
   /**
@@ -4049,35 +4255,9 @@ class CouponService extends Service {
    * @returns {Object} Result object with active coupons
    */
   getActiveCouponsForBundle = async (bundleId) => {
-    try {
-      const currentTime = Math.floor(Date.now() / 1000);
-
-      const result = await this.query(
-        `
-        SELECT DISTINCT c.*
-        FROM coupons c
-        INNER JOIN coupon_bundles cb ON c.id = cb.coupon_id
-        WHERE cb.bundle_id = $1
-        AND c.status = 'active'
-        AND c.start_time <= $2
-        AND c.end_time >= $2
-        AND (c.usage_limit IS NULL OR c.usage_count < c.usage_limit)
-        ORDER BY c.discount_value DESC, c.created_at DESC
-        `,
-        [bundleId, currentTime]
-      );
-
-      return {
-        success: true,
-        data: result.data || []
-      };
-    } catch (error) {
-      console.error("Error getting active coupons for bundle:", error);
-      return {
-        success: false,
-        error: "Failed to get active coupons for bundle"
-      };
-    }
+    return this.getActiveCouponsForItem("bundle", bundleId, {
+      includeEndTime: true,
+    });
   };
 
   /**
@@ -4088,125 +4268,17 @@ class CouponService extends Service {
    * @returns {Object} Validation result
    */
   validateCouponForBundle = async (couponCode, bundleId, userId) => {
-    try {
-      // Validate input parameters
-      if (!couponCode || !bundleId) {
-        return {
-          valid: false,
-          error: "Coupon code and bundle ID are required",
-        };
-      }
-
-      // Validate coupon code format
-      const codeValidation = this.validateCouponCode(couponCode);
-      if (!codeValidation.valid) {
-        return codeValidation;
-      }
-
-      // Get coupon from database by code (not by ID)
-      const couponResult = await this.query(
-        `
-        SELECT c.* 
-        FROM coupons c
-        WHERE c.code = $1 AND c.status = 'active'
-      `,
-        [codeValidation.code]
-      );
-
-      if (!couponResult.success || couponResult.data.length === 0) {
-        return {
-          valid: false,
-          error: "Coupon not found"
-        };
-      }
-
-      const coupon = couponResult.data[0];
-
-      // Check if coupon is active
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (coupon.status !== "active") {
-        return {
-          valid: false,
-          error: "Coupon is not active"
-        };
-      }
-
-      if (currentTime < coupon.start_time || currentTime > coupon.end_time) {
-        return {
-          valid: false,
-          error: "Coupon has expired or not yet started"
-        };
-      }
-
-      // Check usage limit
-      if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
-        return {
-          valid: false,
-          error: "Coupon usage limit reached"
-        };
-      }
-
-      // Check if coupon applies to this bundle
-      const bundleCheck = await this.query(
-        `
-        SELECT COUNT(*) as count
-        FROM coupon_bundles
-        WHERE coupon_id = $1 AND bundle_id = $2
-        `,
-        [coupon.id, bundleId]
-      );
-
-      if (bundleCheck.success && parseInt(bundleCheck.data[0].count) === 0) {
-        return {
-          valid: false,
-          error: "Coupon does not apply to this bundle"
-        };
-      }
-
-      // Check if user has already used this coupon for this bundle
-      const usageCheck = await this.query(
-        `
-        SELECT COUNT(*) as count
-        FROM coupon_usage
-        WHERE coupon_id = $1 AND user_id = $2 AND bundle_id = $3 AND payment_status = 'completed'
-        `,
-        [coupon.id, userId, bundleId]
-      );
-
-      if (usageCheck.success && parseInt(usageCheck.data[0].count) > 0) {
-        return {
-          valid: false,
-          error: "You have already used this coupon for this bundle"
-        };
-      }
-
-      // Normalize coupon object to camelCase for consistency with calculateDiscount method
-      return {
-        valid: true,
-        coupon: {
-          id: coupon.id,
-          name: coupon.name,
-          code: coupon.code,
-          discountType: coupon.discount_type,
-          discountValue: coupon.discount_value,
-          description: coupon.description,
-          usage_limit: coupon.usage_limit,
-          usage_count: coupon.usage_count,
-          start_time: coupon.start_time,
-          end_time: coupon.end_time,
-          status: coupon.status,
-          created_at: coupon.created_at,
-          updated_at: coupon.updated_at,
-          metadata: coupon.metadata
-        }
-      };
-    } catch (error) {
-      console.error("Error validating coupon for bundle:", error);
-      return {
-        valid: false,
-        error: "Failed to validate coupon"
-      };
-    }
+    return this.validateCouponForItem(couponCode, "bundle", bundleId, userId, {
+      notFoundError: "Coupon not found",
+      usageLimitError: "Coupon usage limit reached",
+      itemEligibilityError: "Coupon does not apply to this bundle",
+      completedOnly: true,
+      expiryError: (_coupon, baseError) =>
+        baseError === "Coupon is not yet active"
+          ? "Coupon has expired or not yet started"
+          : "Coupon has expired or not yet started",
+      failureError: "Failed to validate coupon",
+    });
   };
 
 }

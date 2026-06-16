@@ -59,9 +59,13 @@ class PaymentController extends Controller {
             let redirectUrl;
             
             if (type === 'bundle') {
-                redirectUrl = `${frontendUrl}/post-payment/success?type=bundle&bundleId=${itemId}`;
+                redirectUrl = tran_id
+                    ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
+                    : `${frontendUrl}/post-payment/success?type=bundle&bundleId=${itemId}`;
             } else {
-                redirectUrl = `${frontendUrl}/post-payment/success?type=course&courseId=${itemId}`;
+                redirectUrl = tran_id
+                    ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
+                    : `${frontendUrl}/post-payment/success?type=course&courseId=${itemId}`;
             }
             
             console.log('Payment success redirect:', { type, itemId, tran_id, redirectUrl });
@@ -485,8 +489,7 @@ class PaymentController extends Controller {
                                     
                                     const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
                                     
-                                    // CRITICAL FIX: Define successUrl for email template
-                                    const successUrl = `${frontendUrl}/post-payment/success?type=bundle&bundleId=${bundleId}`;
+                                    const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
                                     
                                     // SMS: Use main dashboard link for bundle (shows all courses)
                                     const dashboardUrl = `${frontendUrl}/dashboard`;
@@ -841,8 +844,7 @@ class PaymentController extends Controller {
                                     
                                     const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
                                     
-                                    // CRITICAL FIX: Define successUrl for email template
-                                    const successUrl = `${frontendUrl}/post-payment/success?type=course&courseId=${courseId}`;
+                                    const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
                                     
                                     // SMS: Use dashboard link for course (courseId-specific dashboard)
                                     const courseIdStr = String(courseId);
@@ -1360,7 +1362,7 @@ class PaymentController extends Controller {
                                     ? (bundleWithCourses.data[0].courses ? bundleWithCourses.data[0].courses.length : 0)
                                     : 0;
                                 
-                                const successUrl = `${frontendUrl}/post-payment/success?type=bundle&bundleId=${bundleId}`;
+                                const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
                                 const dashboardUrl = `${frontendUrl}/dashboard`;
                                 const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from Math Pro! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
                                 
@@ -1423,7 +1425,7 @@ class PaymentController extends Controller {
                                 const courseTitle = course.title;
                                 const courseId = course.id;
                                 
-                                const successUrl = `${frontendUrl}/post-payment/success?type=course&courseId=${courseId}`;
+                                const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
                                 const dashboardUrl = `${frontendUrl}/dashboard/${courseId}`;
                                 const text = `Dear ${user.name}, you have successfully purchased "${courseTitle}" course from Math Pro. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
                                 
@@ -1500,4 +1502,3 @@ class PaymentController extends Controller {
 }
 
 module.exports={PaymentController}
-

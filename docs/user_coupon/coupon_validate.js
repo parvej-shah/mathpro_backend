@@ -28,7 +28,7 @@ module.exports = {
                   },
                   user_id: {
                     type: "integer",
-                    description: "User ID (optional, for logged-in users)",
+                    description: "User ID from a valid auth token when authenticated; ignored otherwise",
                     example: 123,
                   },
                 },
@@ -48,7 +48,7 @@ module.exports = {
                   },
                   user_id: {
                     type: "integer",
-                    description: "User ID (optional, for logged-in users)",
+                    description: "User ID from a valid auth token when authenticated; ignored otherwise",
                     example: 123,
                   },
                 },

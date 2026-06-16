@@ -104,8 +104,8 @@ class ProfileService extends Service {
                     auth_providers: authProviders,
                     has_password: passwordSet,
                     profile: {
-                        email: profileData.email || user.email || null,
-                        phone: profileData.phone || user.phone || null,
+                        email: user.email || null,
+                        phone: user.phone || null,
                         facebookId: this.pickFirstProfileValue(profileData.facebookId, profileData.facebookid),
                         address: this.pickFirstProfileValue(profileData.address, profileData.Address),
                         schoolCollege,
@@ -200,8 +200,6 @@ class ProfileService extends Service {
                 ...currentProfile,
                 auth_providers: authProviders,
                 password_set: passwordSet,
-                email: finalEmail || currentProfile.email || null,
-                phone: finalPhone || currentProfile.phone || null,
                 facebookId: this.pickFirstProfileValue(facebookId, currentProfile.facebookId, currentProfile.facebookid),
                 address: this.pickFirstProfileValue(address, currentProfile.address, currentProfile.Address),
                 schoolCollege: this.pickFirstProfileValue(
@@ -269,8 +267,8 @@ class ProfileService extends Service {
                     auth_providers: updatedAuthProviders,
                     has_password: updatedPasswordSet,
                     profile: {
-                        email: updatedProfileData.email || updatedUser.email || null,
-                        phone: updatedProfileData.phone || updatedUser.phone || null,
+                        email: updatedUser.email || null,
+                        phone: updatedUser.phone || null,
                         facebookId: updatedProfileData.facebookId || null,
                         address: updatedProfileData.address || null,
                         schoolCollege: updatedProfileData.schoolCollege || null,

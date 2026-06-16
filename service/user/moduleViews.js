@@ -146,10 +146,18 @@ class ModuleViewsService extends Service {
                     `;
                     await client.query(insertQuery, [userId, courseId, moduleId, chapterId, timestamp]);
                     
-                    // Note: We keep ALL module views in the database
-                    // The APIs will return only the last 5 using LIMIT in queries
-                    // This allows us to track complete view history for analytics
-                    
+                    // Evict rows beyond the 5 most recent for this user+course.
+                    await client.query(`
+                        DELETE FROM user_module_views
+                        WHERE user_id = $1 AND course_id = $2
+                          AND id NOT IN (
+                            SELECT id FROM user_module_views
+                            WHERE user_id = $1 AND course_id = $2
+                            ORDER BY last_viewed_at DESC
+                            LIMIT 5
+                          )
+                    `, [userId, courseId]);
+
                     await client.query('COMMIT');
                     
                     return {

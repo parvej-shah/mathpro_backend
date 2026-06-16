@@ -504,19 +504,9 @@ ORDER BY
       const activeCouponsResult = await couponService.getActiveCouponsForCourse(id);
 
       if (activeCouponsResult.success && activeCouponsResult.data) {
-        // Format coupons for frontend (only show essential info, not full coupon details)
-        resultObject["active_coupons"] = activeCouponsResult.data.map(coupon => ({
-          id: coupon.id,
-          code: coupon.code,
-          name: coupon.name,
-          discount_type: coupon.discount_type,
-          discount_value: coupon.discount_value,
-          description: coupon.description,
-          // Calculate potential savings for this course
-          potential_savings: coupon.discount_type === 'percentage'
-            ? (parseFloat(resultObject.price || 0) * parseFloat(coupon.discount_value) / 100)
-            : Math.min(parseFloat(coupon.discount_value), parseFloat(resultObject.price || 0))
-        }));
+        resultObject["active_coupons"] = activeCouponsResult.data.map((coupon) =>
+          couponService.formatPublicCouponPreview(coupon, resultObject.price)
+        );
       } else {
         resultObject["active_coupons"] = [];
       }
@@ -562,6 +552,29 @@ ORDER BY
       console.error('Error fetching attached books for course:', error);
       resultObject["attached_books"] = [];
       resultObject["books_total"] = 0;
+    }
+
+    // Overwrite instructor_list with normalized data from the junction table
+    try {
+      const instructorsResult = await this.query(
+        `SELECT ma.name, ma.profile->>'credibility' AS credibility, ma.profile->>'image' AS image
+         FROM managerial_auth ma
+         INNER JOIN instructor i ON ma.id = i.user_id
+         WHERE i.course_id = $1
+         ORDER BY ma.name ASC`,
+        [id]
+      );
+      resultObject["instructor_list"] = {
+        instructors: instructorsResult.success
+          ? instructorsResult.data.map((t) => ({
+              name: t.name,
+              credibility: t.credibility || "",
+              imageUploadedLink: t.image || "",
+            }))
+          : [],
+      };
+    } catch (error) {
+      console.error("Error fetching instructors for course:", error);
     }
 
     return {
@@ -1013,44 +1026,19 @@ ORDER BY
       const CouponService = require('./coupon');
       const couponService = new CouponService();
 
-      // Validate coupon
-      const validation = await couponService.validateCoupon(
+      const applyResult = await couponService.applyCouponToPrice(
         coupon_code,
         course_id,
         user_id
       );
 
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: validation.error
-        };
+      if (!applyResult.success || !applyResult.data) {
+        return applyResult;
       }
-
-      // Get course price
-      const courseResult = await this.query(
-        `SELECT price FROM course WHERE id = $1`,
-        [course_id]
-      );
-
-      if (!courseResult.success || !courseResult.data[0]) {
-        return {
-          success: false,
-          error: 'Course not found'
-        };
-      }
-
-      const originalPrice = parseFloat(courseResult.data[0].price);
-
-      // Calculate discount
-      const priceCalc = couponService.calculateDiscount(
-        validation.coupon,
-        originalPrice
-      );
 
       // For free coupons, enroll directly
-      if (priceCalc.finalPrice === 0) {
-        const result = await this.takes(user_id, course_id, 0, null, validation.coupon.id);
+      if (applyResult.data.final_price === 0) {
+        const result = await this.takes(user_id, course_id, 0, null, applyResult.data.coupon.id);
         await this.createLog(logNames.couponSuccess, {
           coupon: coupon_code,
           user_id,
@@ -1063,10 +1051,10 @@ ORDER BY
       return {
         success: true,
         data: {
-          coupon: validation.coupon,
-          original_price: priceCalc.originalPrice,
-          discount_amount: priceCalc.discountAmount,
-          final_price: priceCalc.finalPrice,
+          coupon: applyResult.data.coupon,
+          original_price: applyResult.data.original_price,
+          discount_amount: applyResult.data.discount_amount,
+          final_price: applyResult.data.final_price,
           requires_payment: true
         }
       };

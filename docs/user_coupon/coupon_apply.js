@@ -2,7 +2,7 @@ module.exports = {
   post: {
     security: [],
     tags: ["Coupon Management"],
-    description: "Apply a coupon to calculate discounted price for a course or bundle. Provide either course_id OR bundle_id (not both).",
+    description: "Apply a coupon to calculate discounted price for a course or bundle. Provide either course_id OR bundle_id (not both). The backend ignores client-supplied pricing and recalculates from the authoritative course or bundle price.",
     operationId: "userCouponApply",
     parameters: [],
     requestBody: {
@@ -11,7 +11,7 @@ module.exports = {
         "application/json": {
           schema: {
             type: "object",
-            required: ["coupon_code", "original_price"],
+            required: ["coupon_code"],
             oneOf: [
               {
                 required: ["course_id"],
@@ -26,14 +26,9 @@ module.exports = {
                     description: "Course ID (required if bundle_id not provided)",
                     example: 5,
                   },
-                  original_price: {
-                    type: "number",
-                    description: "Original course price",
-                    example: 1000,
-                  },
                   user_id: {
                     type: "integer",
-                    description: "User ID (optional, for logged-in users)",
+                    description: "User ID from a valid auth token when authenticated; ignored otherwise",
                     example: 123,
                   },
                 },
@@ -51,14 +46,9 @@ module.exports = {
                     description: "Bundle ID (required if course_id not provided)",
                     example: 10,
                   },
-                  original_price: {
-                    type: "number",
-                    description: "Original bundle price",
-                    example: 5000,
-                  },
                   user_id: {
                     type: "integer",
-                    description: "User ID (optional, for logged-in users)",
+                    description: "User ID from a valid auth token when authenticated; ignored otherwise",
                     example: 123,
                   },
                 },

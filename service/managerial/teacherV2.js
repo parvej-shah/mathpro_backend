@@ -1454,6 +1454,44 @@ class TeacherServiceV2 extends TeacherService {
     }
 
     /**
+     * Replace all instructor assignments for a course (delete existing, insert new)
+     * @param {number} courseId - Course ID
+     * @param {number[]} teacherIds - Array of teacher IDs (empty = remove all)
+     * @returns {Promise<object>} Result
+     */
+    async replaceInstructorsForCourse(courseId, teacherIds) {
+        try {
+            const courseCheck = await this.query('SELECT id FROM course WHERE id = $1', [courseId]);
+            if (!courseCheck.success || courseCheck.data.length === 0) {
+                return { success: false, error: 'Course not found', code: 'COURSE_NOT_FOUND' };
+            }
+
+            const client = await this.getClient();
+            try {
+                await client.query('BEGIN');
+                await client.query('DELETE FROM instructor WHERE course_id = $1', [courseId]);
+                for (const teacherId of (teacherIds || [])) {
+                    await client.query(
+                        'INSERT INTO instructor (user_id, course_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        [teacherId, courseId]
+                    );
+                }
+                await client.query('COMMIT');
+            } catch (err) {
+                await client.query('ROLLBACK');
+                throw err;
+            } finally {
+                client.release();
+            }
+
+            return { success: true, data: { course_id: courseId, teacher_ids: teacherIds || [] } };
+        } catch (error) {
+            console.error('Error replacing instructors for course:', error);
+            return { success: false, error: 'Failed to replace instructors', code: 'INTERNAL_SERVER_ERROR' };
+        }
+    }
+
+    /**
      * Bulk assign teachers to bundle
      * @param {number} bundleId - Bundle ID
      * @param {number[]} teacherIds - Array of teacher IDs

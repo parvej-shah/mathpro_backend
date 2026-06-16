@@ -669,6 +669,44 @@ class TeacherControllerV2 extends Controller {
     };
 
     /**
+     * POST /v2/admin/teacher/replace-course-instructors
+     * Atomically replaces all instructor assignments for a course.
+     */
+    replaceInstructorsForCourse = async (req, res) => {
+        try {
+            const { course_id, teacher_ids } = req.body;
+
+            if (!course_id || isNaN(parseInt(course_id))) {
+                const { response, statusCode } = ErrorHandler.validationError({
+                    course_id: 'Course ID is required and must be a valid number'
+                });
+                return res.status(statusCode).json(response);
+            }
+
+            const result = await teacherServiceV2.replaceInstructorsForCourse(
+                parseInt(course_id),
+                Array.isArray(teacher_ids) ? teacher_ids : []
+            );
+
+            if (!result.success) {
+                const { response, statusCode } = ErrorHandler.createErrorResponse(
+                    result.error,
+                    result.code,
+                    result.details,
+                    result.code === 'COURSE_NOT_FOUND' ? 404 : 400
+                );
+                return res.status(statusCode).json(response);
+            }
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in replaceInstructorsForCourse:', error);
+            const { response, statusCode } = ErrorHandler.serverError();
+            return res.status(statusCode).json(response);
+        }
+    };
+
+    /**
      * POST /v2/admin/teacher/bulk-assign-bundle
      */
     bulkAssignToBundle = async (req, res) => {

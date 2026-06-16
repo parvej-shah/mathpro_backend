@@ -113,7 +113,9 @@ class CourseControllerV2 extends Controller {
                 return res.status(statusCode).json(response);
             }
 
-            const result = await courseServiceV2.update(courseId, req.body);
+            // instructor_list is now managed via the instructor junction table — ignore it on save
+            const { instructor_list: _ignored, ...body } = req.body;
+            const result = await courseServiceV2.update(courseId, body);
             return res.status(result.success ? 200 : 400).json(result);
         } catch (error) {
             console.error('Error in update:', error);

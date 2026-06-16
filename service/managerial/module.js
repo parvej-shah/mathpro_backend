@@ -193,10 +193,9 @@ class ModuleService extends Service {
             }
 
             if (existingProgress.rows.length > 0) {
-                await client.query(
-                    `delete from progress where user_id=$1 and module_id=$2`,
-                    [user_id, module_id]
-                );
+                // Progress row exists (could be a quiz score). Don't overwrite it.
+                await client.query('ROLLBACK');
+                return { success: true, data: [], rowCount: 0 };
             }
 
             const result = await client.query(

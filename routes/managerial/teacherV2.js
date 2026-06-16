@@ -21,6 +21,9 @@ router.route('/search')
 router.route('/bulk-assign-course')
     .post(requireTeacherManage, teacherControllerV2.bulkAssignToCourse);
 
+router.route('/replace-course-instructors')
+    .post(requireTeacherManage, teacherControllerV2.replaceInstructorsForCourse);
+
 router.route('/bulk-assign-bundle')
     .post(requireTeacherManage, teacherControllerV2.bulkAssignToBundle);
 

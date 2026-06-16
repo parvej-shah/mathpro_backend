@@ -11,11 +11,11 @@ class UserCouponController extends Controller {
   /**
    * Validate a coupon code for a specific course or bundle
    * POST /user/coupon/validate
-   * Body: { coupon_code, course_id OR bundle_id, user_id }
+   * Body: { coupon_code, course_id OR bundle_id }
    */
   validateCoupon = async (req, res) => {
     try {
-      const { coupon_code, course_id, bundle_id, user_id } = req.body;
+      const { coupon_code, course_id, bundle_id } = req.body;
 
       if (!coupon_code) {
         return res.status(400).json({
@@ -39,7 +39,7 @@ class UserCouponController extends Controller {
         });
       }
 
-      const userId = user_id ? parseInt(user_id) : null;
+      const userId = req.body.auth === true ? parseInt(req.body.user_id) : null;
 
       // Add request details for audit logging
       const requestDetails = {
@@ -92,16 +92,16 @@ class UserCouponController extends Controller {
   /**
    * Apply a coupon to calculate discounted price for a course or bundle
    * POST /user/coupon/apply
-   * Body: { coupon_code, course_id OR bundle_id, user_id, original_price }
+   * Body: { coupon_code, course_id OR bundle_id }
    */
   applyCoupon = async (req, res) => {
     try {
-      const { coupon_code, course_id, bundle_id, user_id, original_price } = req.body;
+      const { coupon_code, course_id, bundle_id } = req.body;
 
-      if (!coupon_code || !original_price) {
+      if (!coupon_code) {
         return res.status(400).json({
           success: false,
-          error: "Coupon code and original price are required",
+          error: "Coupon code is required",
         });
       }
 
@@ -120,15 +120,7 @@ class UserCouponController extends Controller {
         });
       }
 
-      const userId = user_id ? parseInt(user_id) : null;
-      const price = parseFloat(original_price);
-
-      if (isNaN(price) || price < 0) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid price is required",
-        });
-      }
+      const userId = req.body.auth === true ? parseInt(req.body.user_id) : null;
 
       let result;
       let couponId = null;
@@ -144,8 +136,7 @@ class UserCouponController extends Controller {
         result = await couponService.applyCouponToPrice(
           coupon_code,
           courseId,
-          userId,
-          price
+          userId
         );
         
         if (result.success && result.data && result.data.coupon) {
@@ -163,8 +154,7 @@ class UserCouponController extends Controller {
         result = await couponService.applyCouponToPriceForBundle(
           coupon_code,
           bundleId,
-          userId,
-          price
+          userId
         );
         
         if (result.success && result.data && result.data.coupon) {
