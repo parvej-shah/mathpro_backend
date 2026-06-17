@@ -48,6 +48,44 @@ class UploadControllerV2 extends Controller {
             return res.status(statusCode).json(response);
         }
     };
+
+    deleteObject = async (req, res) => {
+        try {
+            const {
+                key,
+                public_url: publicUrl
+            } = req.body;
+
+            if (!key && !publicUrl) {
+                const { response, statusCode } = ErrorHandler.validationError({
+                    key: 'key or public_url is required'
+                });
+                return res.status(statusCode).json(response);
+            }
+
+            const result = await presignedUploadService.deleteObject({
+                key,
+                publicUrl
+            });
+
+            if (!result.success) {
+                const status = result.code === 'UPLOAD_CONFIGURATION_ERROR' ? 500 : 400;
+                const { response, statusCode } = ErrorHandler.createErrorResponse(
+                    result.error,
+                    result.code,
+                    null,
+                    status
+                );
+                return res.status(statusCode).json(response);
+            }
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error('Error in deleteObject:', error);
+            const { response, statusCode } = ErrorHandler.serverError();
+            return res.status(statusCode).json(response);
+        }
+    };
 }
 
 module.exports = { UploadControllerV2 };

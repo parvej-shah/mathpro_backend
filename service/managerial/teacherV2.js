@@ -1255,7 +1255,7 @@ class TeacherServiceV2 extends TeacherService {
                     const image = profile.image || null;
                     const role = profile.role || null;
                     const university = profile.university || null;
-                    const credibility = profile.credibility || null;
+                    const credibility = profile.credibility || profile.bio || null;
                     const achievements = Array.isArray(profile.achievements) ? profile.achievements : [];
                     const social = profile.social || {};
                     const isActive = profile.isActive !== undefined ? profile.isActive : true;

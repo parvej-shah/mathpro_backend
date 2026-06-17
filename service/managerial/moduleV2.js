@@ -433,25 +433,28 @@ class ModuleServiceV2 extends ModuleService {
                 paramIndex++;
             }
 
-            // Handle PDF drive link in data
-            if (updateData.data?.pdf_drive_link !== undefined) {
-                // Validate Google Drive link if provided
-                if (updateData.data.pdf_drive_link) {
-                    const driveValidation = validateGoogleDriveLink(
-                        updateData.data.pdf_drive_link
-                    );
+            // Handle pdf_drive_link — accept as top-level field or from data, persist to column
+            // Stores both Google Drive links and S3 URLs (video module PDF attachments)
+            const pdfLink = updateData.pdf_drive_link !== undefined
+                ? updateData.pdf_drive_link
+                : (updateData.data?.pdf_drive_link !== undefined ? updateData.data.pdf_drive_link : undefined);
+            if (pdfLink !== undefined) {
+                if (pdfLink && pdfLink.includes('drive.google.com')) {
+                    const driveValidation = validateGoogleDriveLink(pdfLink);
                     if (!driveValidation.valid) {
                         return {
                             success: false,
                             error: 'Validation failed',
                             code: 'VALIDATION_ERROR',
                             details: {
-                                'data.pdf_drive_link': driveValidation.error
+                                pdf_drive_link: driveValidation.error
                             }
                         };
                     }
                 }
-                // Update will be handled in data field
+                updateFields.push(`pdf_drive_link = $${paramIndex}`);
+                updateParams.push(pdfLink);
+                paramIndex++;
             }
 
             // Update module

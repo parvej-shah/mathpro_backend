@@ -75,6 +75,12 @@ const uploadPolicies = {
         allowedExtensions: [...imageExtensions, ...documentExtensions],
         allowedMimeTypes: [...imageMimeTypes, ...documentMimeTypes]
     },
+    'quiz-image': {
+        folder: 'quizzes/images',
+        maxBytes: 10 * MB,
+        allowedExtensions: imageExtensions,
+        allowedMimeTypes: imageMimeTypes
+    },
     'assignment-document': {
         folder: 'assignments',
         maxBytes: 25 * MB,
@@ -83,6 +89,12 @@ const uploadPolicies = {
     },
     'module-pdf': {
         folder: 'modules/pdf',
+        maxBytes: 25 * MB,
+        allowedExtensions: ['.pdf'],
+        allowedMimeTypes: ['application/pdf']
+    },
+    'course-outline': {
+        folder: 'courses/outlines',
         maxBytes: 25 * MB,
         allowedExtensions: ['.pdf'],
         allowedMimeTypes: ['application/pdf']

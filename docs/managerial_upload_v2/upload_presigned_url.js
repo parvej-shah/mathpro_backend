@@ -3,7 +3,7 @@ module.exports = {
   tags: ["Course V2"],
   summary: "Create presigned upload URL (admin)",
   description:
-    "Generates a validated presigned PUT URL for direct S3 upload. Backend validates purpose, file type, and file size before issuing URL.",
+    "Generates a validated presigned PUT URL for direct storage upload. Backend validates purpose, file type, and file size before issuing URL.",
   operationId: "adminCreatePresignedUploadUrl",
   requestBody: {
     required: true,
@@ -13,7 +13,7 @@ module.exports = {
           type: "object",
           required: ["purpose", "file_name", "content_type", "content_length"],
           properties: {
-            purpose: { type: "string", example: "course-thumbnail" },
+            purpose: { type: "string", example: "quiz-image" },
             file_name: { type: "string", example: "thumbnail.png" },
             content_type: { type: "string", example: "image/png" },
             content_length: { type: "integer", example: 523412 },

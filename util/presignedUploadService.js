@@ -1,6 +1,11 @@
 const path = require('path');
 const crypto = require('crypto');
-const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const {
+    S3Client,
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand
+} = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { validateUploadInput } = require('./uploadPolicies');
 
@@ -26,19 +31,50 @@ function encodeS3KeyForUrl(key) {
 
 class PresignedUploadService {
     constructor() {
-        this.region = process.env.AWS_REGION;
-        this.bucket = process.env.AWS_BUCKET;
+        this.region = process.env.R2_REGION;
+        this.bucket = process.env.R2_BUCKET;
+        this.accountId = process.env.R2_ACCOUNT_ID;
+        this.endpoint = process.env.R2_ENDPOINT || null;
+        this.publicUrlBase = process.env.R2_PUBLIC_URL_BASE || null;
         this.client = null;
     }
 
-    validateAwsConfig() {
-        if (!this.region || !this.bucket || !process.env.AWS_ACCESS_KEY || !process.env.AWS_SECRET_KEY) {
+    validateStorageConfig() {
+        if (!this.bucket) {
             return {
                 valid: false,
                 code: 'UPLOAD_CONFIGURATION_ERROR',
-                error: 'AWS upload configuration is incomplete'
+                error: 'Storage bucket is not configured'
             };
         }
+
+        const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+        const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
+        if (!accessKeyId || !secretAccessKey) {
+            return {
+                valid: false,
+                code: 'UPLOAD_CONFIGURATION_ERROR',
+                error: 'Storage credentials are incomplete'
+            };
+        }
+
+        if (!this.endpoint && !this.accountId) {
+            return {
+                valid: false,
+                code: 'UPLOAD_CONFIGURATION_ERROR',
+                error: 'R2 endpoint or account id is missing'
+            };
+        }
+
+        if (!this.publicUrlBase) {
+            return {
+                valid: false,
+                code: 'UPLOAD_CONFIGURATION_ERROR',
+                error: 'R2 public URL base is missing'
+            };
+        }
+
         return { valid: true };
     }
 
@@ -47,16 +83,21 @@ class PresignedUploadService {
             return this.client;
         }
 
-        const validation = this.validateAwsConfig();
+        const validation = this.validateStorageConfig();
         if (!validation.valid) {
             throw new Error(validation.error);
         }
 
+        const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+        const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+
         this.client = new S3Client({
-            region: this.region,
+            region: this.region || 'auto',
+            endpoint: this.endpoint || `https://${this.accountId}.r2.cloudflarestorage.com`,
+            forcePathStyle: true,
             credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY,
-                secretAccessKey: process.env.AWS_SECRET_KEY
+                accessKeyId,
+                secretAccessKey
             }
         });
 
@@ -73,16 +114,112 @@ class PresignedUploadService {
 
     buildPublicUrl(key) {
         const encodedKey = encodeS3KeyForUrl(key);
+
+        if (this.publicUrlBase) {
+            const normalizedBase = this.publicUrlBase.endsWith('/') ? this.publicUrlBase : `${this.publicUrlBase}/`;
+            return new URL(encodedKey, normalizedBase).toString();
+        }
+
         return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${encodedKey}`;
     }
 
-    async createPresignedUpload({ purpose, fileName, contentType, contentLength }) {
-        const awsValidation = this.validateAwsConfig();
-        if (!awsValidation.valid) {
+    resolveObjectKey(identifier = {}) {
+        const directKey = typeof identifier.key === 'string' ? identifier.key.trim() : '';
+        if (directKey) {
+            return {
+                success: true,
+                key: directKey
+            };
+        }
+
+        const publicUrl = typeof identifier.publicUrl === 'string'
+            ? identifier.publicUrl.trim()
+            : '';
+
+        if (!publicUrl) {
             return {
                 success: false,
-                error: awsValidation.error,
-                code: awsValidation.code
+                code: 'INVALID_UPLOAD_IDENTIFIER',
+                error: 'Object key or public URL is required'
+            };
+        }
+
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(publicUrl);
+        } catch (error) {
+            return {
+                success: false,
+                code: 'INVALID_UPLOAD_IDENTIFIER',
+                error: 'Public URL is invalid'
+            };
+        }
+
+        if (this.publicUrlBase) {
+            let baseUrl;
+            try {
+                baseUrl = new URL(this.publicUrlBase);
+            } catch (error) {
+                return {
+                    success: false,
+                    code: 'UPLOAD_CONFIGURATION_ERROR',
+                    error: 'R2 public URL base is invalid'
+                };
+            }
+
+            if (parsedUrl.origin !== baseUrl.origin) {
+                return {
+                    success: false,
+                    code: 'INVALID_UPLOAD_IDENTIFIER',
+                    error: 'Public URL does not match storage base URL'
+                };
+            }
+
+            const basePath = baseUrl.pathname.endsWith('/')
+                ? baseUrl.pathname
+                : `${baseUrl.pathname}/`;
+            const normalizedPath = parsedUrl.pathname;
+
+            if (
+                baseUrl.pathname !== '/' &&
+                normalizedPath !== baseUrl.pathname &&
+                !normalizedPath.startsWith(basePath)
+            ) {
+                return {
+                    success: false,
+                    code: 'INVALID_UPLOAD_IDENTIFIER',
+                    error: 'Public URL does not match storage base URL'
+                };
+            }
+        }
+
+        const key = parsedUrl.pathname
+            .split('/')
+            .filter(Boolean)
+            .map((segment) => decodeURIComponent(segment))
+            .join('/');
+
+        if (!key) {
+            return {
+                success: false,
+                code: 'INVALID_UPLOAD_IDENTIFIER',
+                error: 'Unable to derive storage key from public URL'
+            };
+        }
+
+        return {
+            success: true,
+            key
+        };
+    }
+
+    async createPresignedUpload({ purpose, fileName, contentType, contentLength }) {
+        const storageValidation = this.validateStorageConfig();
+        if (!storageValidation.valid) {
+            return {
+                success: false,
+                error: storageValidation.error,
+                code: storageValidation.code
             };
         }
 
@@ -120,10 +257,40 @@ class PresignedUploadService {
         };
     }
 
+    async deleteObject({ key, publicUrl }) {
+        const storageValidation = this.validateStorageConfig();
+        if (!storageValidation.valid) {
+            return {
+                success: false,
+                error: storageValidation.error,
+                code: storageValidation.code
+            };
+        }
+
+        const resolvedKey = this.resolveObjectKey({ key, publicUrl });
+        if (!resolvedKey.success) {
+            return resolvedKey;
+        }
+
+        const command = new DeleteObjectCommand({
+            Bucket: this.bucket,
+            Key: resolvedKey.key
+        });
+
+        await this.getClient().send(command);
+
+        return {
+            success: true,
+            data: {
+                key: resolvedKey.key
+            }
+        };
+    }
+
     async getObjectText(key) {
-        const awsValidation = this.validateAwsConfig();
-        if (!awsValidation.valid) {
-            throw new Error(awsValidation.error);
+        const storageValidation = this.validateStorageConfig();
+        if (!storageValidation.valid) {
+            throw new Error(storageValidation.error);
         }
 
         const command = new GetObjectCommand({

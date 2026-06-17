@@ -3,7 +3,7 @@ module.exports = {
   tags: ["Profile+Reward+Level"],
   summary: "Create presigned upload URL (user)",
   description:
-    "Generates a validated presigned PUT URL for direct S3 upload for user-facing flows.",
+    "Generates a validated presigned PUT URL for direct storage upload for user-facing flows.",
   operationId: "userCreatePresignedUploadUrl",
   requestBody: {
     required: true,

@@ -497,21 +497,25 @@ ORDER BY
     resultObject["enrolled"] = totalEnrollment;
     resultObject["prebooking"] = parseInt(initialData[3].data[0].n);
 
-    // Get active coupons for this course
-    try {
-      const CouponService = require('./coupon');
-      const couponService = new CouponService();
-      const activeCouponsResult = await couponService.getActiveCouponsForCourse(id);
+    // Keep public course detail payload free of coupon disclosures.
+    if (reqBody.auth) {
+      try {
+        const CouponService = require('./coupon');
+        const couponService = new CouponService();
+        const activeCouponsResult = await couponService.getActiveCouponsForCourse(id);
 
-      if (activeCouponsResult.success && activeCouponsResult.data) {
-        resultObject["active_coupons"] = activeCouponsResult.data.map((coupon) =>
-          couponService.formatPublicCouponPreview(coupon, resultObject.price)
-        );
-      } else {
+        if (activeCouponsResult.success && activeCouponsResult.data) {
+          resultObject["active_coupons"] = activeCouponsResult.data.map((coupon) =>
+            couponService.formatPublicCouponPreview(coupon, resultObject.price)
+          );
+        } else {
+          resultObject["active_coupons"] = [];
+        }
+      } catch (error) {
+        console.error('Error fetching active coupons for course:', error);
         resultObject["active_coupons"] = [];
       }
-    } catch (error) {
-      console.error('Error fetching active coupons for course:', error);
+    } else {
       resultObject["active_coupons"] = [];
     }
 

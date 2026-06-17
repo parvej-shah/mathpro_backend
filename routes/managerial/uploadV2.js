@@ -7,4 +7,7 @@ const uploadControllerV2 = new UploadControllerV2();
 router.route('/presigned-url')
     .post(adminAuthMiddleWare, uploadControllerV2.createPresignedUrl);
 
+router.route('/delete')
+    .post(adminAuthMiddleWare, uploadControllerV2.deleteObject);
+
 module.exports = router;
