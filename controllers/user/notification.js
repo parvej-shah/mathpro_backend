@@ -25,13 +25,6 @@ class NotificationController extends Controller {
     );
     return res.status(result.success ? 200 : 400).json(result);
   };
-  markAllAsRead = async (req, res) => {
-    var result = await notificationService.markAllAsRead(
-      req.body.user_id,
-      parseInt(req.query.courseId)
-    );
-    return res.status(result.success ? 200 : 400).json(result);
-  };
   markAsRead = async (req, res) => {
     var result = await notificationService.markAsRead(
       req.params.id,
@@ -59,4 +52,3 @@ class NotificationController extends Controller {
 }
 
 module.exports={NotificationController}
-

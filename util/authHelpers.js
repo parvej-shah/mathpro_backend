@@ -54,12 +54,39 @@ const isValidPhone = (phone) => {
 
 /**
  * Normalize contact info (trim and lowercase)
- * @param {string} contact 
+ * @param {string} contact
  * @returns {string}
  */
 const normalizeContact = (contact) => {
     if (!contact) return '';
     return contact.trim().toLowerCase();
+};
+
+/**
+ * Normalize a Bangladesh phone number to the canonical 01XXXXXXXXX form.
+ * Strips spaces/dashes and a leading +88 or 88 country code if present.
+ * @param {string} phone
+ * @returns {string}
+ */
+const normalizePhone = (phone) => {
+    if (!phone) return '';
+    let digits = `${phone}`.trim().replace(/[\s-]/g, '');
+    if (digits.startsWith('+88')) digits = digits.slice(3);
+    else if (digits.startsWith('88') && digits.length === 13) digits = digits.slice(2);
+    return digits;
+};
+
+/**
+ * Normalize any login identifier (email or phone) for lookup/storage.
+ * Phone numbers (including +88/88-prefixed) collapse to canonical 01XXXXXXXXX.
+ * @param {string} contact
+ * @returns {string}
+ */
+const normalizeIdentifier = (contact) => {
+    // Try phone first so country-code-prefixed numbers are recognized.
+    const phone = normalizePhone(contact);
+    if (PHONE_REGEX.test(phone)) return phone;
+    return normalizeContact(contact);
 };
 
 /**
@@ -135,6 +162,8 @@ module.exports = {
     isValidEmail,
     isValidPhone,
     normalizeContact,
+    normalizePhone,
+    normalizeIdentifier,
     generateOTP,
     getOTPExpiration,
     isOTPExpired,

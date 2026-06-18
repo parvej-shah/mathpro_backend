@@ -2,17 +2,29 @@ const Service = require('../base').Service;
 const { default: axios } = require('axios');
 const bcrypt=require('bcryptjs')
 const JWT = require('jsonwebtoken');
+const crypto = require('crypto');
 const MessagingService=require('../../service/messagingService').MessagingService
 const { RoleService } = require('./roleService');
 const { managerialAccountTypes } = require('../../util/constants');
 const {
     isValidEmail,
+    isValidPhone,
+    detectContactType,
     normalizeContact,
+    normalizePhone,
+    normalizeIdentifier,
     generateOTP,
     getOTPExpiration,
     isOTPExpired,
     sanitizeContactForLog
 } = require('../../util/authHelpers');
+
+// Max concurrent sessions (devices) for a regular user; oldest is evicted beyond this.
+const MAX_REGULAR_SESSIONS = 2;
+// OTP brute-force / abuse guards.
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_RESEND_COOLDOWN_SECONDS = 60;
+const OTP_DAILY_LIMIT = 5;
 
 const messagingService=new MessagingService()
 const roleService = new RoleService()
@@ -69,7 +81,7 @@ class AuthService extends Service {
             : 'Student';
     };
 
-    buildTokenObject = (user, roles = [], permissions = []) => ({
+    buildTokenObject = (user, roles = [], permissions = [], sid = null) => ({
         id: user.id,
         name: user.name,
         type: user.type,
@@ -77,8 +89,74 @@ class AuthService extends Service {
         profile: user.profile,
         roles,
         permissions,
+        ...(sid ? { sid } : {}),
         createdAt: Date.now()
     });
+
+    // ========================================
+    // Session management (regular-user device limit)
+    // ========================================
+
+    /**
+     * Create a session row for a user and enforce the max-device cap by evicting
+     * the oldest sessions beyond the limit. Returns the new session_id (sid).
+     * @param {number} userId
+     * @param {{userAgent?: string, ip?: string}} deviceInfo
+     * @returns {Promise<string>} session_id
+     */
+    createSession = async (userId, deviceInfo = {}) => {
+        const sessionId = crypto.randomUUID();
+        const userAgent = (deviceInfo.userAgent || '').slice(0, 255) || null;
+        const ip = (deviceInfo.ip || '').slice(0, 64) || null;
+
+        await this.query(
+            `INSERT INTO auth_session (user_id, session_id, user_agent, ip)
+             VALUES ($1, $2, $3, $4)`,
+            [userId, sessionId, userAgent, ip]
+        );
+
+        // Keep only the newest MAX_REGULAR_SESSIONS sessions; evict the rest.
+        await this.query(
+            `DELETE FROM auth_session
+             WHERE user_id = $1
+               AND session_id NOT IN (
+                   SELECT session_id FROM auth_session
+                   WHERE user_id = $1
+                   ORDER BY created_at DESC, id DESC
+                   LIMIT $2
+               )`,
+            [userId, MAX_REGULAR_SESSIONS]
+        );
+
+        return sessionId;
+    };
+
+    /**
+     * Delete a single session (logout this device).
+     * @param {number} userId
+     * @param {string} sessionId
+     */
+    revokeSession = async (userId, sessionId) => {
+        if (!sessionId) return { success: false, error: 'No session' };
+        const result = await this.query(
+            `DELETE FROM auth_session WHERE user_id = $1 AND session_id = $2`,
+            [userId, sessionId]
+        );
+        return { success: result.success, message: 'Logged out' };
+    };
+
+    /**
+     * List active sessions (devices) for a user.
+     * @param {number} userId
+     */
+    listSessions = async (userId) => {
+        const result = await this.query(
+            `SELECT session_id, user_agent, ip, created_at, last_seen_at
+             FROM auth_session WHERE user_id = $1 ORDER BY created_at DESC`,
+            [userId]
+        );
+        return { success: result.success, data: result.data || [] };
+    };
 
     getUserRolesAndPermissions = async (userId) => {
         const rolesResult = await roleService.getUserRoles(userId);
@@ -155,78 +233,116 @@ class AuthService extends Service {
     ).join('');
 
     // ========================================
-    // Email-based authentication methods
+    // OTP methods (phone or email)
     // ========================================
 
     /**
-     * REQUEST OTP - Email only
-     * @param {string} contact - Email address
+     * Resolve a login identifier into its normalized form + contact type.
+     * @param {string} contact
+     * @returns {{ contactType: 'email'|'phone'|null, value: string }}
+     */
+    resolveContact = (contact) => {
+        const value = normalizeIdentifier(contact);
+        const contactType = detectContactType(value);
+        return { contactType, value: contactType ? value : '' };
+    };
+
+    /**
+     * REQUEST OTP - phone or email
+     * @param {string} contact - Phone number or email address
      * @param {'registration' | 'password_reset'} purpose - Purpose of OTP
      * @returns {Promise<{success: boolean, message?: string, otp?: string, error?: string}>}
      */
     requestOTP = async (contact, purpose = 'registration') => {
         try {
-            const normalizedContact = normalizeContact(contact);
+            const { contactType, value } = this.resolveContact(contact);
 
-            if (!isValidEmail(normalizedContact)) {
+            // OTP is delivered by SMS only; email OTP is not supported (cost control).
+            if (contactType !== 'phone') {
                 return {
                     success: false,
-                    error: 'Invalid email format'
+                    error: 'Enter a valid phone number'
                 };
             }
 
-            if (purpose === 'registration') {
-                const existsQuery = `SELECT id FROM managerial_auth WHERE login = $1`;
-                const existsResult = await this.query(existsQuery, [normalizedContact]);
+            const contactColumn = 'phone';
 
+            if (purpose === 'registration') {
+                const existsResult = await this.query(
+                    `SELECT id FROM managerial_auth WHERE login = $1 OR ${contactColumn} = $1`,
+                    [value]
+                );
                 if (existsResult.data.length > 0) {
                     return {
                         success: false,
-                        error: 'User already exists with this email'
+                        error: `An account already exists with this ${contactType}`
                     };
                 }
             }
 
             if (purpose === 'password_reset') {
-                const existsQuery = `SELECT id FROM managerial_auth WHERE login = $1`;
-                const existsResult = await this.query(existsQuery, [normalizedContact]);
-
+                const existsResult = await this.query(
+                    `SELECT id FROM managerial_auth WHERE login = $1 OR ${contactColumn} = $1`,
+                    [value]
+                );
                 if (existsResult.data.length === 0) {
                     return {
                         success: false,
-                        error: 'No account found with this email'
+                        error: `No account found with this ${contactType}`
                     };
                 }
             }
 
+            // Rate limiting: per-contact resend cooldown + daily cap.
+            const nowSeconds = Math.floor(Date.now() / 1000);
+            const recentResult = await this.query(
+                `SELECT timestamp FROM otp
+                 WHERE ${contactColumn} = $1 AND purpose = $2
+                 ORDER BY timestamp DESC`,
+                [value, purpose]
+            );
+            const recent = recentResult.data || [];
+            if (recent.length > 0 && (nowSeconds - recent[0].timestamp) < OTP_RESEND_COOLDOWN_SECONDS) {
+                const wait = OTP_RESEND_COOLDOWN_SECONDS - (nowSeconds - recent[0].timestamp);
+                return {
+                    success: false,
+                    error: `Please wait ${wait}s before requesting another code`
+                };
+            }
+            const dayAgo = nowSeconds - 24 * 60 * 60;
+            const todayCount = recent.filter(r => r.timestamp >= dayAgo).length;
+            if (todayCount >= OTP_DAILY_LIMIT) {
+                return {
+                    success: false,
+                    error: 'Daily OTP limit reached. Please try again later.'
+                };
+            }
+
+            // Invalidate any prior unused OTPs for this contact+purpose (single active OTP).
+            await this.query(
+                `UPDATE otp SET is_used = true
+                 WHERE ${contactColumn} = $1 AND purpose = $2 AND is_used = false`,
+                [value, purpose]
+            );
+
             const otp = generateOTP(6);
             const expiresAt = getOTPExpiration(10); // 10 minutes
-            const timestamp = Math.floor(Date.now() / 1000);
 
-            const saveOTPQuery = `
-                INSERT INTO otp (
-                    email,
+            await this.query(
+                `INSERT INTO otp (email, phone, contact_type, purpose, otp, timestamp, expires_at, is_used, attempts)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, false, 0)`,
+                [
+                    contactType === 'email' ? value : null,
+                    contactType === 'phone' ? value : null,
+                    contactType,
+                    purpose,
                     otp,
-                    timestamp,
-                    expires_at,
-                    is_used
-                ) VALUES ($1, $2, $3, $4, $5)
-            `;
-
-            await this.query(saveOTPQuery, [
-                normalizedContact,
-                otp,
-                timestamp,
-                expiresAt,
-                false
-            ]);
-
-            const sendResult = await messagingService.sendOTP(
-                normalizedContact,
-                'email',
-                otp,
-                purpose
+                    nowSeconds,
+                    expiresAt
+                ]
             );
+
+            const sendResult = await messagingService.sendOTP(value, contactType, otp, purpose);
 
             if (!sendResult.success) {
                 console.error('Failed to send OTP:', sendResult.error);
@@ -236,11 +352,11 @@ class AuthService extends Service {
                 };
             }
 
-            console.log(`OTP sent to ${sanitizeContactForLog(normalizedContact, 'email')}`);
+            console.log(`OTP sent to ${sanitizeContactForLog(value, contactType)}`);
 
             const response = {
                 success: true,
-                message: 'OTP sent to your email'
+                message: contactType === 'phone' ? 'OTP sent to your phone' : 'OTP sent to your email'
             };
 
             if (process.env.NODE_ENV === 'development') {
@@ -258,59 +374,57 @@ class AuthService extends Service {
     }
 
     /**
-     * VERIFY OTP
-     * @param {string} contact - Email address
+     * VERIFY OTP - phone or email, with attempt cap.
+     * @param {string} contact - Phone number or email address
      * @param {string} otp - OTP code
      * @returns {Promise<{success: boolean, message?: string, error?: string}>}
      */
     verifyOTP = async (contact, otp) => {
         try {
-            const normalizedContact = normalizeContact(contact);
+            const { contactType, value } = this.resolveContact(contact);
 
-            if (!isValidEmail(normalizedContact)) {
-                return { success: false, error: 'Invalid email format' };
+            if (!contactType) {
+                return { success: false, error: 'Enter a valid phone number or email' };
             }
 
-            const verifyQuery = `
-                SELECT * FROM otp 
-                WHERE email = $1 
-                    AND otp = $2 
-                    AND is_used = false
-                ORDER BY timestamp DESC
-                LIMIT 1
-            `;
-            
-            const result = await this.query(verifyQuery, [normalizedContact, otp]);
-            
-            if (result.data.length === 0) {
-                return {
-                    success: false,
-                    error: 'Invalid or already used OTP'
-                };
-            }
-            
-            const otpRecord = result.data[0];
-            
-            // Check expiration
-            if (isOTPExpired(otpRecord.expires_at)) {
-                return {
-                    success: false,
-                    error: 'OTP has expired. Please request a new one.'
-                };
-            }
-            
-            // Mark OTP as used
-            await this.query(
-                `UPDATE otp SET is_used = true WHERE id = $1`,
-                [otpRecord.id]
+            const contactColumn = contactType === 'phone' ? 'phone' : 'email';
+
+            // Latest unused OTP for this contact.
+            const result = await this.query(
+                `SELECT * FROM otp
+                 WHERE ${contactColumn} = $1 AND is_used = false
+                 ORDER BY timestamp DESC
+                 LIMIT 1`,
+                [value]
             );
 
-            console.log(`OTP verified for ${sanitizeContactForLog(normalizedContact, 'email')}`);
+            if (result.data.length === 0) {
+                return { success: false, error: 'No active code. Please request a new one.' };
+            }
 
-            return {
-                success: true,
-                message: 'OTP verified successfully'
-            };
+            const otpRecord = result.data[0];
+
+            if (isOTPExpired(otpRecord.expires_at)) {
+                await this.query(`UPDATE otp SET is_used = true WHERE id = $1`, [otpRecord.id]);
+                return { success: false, error: 'OTP has expired. Please request a new one.' };
+            }
+
+            if ((otpRecord.attempts || 0) >= OTP_MAX_ATTEMPTS) {
+                await this.query(`UPDATE otp SET is_used = true WHERE id = $1`, [otpRecord.id]);
+                return { success: false, error: 'Too many attempts. Please request a new code.' };
+            }
+
+            if (`${otpRecord.otp}` !== `${otp}`.trim()) {
+                await this.query(`UPDATE otp SET attempts = attempts + 1 WHERE id = $1`, [otpRecord.id]);
+                return { success: false, error: 'Invalid OTP' };
+            }
+
+            // Correct code — consume it.
+            await this.query(`UPDATE otp SET is_used = true WHERE id = $1`, [otpRecord.id]);
+
+            console.log(`OTP verified for ${sanitizeContactForLog(value, contactType)}`);
+
+            return { success: true, message: 'OTP verified successfully' };
         } catch (error) {
             console.error('Error in verifyOTP:', error);
             return {
@@ -321,19 +435,22 @@ class AuthService extends Service {
     }
 
     /**
-     * REGISTER - Email only public signup for regular users
+     * REGISTER - phone-primary public signup for regular users (email also accepted).
+     * OTP is required and verified before the account is created.
      * @param {Object} reqObj - {name, login, password, otp}
+     * @param {{userAgent?: string, ip?: string}} deviceInfo
      * @returns {Promise<{success: boolean, token?: string, user?: Object, error?: string}>}
      */
-    register = async (reqObj) => {
+    register = async (reqObj, deviceInfo = {}) => {
         try {
-            const { name, login, password } = reqObj;
-            const normalizedLogin = normalizeContact(login);
+            const { name, login, password, otp } = reqObj;
+            const { contactType, value: normalizedLogin } = this.resolveContact(login);
 
-            if (!isValidEmail(normalizedLogin)) {
+            // Public signup is phone-only (OTP via SMS). Email accounts arrive via Google.
+            if (contactType !== 'phone') {
                 return {
                     success: false,
-                    error: 'Invalid email format'
+                    error: 'Enter a valid phone number'
                 };
             }
 
@@ -344,62 +461,77 @@ class AuthService extends Service {
                 };
             }
 
-            const existsQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR email = $1`;
-            const existsResult = await this.query(existsQuery, [normalizedLogin]);
+            if (!otp) {
+                return {
+                    success: false,
+                    error: 'OTP is required'
+                };
+            }
+
+            const contactColumn = contactType === 'phone' ? 'phone' : 'email';
+            const existsResult = await this.query(
+                `SELECT id FROM managerial_auth WHERE login = $1 OR ${contactColumn} = $1`,
+                [normalizedLogin]
+            );
             if (existsResult.data.length > 0) {
                 return {
                     success: false,
-                    error: 'User already exists with this email'
+                    error: `An account already exists with this ${contactType}`
                 };
+            }
+
+            // Enforce OTP verification before creating the account.
+            const otpVerification = await this.verifyOTP(normalizedLogin, otp);
+            if (!otpVerification.success) {
+                return otpVerification;
             }
 
             const salt = await bcrypt.genSalt(10);
             const hashedPass = await bcrypt.hash(password, salt);
-            const finalName = name && `${name}`.trim() ? `${name}`.trim() : this.deriveNameFromEmail(normalizedLogin);
+            const finalName = name && `${name}`.trim() ? `${name}`.trim() : 'Student';
             const profile = this.buildProfileWithAuth({}, {
                 authProvider: 'password',
                 passwordSet: true
             });
+            profile.phone_verified = true;
+            profile.email_verified = false;
 
-            const insertQuery = `
-                INSERT INTO managerial_auth (
-                    name, type, login, email, phone, password, profile
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7) 
-                RETURNING id
-            `;
-            
-            const insertParams = [
-                finalName,
-                managerialAccountTypes.regular,
-                normalizedLogin,
-                normalizedLogin,
-                null,
-                hashedPass,
-                JSON.stringify(profile)
-            ];
+            const phone = normalizedLogin;
 
-            const result = await this.query(insertQuery, insertParams);
+            const result = await this.query(
+                `INSERT INTO managerial_auth (name, type, login, email, phone, password, profile)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                 RETURNING id`,
+                [
+                    finalName,
+                    managerialAccountTypes.regular,
+                    normalizedLogin,
+                    null,
+                    phone,
+                    hashedPass,
+                    JSON.stringify(profile)
+                ]
+            );
 
             if (result.success) {
-                const tokenObject = {
-                    id: result.data[0].id,
-                    name: finalName,
-                    type: managerialAccountTypes.regular,
-                    login: normalizedLogin,
-                    roles: [],
-                    permissions: [],
-                    createdAt: Date.now()
-                };
+                const userId = result.data[0].id;
+                const sid = await this.createSession(userId, deviceInfo);
+                const tokenObject = this.buildTokenObject(
+                    { id: userId, name: finalName, type: managerialAccountTypes.regular, login: normalizedLogin, profile },
+                    [], [], sid
+                );
                 const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
-                console.log(`New user registered: ${sanitizeContactForLog(normalizedLogin, 'email')}`);
+                console.log(`New user registered: ${sanitizeContactForLog(normalizedLogin, contactType)}`);
 
                 return {
                     success: true,
                     token,
                     user: {
-                        id: result.data[0].id,
+                        id: userId,
                         name: finalName,
-                        type: managerialAccountTypes.regular
+                        type: managerialAccountTypes.regular,
+                        email: null,
+                        phone
                     }
                 };
             }
@@ -418,23 +550,30 @@ class AuthService extends Service {
     }
 
     /**
-     * LOGIN - Email only
+     * LOGIN - by phone or email. Regular users (type=3) get a tracked session
+     * (device limit enforced); admins/moderators keep their session-less token.
      * @param {Object} credentials - {login, password}
+     * @param {{userAgent?: string, ip?: string}} deviceInfo
      * @returns {Promise<{success: boolean, token?: string, user?: Object, error?: string}>}
      */
-    login = async ({ login, password }) => {
+    login = async ({ login, password }, deviceInfo = {}) => {
         try {
-            const normalizedLogin = normalizeContact(login);
+            const { contactType, value: normalizedLogin } = this.resolveContact(login);
 
-            if (!isValidEmail(normalizedLogin)) {
+            if (!contactType) {
                 return {
                     success: false,
-                    error: 'Invalid email format'
+                    error: 'Enter a valid phone number or email'
                 };
             }
 
-            const loginFindQuery = `SELECT * FROM managerial_auth WHERE login = $1`;
-            const loginFindResult = await this.query(loginFindQuery, [normalizedLogin]);
+            // Match on the canonical column: email identifiers via the email column,
+            // phone identifiers via the phone column. login is no longer a lookup key.
+            const contactColumn = contactType === 'phone' ? 'phone' : 'email';
+            const loginFindResult = await this.query(
+                `SELECT * FROM managerial_auth WHERE ${contactColumn} = $1 LIMIT 1`,
+                [normalizedLogin]
+            );
 
             if (loginFindResult.data.length === 0) {
                 return {
@@ -442,7 +581,7 @@ class AuthService extends Service {
                     error: 'User not found'
                 };
             }
-            
+
             const user = loginFindResult.data[0];
             const isPassValid = await bcrypt.compare(password, user.password);
 
@@ -452,14 +591,19 @@ class AuthService extends Service {
                     error: 'Invalid password'
                 };
             }
-            
+
             const { roles, permissions } = await this.getUserRolesAndPermissions(user.id);
 
-            const tokenObject = this.buildTokenObject(user, roles, permissions);
+            // Only regular users get device-limited sessions.
+            const sid = user.type === managerialAccountTypes.regular
+                ? await this.createSession(user.id, deviceInfo)
+                : null;
+
+            const tokenObject = this.buildTokenObject(user, roles, permissions, sid);
 
             const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
-            console.log(`User logged in: ${sanitizeContactForLog(user.login, 'email')} with ${roles.length} role(s) and ${permissions.length} permission(s)`);
+            console.log(`User logged in: ${sanitizeContactForLog(user.login, contactType)} with ${roles.length} role(s) and ${permissions.length} permission(s)`);
 
             return {
                 success: true,
@@ -483,7 +627,7 @@ class AuthService extends Service {
         }
     }
 
-    googleLogin = async ({ id_token }) => {
+    googleLogin = async ({ id_token }, deviceInfo = {}) => {
         try {
             const googleVerification = await this.verifyGoogleToken(id_token);
             if (!googleVerification.success) {
@@ -498,13 +642,6 @@ class AuthService extends Service {
 
             if (existingResult.data.length > 0) {
                 const user = existingResult.data[0];
-
-                if (user.type !== managerialAccountTypes.regular) {
-                    return {
-                        success: false,
-                        error: 'This Google account is not allowed for student login'
-                    };
-                }
 
                 const updatedProfile = this.buildProfileWithAuth(user.profile, {
                     authProvider: 'google'
@@ -521,7 +658,12 @@ class AuthService extends Service {
                 }
 
                 const { roles, permissions } = await this.getUserRolesAndPermissions(user.id);
-                const tokenObject = this.buildTokenObject(user, roles, permissions);
+                // Only regular users (type=3) get device-limited sessions; admins/mods
+                // keep session-less tokens (consistent with password login).
+                const sid = user.type === managerialAccountTypes.regular
+                    ? await this.createSession(user.id, deviceInfo)
+                    : null;
+                const tokenObject = this.buildTokenObject(user, roles, permissions, sid);
                 const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
                 return {
@@ -546,6 +688,8 @@ class AuthService extends Service {
                 authProvider: 'google',
                 passwordSet: false
             }, true);
+            profile.email_verified = true;
+            profile.phone_verified = false;
 
             const insertResult = await this.query(
                 `
@@ -565,7 +709,8 @@ class AuthService extends Service {
             }
 
             const user = insertResult.data[0];
-            const tokenObject = this.buildTokenObject(user, [], []);
+            const sid = await this.createSession(user.id, deviceInfo);
+            const tokenObject = this.buildTokenObject(user, [], [], sid);
             const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
             return {
@@ -591,24 +736,158 @@ class AuthService extends Service {
     }
 
     /**
-     * RESET PASSWORD with OTP
-     * @param {string} contact - Email address
+     * LINK PHONE - for a logged-in user (typically Google-first) to add a verified
+     * phone number and set/confirm a password. Requires a verified OTP for the phone.
+     * @param {number} userId
+     * @param {{phone: string, password: string, otp: string}} reqObj
+     * @returns {Promise<{success: boolean, message?: string, error?: string}>}
+     */
+    linkPhone = async (userId, { phone, password, otp }) => {
+        try {
+            const normalizedPhone = normalizePhone(phone);
+
+            if (!isValidPhone(normalizedPhone)) {
+                return { success: false, error: 'Enter a valid phone number' };
+            }
+            if (!password || `${password}`.trim().length < 6) {
+                return { success: false, error: 'Password must be at least 6 characters long' };
+            }
+            if (!otp) {
+                return { success: false, error: 'OTP is required' };
+            }
+
+            // Phone must not already belong to another account.
+            const existsResult = await this.query(
+                `SELECT id FROM managerial_auth WHERE (phone = $1 OR login = $1) AND id <> $2 LIMIT 1`,
+                [normalizedPhone, userId]
+            );
+            if (existsResult.data.length > 0) {
+                return { success: false, error: 'This phone number is already in use' };
+            }
+
+            const otpVerification = await this.verifyOTP(normalizedPhone, otp);
+            if (!otpVerification.success) {
+                return otpVerification;
+            }
+
+            const userResult = await this.query(`SELECT * FROM managerial_auth WHERE id = $1`, [userId]);
+            if (userResult.data.length === 0) {
+                return { success: false, error: 'User not found' };
+            }
+            const user = userResult.data[0];
+
+            const salt = await bcrypt.genSalt(10);
+            const hashedPass = await bcrypt.hash(password, salt);
+            const updatedProfile = this.buildProfileWithAuth(user.profile, {
+                authProvider: 'password',
+                passwordSet: true
+            }, true);
+            updatedProfile.phone_verified = true;
+
+            const updateResult = await this.query(
+                `UPDATE managerial_auth
+                 SET phone = $1, password = $2, profile = $3, updated_at = NOW()
+                 WHERE id = $4`,
+                [normalizedPhone, hashedPass, JSON.stringify(updatedProfile), userId]
+            );
+
+            if (!updateResult.success) {
+                return { success: false, error: 'Failed to link phone number' };
+            }
+
+            console.log(`Phone linked for user ${userId}: ${sanitizeContactForLog(normalizedPhone, 'phone')}`);
+            return { success: true, message: 'Phone number linked successfully' };
+        } catch (error) {
+            console.error('Error in linkPhone:', error);
+            return { success: false, error: 'An error occurred while linking phone' };
+        }
+    }
+
+    /**
+     * CONNECT GOOGLE - for a logged-in user (typically phone-registered) to attach
+     * or change the Google-verified email on their account. Google is the email
+     * verification mechanism (no email OTP). Re-running with a different Google
+     * account replaces the stored email. The email must not belong to another user.
+     * @param {number} userId
+     * @param {{id_token: string}} reqObj
+     * @returns {Promise<{success: boolean, message?: string, email?: string, error?: string}>}
+     */
+    connectGoogle = async (userId, { id_token }) => {
+        try {
+            const googleVerification = await this.verifyGoogleToken(id_token);
+            if (!googleVerification.success) {
+                return googleVerification;
+            }
+
+            const { email } = googleVerification.data;
+
+            // The Google email must not already belong to a different account.
+            const existsResult = await this.query(
+                `SELECT id FROM managerial_auth WHERE (email = $1 OR login = $1) AND id <> $2 LIMIT 1`,
+                [email, userId]
+            );
+            if (existsResult.data.length > 0) {
+                return { success: false, error: 'This Google account is already linked to another user' };
+            }
+
+            const userResult = await this.query(`SELECT * FROM managerial_auth WHERE id = $1`, [userId]);
+            if (userResult.data.length === 0) {
+                return { success: false, error: 'User not found' };
+            }
+            const user = userResult.data[0];
+
+            const updatedProfile = this.buildProfileWithAuth(user.profile, {
+                authProvider: 'google'
+            }, Boolean(user.password));
+            updatedProfile.email_verified = true;
+
+            const updateResult = await this.query(
+                `UPDATE managerial_auth
+                 SET email = $1, profile = $2, updated_at = NOW()
+                 WHERE id = $3`,
+                [email, JSON.stringify(updatedProfile), userId]
+            );
+
+            if (!updateResult.success) {
+                return { success: false, error: 'Failed to connect Google account' };
+            }
+
+            console.log(`Google connected for user ${userId}: ${sanitizeContactForLog(email, 'email')}`);
+            return { success: true, message: 'Google account connected', email };
+        } catch (error) {
+            console.error('Error in connectGoogle:', error);
+            return { success: false, error: 'An error occurred while connecting Google' };
+        }
+    }
+
+    /**
+     * RESET PASSWORD with OTP - phone only (OTP via SMS). Revokes all existing
+     * sessions so other devices are logged out after a reset. Legacy email-only
+     * accounts without a phone recover via Google login instead.
+     * @param {string} contact - Phone number
      * @param {string} otp - OTP code
      * @param {string} newPassword - New password
      * @returns {Promise<{success: boolean, message?: string, error?: string}>}
      */
     resetPasswordWithOTP = async (contact, otp, newPassword) => {
         try {
-            const normalizedContact = normalizeContact(contact);
+            const { contactType, value } = this.resolveContact(contact);
 
-            if (!isValidEmail(normalizedContact)) {
+            if (contactType !== 'phone') {
                 return {
                     success: false,
-                    error: 'Invalid email format'
+                    error: 'Enter a valid phone number'
                 };
             }
 
-            const otpVerification = await this.verifyOTP(normalizedContact, otp);
+            if (!newPassword || `${newPassword}`.trim().length < 6) {
+                return {
+                    success: false,
+                    error: 'Password must be at least 6 characters long'
+                };
+            }
+
+            const otpVerification = await this.verifyOTP(value, otp);
             if (!otpVerification.success) {
                 return otpVerification;
             }
@@ -616,23 +895,28 @@ class AuthService extends Service {
             const salt = await bcrypt.genSalt(10);
             const hashedPass = await bcrypt.hash(newPassword, salt);
 
-            const updateQuery = `
-                UPDATE managerial_auth 
-                SET password = $1 
-                WHERE login = $2
-            `;
-
-            const updateResult = await this.query(updateQuery, [hashedPass, normalizedContact]);
+            const updateResult = await this.query(
+                `UPDATE managerial_auth
+                 SET password = $1, updated_at = NOW()
+                 WHERE login = $2 OR phone = $2
+                 RETURNING id`,
+                [hashedPass, value]
+            );
 
             if (updateResult.success && updateResult.rowCount > 0) {
-                console.log(`Password reset for ${sanitizeContactForLog(normalizedContact, 'email')}`);
+                // Log out all devices after a password reset.
+                await this.query(
+                    `DELETE FROM auth_session WHERE user_id = $1`,
+                    [updateResult.data[0].id]
+                );
+                console.log(`Password reset for ${sanitizeContactForLog(value, contactType)}`);
                 return {
                     success: true,
                     message: 'Password updated successfully'
                 };
             }
 
-            console.error(`Failed to update password - no rows affected for: ${sanitizeContactForLog(normalizedContact, 'email')}`);
+            console.error(`Failed to update password - no rows affected for: ${sanitizeContactForLog(value, contactType)}`);
             return {
                 success: false,
                 error: 'Failed to update password - user not found'

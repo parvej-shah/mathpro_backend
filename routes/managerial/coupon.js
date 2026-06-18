@@ -2,6 +2,7 @@ const router = require("express-promise-router")();
 const { CouponController } = require("../../controllers/managerial/coupon");
 const { requirePermission, requireAnyPermission } = require("../../service/authMiddleWares");
 const { PERMISSIONS } = require("../../util/permissions");
+const { actorLimiter } = require("../../util/rateLimitPolicies");
 
 const couponController = new CouponController();
 
@@ -16,79 +17,93 @@ const requireCouponOrAnalyticsOrRevenue = requireAnyPermission([
   PERMISSIONS.ANALYTICS.MANAGE.ALL,
 ]);
 
+const couponReadLimit = actorLimiter(
+  "admin-coupon:read",
+  20,
+  15 * 60 * 1000,
+  { message: "Too many coupon requests. Please try again later." }
+);
+
+const couponWriteLimit = actorLimiter(
+  "admin-coupon:write",
+  10,
+  15 * 60 * 1000,
+  { message: "Too many coupon requests. Please try again later." }
+);
+
 // IMPORTANT: Specific routes must come BEFORE parameterized routes (/:id)
 // Otherwise Express will match "available-courses" or "analytics" as an ID
 
 // Available courses for coupon association (must be before /:id)
 router
   .route("/available-courses")
-  .get(requireCouponManage, couponController.getAvailableCourses);
+  .get(requireCouponManage, couponReadLimit, couponController.getAvailableCourses);
 
 // Available bundles for coupon association (must be before /:id)
 router
   .route("/available-bundles")
-  .get(requireCouponManage, couponController.getAvailableBundles);
+  .get(requireCouponManage, couponReadLimit, couponController.getAvailableBundles);
 
 // Click tracking endpoints (must be before /:id)
 router
   .route("/coupon-clicks")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getAllCouponClicks);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getAllCouponClicks);
 
 // Analytics and reporting endpoints (must be before /:id)
 router
   .route("/analytics/statistics")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getCouponStatistics);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getCouponStatistics);
 router
   .route("/analytics/revenue-impact")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getRevenueImpactAnalytics);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getRevenueImpactAnalytics);
 router
   .route("/analytics/top-performing")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getTopPerformingCoupons);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getTopPerformingCoupons);
 router
   .route("/analytics/usage-report")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getCouponUsageReport);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getCouponUsageReport);
 router
   .route("/analytics/dashboard")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getAnalyticsDashboard);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getAnalyticsDashboard);
 
 // Admin coupon management routes
-router.route("/").get(requireCouponManage, couponController.list);
-router.route("/").post(requireCouponManage, couponController.create);
+router.route("/").get(requireCouponManage, couponReadLimit, couponController.list);
+router.route("/").post(requireCouponManage, couponWriteLimit, couponController.create);
 
 // Parameterized routes (must come AFTER specific routes)
-router.route("/:id").get(requireCouponManage, couponController.getCoupon);
-router.route("/:id").put(requireCouponManage, couponController.update);
-router.route("/:id").delete(requireCouponManage, couponController.deleteCoupon);
+router.route("/:id").get(requireCouponManage, couponReadLimit, couponController.getCoupon);
+router.route("/:id").put(requireCouponManage, couponWriteLimit, couponController.update);
+router.route("/:id").delete(requireCouponManage, couponWriteLimit, couponController.deleteCoupon);
 
 // Course association management
 router
   .route("/:id/courses")
-  .get(requireCouponManage, couponController.getCouponCourses);
+  .get(requireCouponManage, couponReadLimit, couponController.getCouponCourses);
 router
   .route("/:id/courses")
-  .post(requireCouponManage, couponController.addCoursesToCoupon);
+  .post(requireCouponManage, couponWriteLimit, couponController.addCoursesToCoupon);
 router
   .route("/:id/courses")
-  .delete(requireCouponManage, couponController.removeCoursesFromCoupon);
+  .delete(requireCouponManage, couponWriteLimit, couponController.removeCoursesFromCoupon);
 
 // Bundle association management
 router
   .route("/:id/bundles")
-  .get(requireCouponManage, couponController.getCouponBundles);
+  .get(requireCouponManage, couponReadLimit, couponController.getCouponBundles);
 router
   .route("/:id/bundles")
-  .post(requireCouponManage, couponController.addBundlesToCoupon);
+  .post(requireCouponManage, couponWriteLimit, couponController.addBundlesToCoupon);
 router
   .route("/:id/bundles")
-  .delete(requireCouponManage, couponController.removeBundlesFromCoupon);
+  .delete(requireCouponManage, couponWriteLimit, couponController.removeBundlesFromCoupon);
 
 // Click tracking for specific coupon
 router
   .route("/:id/clicks")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getCouponClicks);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getCouponClicks);
 
 router
   .route("/:id/click-stats")
-  .get(requireCouponOrAnalyticsOrRevenue, couponController.getCouponClickStats);
+  .get(requireCouponOrAnalyticsOrRevenue, couponReadLimit, couponController.getCouponClickStats);
 
 module.exports = router;

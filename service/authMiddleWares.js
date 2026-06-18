@@ -1,6 +1,23 @@
 const jwt = require('jsonwebtoken');
 const { managerialAccountTypes } = require('../util/constants');
 const { PERMISSIONS } = require('../util/permissions');
+const { Service } = require('./base');
+
+const sessionStore = new Service();
+
+// For regular users (type=3), tokens carry a session id (sid) tracked server-side
+// to enforce the max-device limit. Returns true if the session is still active.
+// Tokens without a sid (e.g. legacy tokens issued before sessions) are allowed
+// through so existing logins are not invalidated.
+const isSessionActive = async (decoded) => {
+    if (decoded.type !== managerialAccountTypes.regular) return true;
+    if (!decoded.sid) return true;
+    const result = await sessionStore.query(
+        `SELECT 1 FROM auth_session WHERE user_id = $1 AND session_id = $2 LIMIT 1`,
+        [parseInt(decoded.id), decoded.sid]
+    );
+    return result.success && result.data.length > 0;
+};
 
 // ========================================
 // LEGACY MIDDLEWARE (Type-based)
@@ -22,7 +39,7 @@ var authenticateAdmin=(req, res, next)=>{
     }
 }
 
-var authenticateUser=(req, res, next)=>{
+var authenticateUser=async (req, res, next)=>{
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
     if (token == null) return res.sendStatus(401)
@@ -30,6 +47,13 @@ var authenticateUser=(req, res, next)=>{
         var decoded = jwt.verify(token, process.env.JWT_SECRET);
         if(decoded.type!==managerialAccountTypes.regular) {
             return res.sendStatus(403)
+        }
+        if (!(await isSessionActive(decoded))) {
+            return res.status(401).json({
+                success: false,
+                message: 'Session ended. Please log in again.',
+                error: 'SESSION_REVOKED'
+            })
         }
         req.user = decoded;
         req.body['user_id']=parseInt(decoded.id)

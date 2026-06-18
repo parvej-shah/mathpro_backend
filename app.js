@@ -22,7 +22,6 @@ const userFaqRoutes = require("./routes/user/faq");
 const adminTestimonialRoutes = require("./routes/managerial/testimonial");
 const userTestimonialRoutes = require("./routes/user/testimonial");
 
-const inAuthRoutes = require("./routes/in/auth");
 const { user } = require("pg/lib/defaults");
 
 const app = express();
@@ -121,8 +120,6 @@ app.use("/user/instructor", require("./routes/user/instructor"));
 // Streak tracking routes
 app.use("/user/streak", require("./routes/user/streak"));
 app.use("/admin/streak", require("./routes/managerial/streak"));
-
-app.use("/in/auth", inAuthRoutes);
 
 // Import the new route modules
 const revenueRoutes = require("./routes/managerial/revenue");

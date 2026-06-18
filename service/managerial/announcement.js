@@ -17,13 +17,10 @@ class AnnouncementService extends Service {
     `notification_is_sent`,
     `created_at`,
   ];
-  has_email = false;
   has_notification = false;
   sanitizeSentMethods = (sentMethods) => {
     if (!Array.isArray(sentMethods)) return [];
-    return sentMethods.filter((method) =>
-      method === "email" || method === "notification"
-    );
+    return sentMethods.filter((method) => method === "notification");
   };
   getColumnsWithParenthesis = () => {
     var result = `(`;
@@ -48,7 +45,6 @@ class AnnouncementService extends Service {
   }
   intitializeBooleans = (reqObj) => {
     const sanitizedMethods = this.sanitizeSentMethods(reqObj);
-    this.has_email = sanitizedMethods.includes('email');
     this.has_notification = sanitizedMethods.includes('notification');
   }
   async getAllAnnouncementsPaginated(limit, offset, access) {
@@ -79,15 +75,14 @@ class AnnouncementService extends Service {
   }
   async create(fk_id, reqObj) {
     var query = `insert into ${this.table} ${this.getColumnsWithParenthesis()} values ${this.getWildCards()} returning id`;
-    const sanitizedSentMethods = this.sanitizeSentMethods(reqObj.sent_methods);
     var params = [
       ...this.cols.map((c) => {
-        if(c==='user_type') return reqObj['user_sender_type'];
+        if(c==='user_type') return 3;
         else if (c === "created_at") return parseInt(Date.now() / 1000);
         else if (c === "email_is_sent") return false;
         else if (c === "sms_is_sent") return false;
         else if (c === "notification_is_sent") return false;
-        else if (c === "sent_methods") return sanitizedSentMethods;
+        else if (c === "sent_methods") return ["notification"];
         else return reqObj[c];
       }),fk_id
     ];
@@ -102,15 +97,14 @@ class AnnouncementService extends Service {
   }
   updateEntry(id, reqObj) { 
     var query = `update ${this.table} set ${this.getUpdatePairs()} where id=$${this.cols.length + 1} returning id`;
-    const sanitizedSentMethods = this.sanitizeSentMethods(reqObj.sent_methods);
     var params = [
       ...this.cols.map((c) => {
-        if (c === "user_type") return reqObj["user_sender_type"];
+        if (c === "user_type") return 3;
         else if (c === "created_at") return parseInt(Date.now() / 1000);
         else if (c === "email_is_sent") return false;
         else if (c === "sms_is_sent") return false;
         else if (c === "notification_is_sent") return false;
-        else if (c === "sent_methods") return sanitizedSentMethods;
+        else if (c === "sent_methods") return ["notification"];
         else return reqObj[c];
       }),id
     ];
@@ -126,15 +120,11 @@ class AnnouncementService extends Service {
       return { success: false, message: 'Announcement not found', data: null };
     }
     this.intitializeBooleans(announcement.sent_methods || []);
-    // console.log("Announcement: ",announcement);
-    // console.log("Has email: ",this.has_email);
-    // console.log("Has sms: ",this.has_sms);
-    // console.log("Has notification: ",this.has_notification);
     if (this.has_notification) {
-      this.sendNotification(announcement);
-    }
-    if (this.has_email) {
-      this.sendEmail(announcement);
+      const notificationResult = await this.sendNotification(announcement);
+      if (!notificationResult.success) {
+        return notificationResult;
+      }
     }
     return announcement_query_execution;
   }
@@ -145,35 +135,34 @@ class AnnouncementService extends Service {
     return result;
   }
   async sendNotification(announcement) {
-    var query2 = `INSERT INTO notification (type, data, user_id, course_id, is_read, timestamp)
+    var query2 = `INSERT INTO notification (type, data, user_id, course_id, is_read, timestamp, announcement_id)
                     SELECT 
 	                    $1 AS type,
                         $2 AS data,
                         t.user_id AS user_id,
                         c.id AS course_id,
                         $3 AS is_read,
-                        $4 AS timestamp
+                        $4 AS timestamp,
+                        $5 AS announcement_id
                     FROM course AS c
                     JOIN takes AS t ON c.id = t.course_id
-                    WHERE c.id = $5`;
+                    WHERE c.id = $6`;
     var params2 = [
       "ANNOUNCEMENT",
       {
         title: announcement.subject,
-        body: announcement.description,
-        moduleData: {}, //NEED TO FIX MODULE DATA TO CHAPTER DATA
+        moduleData: {},
       },
       false,
       parseInt(Date.now() / 1000),
       announcement.course_id,
+      announcement.id,
     ];
     var notification_generator = await this.query(query2, params2);
     if (notification_generator.success) {
-      this.updateNotificationIsSentStatus(announcement.id);
+      await this.updateNotificationIsSentStatus(announcement.id);
     }
-  }
-  async sendEmail(announcement) {
-    //Implement email sending here
+    return notification_generator;
   }
 }
 

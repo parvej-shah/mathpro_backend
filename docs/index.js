@@ -357,73 +357,6 @@ module.exports = {
         },
       },
     },
-    "/in/auth/register": {
-      post: {
-        security: [],
-        tags: ["In"], // operation's tag
-        description: "Register", // short desc
-        operationId: "inAuthRegister", // unique operation id
-        parameters: [], // expected params
-        requestBody: {
-          // expected request body
-          content: {
-            // content-type
-            "application/json": {
-              schema: {
-                type: "object",
-                description: "Register",
-                example: {
-                  login: "mehrab.haque.0001@gmail.com",
-                  password: "passWord123$$$",
-                  name: "Md. Mehrab Haque",
-                },
-              },
-            },
-          },
-        },
-        responses: {
-          200: {
-            description: "Registration Successful",
-          },
-          400: {
-            description: "Registration Failed",
-          },
-        },
-      },
-    },
-    "/in/auth/login": {
-      post: {
-        security: [],
-        tags: ["In"], // operation's tag
-        description: "Login", // short desc
-        operationId: "inAuthLogin", // unique operation id
-        parameters: [], // expected params
-        requestBody: {
-          // expected request body
-          content: {
-            // content-type
-            "application/json": {
-              schema: {
-                type: "object",
-                description: "Login",
-                example: {
-                  login: "mehrab.haque.0001@gmail.com",
-                  password: "passWord123$$$",
-                },
-              },
-            },
-          },
-        },
-        responses: {
-          200: {
-            description: "Login Successful",
-          },
-          400: {
-            description: "Login Failed",
-          },
-        },
-      },
-    },
     "/in/item/list/{platform}/{level}/{parentId}": {
       get: {
         security: [
@@ -2982,7 +2915,7 @@ module.exports = {
       post: {
         security: [{ bearerAuth: [] }],
         tags: ["Admin Announcement"],
-        description: "Create new announcement",
+        description: "Create new student announcement (server enforces web notification delivery)",
         operationId: "adminAnnouncementCreate",
         parameters: [
           {
@@ -3077,7 +3010,7 @@ module.exports = {
       post: {
         security: [{ bearerAuth: [] }],
         tags: ["Admin Announcement"],
-        description: "Send announcement to students",
+        description: "Send announcement to students (server ignores any channel toggles and uses web notification only)",
         operationId: "adminAnnouncementSend",
         parameters: [
           {
@@ -3087,20 +3020,6 @@ module.exports = {
             description: "Announcement ID",
           },
         ],
-        requestBody: {
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  send_email: { type: "boolean", example: true },
-                  send_push: { type: "boolean", example: true },
-                  send_sms: { type: "boolean", example: false },
-                },
-              },
-            },
-          },
-        },
         responses: {
           200: { description: "Announcement sent successfully" },
           400: { description: "Cannot send announcement" },

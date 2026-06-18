@@ -3,7 +3,7 @@ const router = express.Router();
 const AdminStreakController = require('../../controllers/managerial/streakController');
 const { requirePermission } = require('../../service/authMiddleWares');
 const { PERMISSIONS } = require('../../util/permissions');
-const { rateLimiter } = require('../../util/rateLimiter');
+const { actorLimiter } = require('../../util/rateLimitPolicies');
 
 const adminStreakController = new AdminStreakController();
 
@@ -55,7 +55,7 @@ const requireStreakManage = requirePermission(PERMISSIONS.STREAK.MANAGE.ALL);
  *                     engagementRate:
  *                       type: string
  */
-router.get('/analytics', requireStreakManage, rateLimiter(100, 15 * 60 * 1000), adminStreakController.getStreakAnalytics);
+router.get('/analytics', requireStreakManage, actorLimiter('admin-streak:analytics', 50, 15 * 60 * 1000), adminStreakController.getStreakAnalytics);
 
 /**
  * @swagger
@@ -76,7 +76,7 @@ router.get('/analytics', requireStreakManage, rateLimiter(100, 15 * 60 * 1000), 
  *       200:
  *         description: User streak details
  */
-router.get('/user/:userId', requireStreakManage, rateLimiter(200, 15 * 60 * 1000), adminStreakController.getUserStreakDetails);
+router.get('/user/:userId', requireStreakManage, actorLimiter('admin-streak:user', 100, 15 * 60 * 1000), adminStreakController.getUserStreakDetails);
 
 /**
  * @swagger
@@ -103,7 +103,7 @@ router.get('/user/:userId', requireStreakManage, rateLimiter(200, 15 * 60 * 1000
  *       200:
  *         description: Admin course leaderboard
  */
-router.get('/leaderboard/:courseId', requireStreakManage, rateLimiter(100, 15 * 60 * 1000), adminStreakController.getAdminCourseLeaderboard);
+router.get('/leaderboard/:courseId', requireStreakManage, actorLimiter('admin-streak:leaderboard', 50, 15 * 60 * 1000), adminStreakController.getAdminCourseLeaderboard);
 
 /**
  * @swagger
@@ -138,7 +138,7 @@ router.get('/leaderboard/:courseId', requireStreakManage, rateLimiter(100, 15 * 
  *       200:
  *         description: Streak updated successfully
  */
-router.post('/manual-update', requireStreakManage, rateLimiter(50, 15 * 60 * 1000), adminStreakController.manualStreakUpdate);
+router.post('/manual-update', requireStreakManage, actorLimiter('admin-streak:manual-update', 20, 15 * 60 * 1000), adminStreakController.manualStreakUpdate);
 
 /**
  * @swagger
@@ -175,7 +175,7 @@ router.post('/manual-update', requireStreakManage, rateLimiter(50, 15 * 60 * 100
  *       200:
  *         description: Bulk update completed
  */
-router.post('/bulk-update', requireStreakManage, rateLimiter(10, 15 * 60 * 1000), adminStreakController.bulkStreakUpdate);
+router.post('/bulk-update', requireStreakManage, actorLimiter('admin-streak:bulk-update', 5, 15 * 60 * 1000), adminStreakController.bulkStreakUpdate);
 
 /**
  * @swagger
@@ -201,6 +201,6 @@ router.post('/bulk-update', requireStreakManage, rateLimiter(10, 15 * 60 * 1000)
  *       200:
  *         description: Streak trends data
  */
-router.get('/trends', requireStreakManage, rateLimiter(50, 15 * 60 * 1000), adminStreakController.getStreakTrends);
+router.get('/trends', requireStreakManage, actorLimiter('admin-streak:trends', 50, 15 * 60 * 1000), adminStreakController.getStreakTrends);
 
 module.exports = router;

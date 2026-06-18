@@ -5,10 +5,60 @@ class NotificationService extends Service {
     super();
   }
 
+  normalizeNotificationRow(notification) {
+    const {
+      announcement_subject,
+      announcement_description,
+      ...baseNotification
+    } = notification;
+
+    const data = baseNotification.data && typeof baseNotification.data === 'object'
+      ? notification.data
+      : {};
+
+    if (baseNotification.type === 'ANNOUNCEMENT') {
+      const body = data.body ?? announcement_description ?? null;
+      const title = data.title ?? announcement_subject ?? null;
+
+      return {
+        ...baseNotification,
+        data: {
+          ...data,
+          title,
+          body,
+          html: data.html ?? body,
+          moduleData: data.moduleData ?? {},
+        },
+      };
+    }
+
+    return {
+      ...baseNotification,
+      data: {
+        ...data,
+        moduleData: data.moduleData ?? {},
+      },
+    };
+  }
+
   async getNotificationsPaginated(userId, courseId, limit, offset) {
-    var query = `select * from notification where course_id = $1 and user_id = $2 order by timestamp desc limit $3 offset $4`;
+    var query = `
+      select
+        n.*,
+        a.subject as announcement_subject,
+        a.description as announcement_description
+      from notification n
+      left join announcements a on a.id = n.announcement_id
+      where n.course_id = $1 and n.user_id = $2
+      order by n.timestamp desc
+      limit $3 offset $4`;
     var params = [courseId, userId, limit, offset];
     var result = await this.query(query, params);
+    if (result.success) {
+      result.data = result.data.map((notification) =>
+        this.normalizeNotificationRow(notification)
+      );
+    }
     return result;
   }
 

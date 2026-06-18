@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const StreakController = require('../../controllers/user/streakController');
 const { authenticateUser } = require('../../service/authMiddleWares');
-const { rateLimiter } = require('../../util/rateLimiter');
+const { actorLimiter } = require('../../util/rateLimitPolicies');
 
 const streakController = new StreakController();
 
@@ -70,7 +70,7 @@ const streakController = new StreakController();
  */
 router.post('/complete-lesson', 
     authenticateUser, 
-    rateLimiter(100, 15 * 60 * 1000), // 100 requests per 15 minutes
+    actorLimiter('streak:complete-lesson', 30, 15 * 60 * 1000), // 30 requests per 15 minutes
     streakController.completeLessonStreak
 );
 
@@ -104,7 +104,7 @@ router.post('/complete-lesson',
  */
 router.get('/course/:courseId', 
     authenticateUser, 
-    rateLimiter(200, 15 * 60 * 1000), // 200 requests per 15 minutes
+    actorLimiter('streak:course', 60, 15 * 60 * 1000), // 60 requests per 15 minutes
     streakController.getCourseStreak
 );
 
@@ -144,7 +144,7 @@ router.get('/course/:courseId',
  */
 router.get('/dashboard', 
     authenticateUser, 
-    rateLimiter(100, 15 * 60 * 1000), // 100 requests per 15 minutes
+    actorLimiter('streak:dashboard', 60, 15 * 60 * 1000), // 60 requests per 15 minutes
     streakController.getDashboardStreaks
 );
 
@@ -199,7 +199,7 @@ router.get('/dashboard',
  */
 router.get('/leaderboard/:courseId', 
     authenticateUser, 
-    rateLimiter(50, 15 * 60 * 1000), // 50 requests per 15 minutes
+    actorLimiter('streak:leaderboard', 30, 15 * 60 * 1000), // 30 requests per 15 minutes
     streakController.getCourseLeaderboard
 );
 
