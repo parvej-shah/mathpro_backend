@@ -18,30 +18,25 @@ class AdminService extends Service {
     }
 
     /**
-     * Generate random password
-     * @param {number} length - Password length (default 12)
+     * Generate random password (alphanumeric only — easy to read/type from SMS)
+     * @param {number} length - Password length (default 8)
      * @returns {string}
      */
-    generatePassword = (length = 12) => {
+    generatePassword = (length = 8) => {
         const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const lowercase = 'abcdefghijklmnopqrstuvwxyz';
         const numbers = '0123456789';
-        const special = '!@#$%^&*';
-        const allChars = uppercase + lowercase + numbers + special;
+        const allChars = uppercase + lowercase + numbers;
 
         let password = '';
-        // Ensure at least one of each type
         password += uppercase[Math.floor(Math.random() * uppercase.length)];
         password += lowercase[Math.floor(Math.random() * lowercase.length)];
         password += numbers[Math.floor(Math.random() * numbers.length)];
-        password += special[Math.floor(Math.random() * special.length)];
 
-        // Fill the rest randomly
         for (let i = password.length; i < length; i++) {
             password += allChars[Math.floor(Math.random() * allChars.length)];
         }
 
-        // Shuffle the password
         return password.split('').sort(() => Math.random() - 0.5).join('');
     }
 
@@ -254,7 +249,7 @@ class AdminService extends Service {
 
     /**
      * CREATE - Create new admin
-     * @param {Object} adminData - {name, type, email, phone?, profile?}
+     * @param {Object} adminData - {name, type, phone, email?, profile?}
      * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
      */
     create = async (adminData) => {
@@ -262,10 +257,10 @@ class AdminService extends Service {
             const { name, type, email, phone, profile } = adminData;
 
             // Validate required fields
-            if (!name || !type || !email) {
+            if (!name || !type || !phone) {
                 return {
                     success: false,
-                    error: 'Name, type, and email are required'
+                    error: 'Name, type, and phone are required'
                 };
             }
 
@@ -277,45 +272,45 @@ class AdminService extends Service {
                 };
             }
 
-            // Validate and normalize email
-            const normalizedEmail = normalizeContact(email);
-            if (!isValidEmail(normalizedEmail)) {
+            // Validate and normalize phone
+            const normalizedPhone = normalizeContact(phone);
+            if (!isValidPhone(normalizedPhone)) {
                 return {
                     success: false,
-                    error: 'Invalid email format'
+                    error: 'Invalid phone number. Must be 11 digits starting with 01'
                 };
             }
 
-            // Validate phone if provided
-            let normalizedPhone = null;
-            if (phone) {
-                normalizedPhone = normalizeContact(phone);
-                if (!isValidPhone(normalizedPhone)) {
+            // Validate email if provided
+            let normalizedEmail = null;
+            if (email) {
+                normalizedEmail = normalizeContact(email);
+                if (!isValidEmail(normalizedEmail)) {
                     return {
                         success: false,
-                        error: 'Invalid phone number. Must be 11 digits starting with 01'
+                        error: 'Invalid email format'
                     };
                 }
             }
 
-            // Check if email already exists
-            const emailCheckQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR email = $1`;
-            const emailCheckResult = await this.query(emailCheckQuery, [normalizedEmail]);
-            if (emailCheckResult.data.length > 0) {
+            // Check if phone already exists
+            const phoneCheckQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`;
+            const phoneCheckResult = await this.query(phoneCheckQuery, [normalizedPhone]);
+            if (phoneCheckResult.data.length > 0) {
                 return {
                     success: false,
-                    error: 'Email already exists'
+                    error: 'Phone number already exists'
                 };
             }
 
-            // Check if phone already exists (if provided)
-            if (normalizedPhone) {
-                const phoneCheckQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`;
-                const phoneCheckResult = await this.query(phoneCheckQuery, [normalizedPhone]);
-                if (phoneCheckResult.data.length > 0) {
+            // Check if email already exists (if provided)
+            if (normalizedEmail) {
+                const emailCheckQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR email = $1`;
+                const emailCheckResult = await this.query(emailCheckQuery, [normalizedEmail]);
+                if (emailCheckResult.data.length > 0) {
                     return {
                         success: false,
-                        error: 'Phone number already exists'
+                        error: 'Email already exists'
                     };
                 }
             }
@@ -325,7 +320,7 @@ class AdminService extends Service {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(plainPassword, salt);
 
-            // Insert admin
+            // login = phone (primary identifier for SMS-based auth)
             const insertQuery = `
                 INSERT INTO managerial_auth (
                     name, type, login, email, phone, password, profile
@@ -336,7 +331,7 @@ class AdminService extends Service {
             const insertResult = await this.query(insertQuery, [
                 name,
                 type,
-                normalizedEmail,
+                normalizedPhone,
                 normalizedEmail,
                 normalizedPhone,
                 hashedPassword,
@@ -360,23 +355,18 @@ class AdminService extends Service {
 
             const newAdmin = insertResult.data[0];
 
-            // Send credentials email
-            const emailResult = await this.sendAdminCredentialsEmail(
-                normalizedEmail,
-                name,
-                normalizedEmail,
-                plainPassword
-            );
+            // Send credentials via SMS
+            const smsText = `Math Pro Admin\nName: ${name}\nLogin: ${normalizedPhone}\nPassword: ${plainPassword}\nLogin at: https://admin.mathpro.academy/`;
+            const smsResult = await messagingService.sendMessage(normalizedPhone, smsText);
 
-            if (!emailResult.success) {
-                console.error('Failed to send credentials email:', emailResult.error);
-                // Don't fail the creation, just log the error
+            if (!smsResult.success) {
+                console.error('Failed to send credentials SMS:', smsResult.error);
             }
 
             return {
                 success: true,
                 data: newAdmin,
-                message: 'Admin created successfully. Credentials have been sent to email.'
+                message: 'Admin created successfully. Credentials have been sent via SMS.'
             };
         } catch (error) {
             console.error('Error in admin create:', error);
@@ -384,6 +374,104 @@ class AdminService extends Service {
                 success: false,
                 error: 'An error occurred while creating admin'
             };
+        }
+    }
+
+    /**
+     * PROMOTE - Promote an existing regular user (type 3) to admin or moderator
+     * @param {number} userId - The existing user's ID
+     * @param {number} newType - Target type (1 = Admin, 2 = Moderator)
+     * @returns {Promise<{success: boolean, data?: Object, error?: string}>}
+     */
+    promote = async (userId, newType) => {
+        try {
+            if (!userId || !newType) {
+                return { success: false, error: 'User ID and type are required' };
+            }
+
+            if (newType !== managerialAccountTypes.admin && newType !== managerialAccountTypes.moderator) {
+                return { success: false, error: 'Type must be 1 (Admin) or 2 (Moderator)' };
+            }
+
+            const userResult = await this.query(
+                `SELECT id, name, type, login, email, phone, profile FROM managerial_auth WHERE id = $1`,
+                [userId]
+            );
+
+            if (!userResult.data || userResult.data.length === 0) {
+                return { success: false, error: 'User not found' };
+            }
+
+            const user = userResult.data[0];
+
+            if (user.type === managerialAccountTypes.admin || user.type === managerialAccountTypes.moderator) {
+                return { success: false, error: 'User is already an admin or moderator' };
+            }
+
+            const updateResult = await this.query(
+                `UPDATE managerial_auth SET type = $1, updated_at = NOW() WHERE id = $2
+                 RETURNING id, name, type, login, email, phone, profile, created_at, updated_at`,
+                [newType, userId]
+            );
+
+            if (!updateResult.success || !updateResult.data || updateResult.data.length === 0) {
+                return { success: false, error: 'Failed to promote user' };
+            }
+
+            const typeName = newType === managerialAccountTypes.admin ? 'Admin' : 'Moderator';
+
+            if (user.phone) {
+                const smsText = `Math Pro: You have been promoted to ${typeName}. You can now access the admin panel at https://admin.mathpro.academy/`;
+                const smsResult = await messagingService.sendMessage(user.phone, smsText);
+                if (!smsResult.success) {
+                    console.error('Failed to send promotion SMS:', smsResult.error);
+                }
+            }
+
+            return {
+                success: true,
+                data: updateResult.data[0],
+                message: `User promoted to ${typeName} successfully`
+            };
+        } catch (error) {
+            console.error('Error in admin promote:', error);
+            return { success: false, error: 'An error occurred while promoting user' };
+        }
+    }
+
+    /**
+     * SEARCH USERS - Search regular users (type 3) by phone or name for promotion
+     * @param {string} query - Search term (phone number or name)
+     * @returns {Promise<{success: boolean, data?: Array, error?: string}>}
+     */
+    searchUsers = async (query) => {
+        try {
+            if (!query || query.trim().length < 2) {
+                return { success: false, error: 'Search query must be at least 2 characters' };
+            }
+
+            const trimmed = query.trim();
+            const searchQuery = `
+                SELECT id, name, type, login, email, phone, created_at
+                FROM managerial_auth
+                WHERE type = $1
+                  AND (phone ILIKE $2 OR name ILIKE $2 OR login ILIKE $2 OR email ILIKE $2)
+                ORDER BY name ASC
+                LIMIT 20
+            `;
+
+            const result = await this.query(searchQuery, [
+                managerialAccountTypes.regular,
+                `%${trimmed}%`
+            ]);
+
+            return {
+                success: true,
+                data: result.data || []
+            };
+        } catch (error) {
+            console.error('Error in searchUsers:', error);
+            return { success: false, error: 'An error occurred while searching users' };
         }
     }
 
@@ -652,23 +740,19 @@ class AdminService extends Service {
                 };
             }
 
-            // Send credentials email
-            const emailResult = await this.sendAdminCredentialsEmail(
-                admin.email || admin.login,
-                admin.name,
-                admin.login,
-                plainPassword
-            );
-
-            if (!emailResult.success) {
-                console.error('Failed to send credentials email:', emailResult.error);
-                // Don't fail the operation, just log the error
+            // Send new password via SMS if admin has a phone number
+            if (admin.phone) {
+                const smsText = `Math Pro: Your password has been reset.\nLogin: ${admin.login}\nNew Password: ${plainPassword}`;
+                const smsResult = await messagingService.sendMessage(admin.phone, smsText);
+                if (!smsResult.success) {
+                    console.error('Failed to send password reset SMS:', smsResult.error);
+                }
             }
 
             return {
                 success: true,
                 data: updateResult.data[0],
-                message: 'Password has been reset and sent to admin email'
+                message: 'Password has been reset and sent via SMS'
             };
         } catch (error) {
             console.error('Error in admin setPassword:', error);

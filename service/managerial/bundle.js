@@ -5,6 +5,38 @@ class BundleService extends Service {
     super();
   }
 
+  normalizeTag = (tag) =>
+    typeof tag === "string" ? tag.replace(/\s+/g, " ").trim() : "";
+
+  uniqueTags = (tags = []) => {
+    const unique = new Map();
+
+    tags.forEach((tag) => {
+      const normalized = this.normalizeTag(tag);
+      if (!normalized || unique.has(normalized)) return;
+      unique.set(normalized, tag);
+    });
+
+    return Array.from(unique.values());
+  };
+
+  attachBundleTags = (bundle) => {
+    if (!bundle) return bundle;
+
+    const courseTags = Array.isArray(bundle.courses)
+      ? bundle.courses.flatMap((course) =>
+          Array.isArray(course.tags) ? course.tags : []
+        )
+      : [];
+
+    bundle.tags = this.uniqueTags([
+      ...(Array.isArray(bundle.tags) ? bundle.tags : []),
+      ...courseTags,
+    ]);
+
+    return bundle;
+  };
+
   // CRUD Operations for Bundles
   create = async (bundleData) => {
     const query = `
@@ -141,6 +173,7 @@ class BundleService extends Service {
                             'title', c.title,
                             'price', c.price,
                             'url', c.url,
+                            'tags', c.tags,
                             'chips', c.chips
                         )
                     ) FILTER (WHERE c.id IS NOT NULL), 
@@ -155,7 +188,13 @@ class BundleService extends Service {
             GROUP BY b.id
             ORDER BY b.id DESC
         `;
-    return await this.query(query);
+    const result = await this.query(query);
+
+    if (result.success && Array.isArray(result.data)) {
+      result.data = result.data.map((bundle) => this.attachBundleTags(bundle));
+    }
+
+    return result;
   };
 
   getBundleDetails = async (lookupColumn, lookupValue, userId = null) => {
@@ -176,6 +215,7 @@ class BundleService extends Service {
                                 'url', c.url,
                                 'short_description', c.short_description,
                                 'intro_video', c.intro_video,
+                                'tags', c.tags,
                                 'chips', c.chips,
                                 'enrolled', (
                                     (SELECT COUNT(*) FROM takes WHERE course_id IN (SELECT course_id FROM bundle_course WHERE bundle_id = b.id)) + 
@@ -217,6 +257,7 @@ class BundleService extends Service {
                                 'url', c.url,
                                 'short_description', c.short_description,
                                 'intro_video', c.intro_video,
+                                'tags', c.tags,
                                 'chips', c.chips,
                                 'enrolled', (
                                     (SELECT COUNT(*) FROM takes WHERE course_id IN (SELECT course_id FROM bundle_course WHERE bundle_id = b.id)) + 
@@ -264,6 +305,7 @@ class BundleService extends Service {
       }
       
       const bundleData = result.data[0];
+      this.attachBundleTags(bundleData);
       
       if (bundleData.courses && Array.isArray(bundleData.courses) && bundleData.courses.length > 0) {
         bundleData.enrolled = parseInt(bundleData.courses[0].enrolled || 0);
@@ -426,6 +468,7 @@ class BundleService extends Service {
                             'title', c.title,
                             'url', c.url,
                             'short_description', c.short_description,
+                            'tags', c.tags,
                             'chips', c.chips,
                             'enrolled', CASE WHEN t.user_id IS NOT NULL THEN true ELSE false END,
                             'enrollment_date', t.timestamp
@@ -443,7 +486,13 @@ class BundleService extends Service {
             GROUP BY b.id, bp.amount, bp.transaction_id, bp.timestamp
             ORDER BY bp.timestamp DESC
         `;
-    return await this.query(query, [userIdInt]);
+    const result = await this.query(query, [userIdInt]);
+
+    if (result.success && Array.isArray(result.data)) {
+      result.data = result.data.map((bundle) => this.attachBundleTags(bundle));
+    }
+
+    return result;
   };
 
   // Get user's bundle courses (courses from purchased bundles) - SIMPLIFIED

@@ -137,6 +137,69 @@ class AdminController extends Controller {
     }
 
     /**
+     * PROMOTE - Promote existing user to admin/moderator
+     * POST /admin/admins/:id/promote
+     */
+    promote = async (req, res) => {
+        try {
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid user ID',
+                    error: 'INVALID_ID'
+                });
+            }
+
+            const { type } = req.body;
+            if (!type) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Type is required',
+                    error: 'MISSING_TYPE'
+                });
+            }
+
+            const result = await adminService.promote(id, type);
+            return res.status(result.success ? 200 : 400).json(result);
+        } catch (error) {
+            console.error('Error in admin promote controller:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'An error occurred while promoting user',
+                error: 'SERVER_ERROR'
+            });
+        }
+    }
+
+    /**
+     * SEARCH USERS - Search regular users for promotion
+     * GET /admin/admins/search-users?q=...
+     */
+    searchUsers = async (req, res) => {
+        try {
+            const query = req.query.q;
+            if (!query) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Search query (q) is required',
+                    error: 'MISSING_QUERY'
+                });
+            }
+
+            const result = await adminService.searchUsers(query);
+            return res.status(result.success ? 200 : 400).json(result);
+        } catch (error) {
+            console.error('Error in searchUsers controller:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'An error occurred while searching users',
+                error: 'SERVER_ERROR'
+            });
+        }
+    }
+
+    /**
      * DELETE - Delete admin
      * DELETE /admin/admins/:id
      */

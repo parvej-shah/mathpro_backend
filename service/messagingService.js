@@ -1,6 +1,9 @@
 const { default: axios } = require('axios');
 const nodeMailer = require('nodemailer');
 
+const BULKSMS_API_KEY = process.env.BULKSMS_API_KEY;
+const BULKSMS_SENDER_ID = process.env.BULKSMS_SENDER_ID;
+
 let transporter = nodeMailer.createTransport({
   host: 'smtp.zoho.com',
   secure: true,
@@ -47,7 +50,7 @@ class MessagingService{
       try{
         // URL-encode the message text to prevent special characters from breaking URL
         const encodedMessage = encodeURIComponent(text);
-        var response = await axios.post(`http://bulksmsbd.net/api/smsapi?api_key=KnTJvkYZz7wypnpETNsy&type=text&number=${phone}&senderid=8809617623860&message=${encodedMessage}`);
+        var response = await axios.post(`http://bulksmsbd.net/api/smsapi?api_key=${BULKSMS_API_KEY}&type=text&number=${phone}&senderid=${BULKSMS_SENDER_ID}&message=${encodedMessage}`);
         
         // Parse API response code - handle different response formats
         let apiCode = null;
@@ -98,7 +101,7 @@ class MessagingService{
             const phoneNumbers = phones.join(',');
             
             const response = await axios.post(
-                `http://bulksmsbd.net/api/smsapi?api_key=KnTJvkYZz7wypnpETNsy&type=text&number=${phoneNumbers}&senderid=8809617623860&message=${encodedMessage}`
+                `http://bulksmsbd.net/api/smsapi?api_key=${BULKSMS_API_KEY}&type=text&number=${phoneNumbers}&senderid=${BULKSMS_SENDER_ID}&message=${encodedMessage}`
             );
             
             // Parse API response code - handle different response formats
@@ -153,8 +156,8 @@ class MessagingService{
             const response = await axios.post(
                 `http://bulksmsbd.net/api/smsapimany`,
                 {
-                    api_key: 'KnTJvkYZz7wypnpETNsy',
-                    senderid: '8809617623860',
+                    api_key: BULKSMS_API_KEY,
+                    senderid: BULKSMS_SENDER_ID,
                     messages: formattedMessages
                 }
             );
