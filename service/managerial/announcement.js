@@ -135,28 +135,28 @@ class AnnouncementService extends Service {
     return result;
   }
   async sendNotification(announcement) {
-    var query2 = `INSERT INTO notification (type, data, user_id, course_id, is_read, timestamp, announcement_id)
+    var query2 = `INSERT INTO notification (type, data, user_id, course_id, is_read, timestamp)
                     SELECT 
 	                    $1 AS type,
                         $2 AS data,
                         t.user_id AS user_id,
                         c.id AS course_id,
                         $3 AS is_read,
-                        $4 AS timestamp,
-                        $5 AS announcement_id
+                        $4 AS timestamp
                     FROM course AS c
                     JOIN takes AS t ON c.id = t.course_id
-                    WHERE c.id = $6`;
+                    WHERE c.id = $5`;
     var params2 = [
       "ANNOUNCEMENT",
       {
         title: announcement.subject,
+        body: announcement.description,
+        html: announcement.description,
         moduleData: {},
       },
       false,
       parseInt(Date.now() / 1000),
       announcement.course_id,
-      announcement.id,
     ];
     var notification_generator = await this.query(query2, params2);
     if (notification_generator.success) {

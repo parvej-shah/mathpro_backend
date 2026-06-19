@@ -6,19 +6,15 @@ class NotificationService extends Service {
   }
 
   normalizeNotificationRow(notification) {
-    const {
-      announcement_subject,
-      announcement_description,
-      ...baseNotification
-    } = notification;
+    const { ...baseNotification } = notification;
 
     const data = baseNotification.data && typeof baseNotification.data === 'object'
       ? notification.data
       : {};
 
     if (baseNotification.type === 'ANNOUNCEMENT') {
-      const body = data.body ?? announcement_description ?? null;
-      const title = data.title ?? announcement_subject ?? null;
+      const body = data.body ?? null;
+      const title = data.title ?? null;
 
       return {
         ...baseNotification,
@@ -44,11 +40,8 @@ class NotificationService extends Service {
   async getNotificationsPaginated(userId, courseId, limit, offset) {
     var query = `
       select
-        n.*,
-        a.subject as announcement_subject,
-        a.description as announcement_description
+        n.*
       from notification n
-      left join announcements a on a.id = n.announcement_id
       where n.course_id = $1 and n.user_id = $2
       order by n.timestamp desc
       limit $3 offset $4`;
@@ -83,9 +76,7 @@ class NotificationService extends Service {
   }
 
   async getNotificationBellIcounUnclickedCount(userId, courseId) {
-    // console.log(courseId);
-    // console.log(userId);
-    var query = `select count(*) from notification where user_id = $1 and course_id = $2 and is_bell_icon_clicked = $3`;
+    var query = `select count(*) from notification where user_id = $1 and course_id = $2 and is_read = $3`;
     var params = [userId, courseId, false];
     var result = await this.query(query, params);
     return result;
