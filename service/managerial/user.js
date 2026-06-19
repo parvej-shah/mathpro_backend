@@ -21,26 +21,21 @@ class UserService extends Service {
      * @param {number} length - Password length (default 12)
      * @returns {string}
      */
-    generatePassword = (length = 12) => {
+    generatePassword = (length = 8) => {
         const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const lowercase = 'abcdefghijklmnopqrstuvwxyz';
         const numbers = '0123456789';
-        const special = '!@#$%^&*';
-        const allChars = uppercase + lowercase + numbers + special;
+        const allChars = uppercase + lowercase + numbers;
 
         let password = '';
-        // Ensure at least one of each type
         password += uppercase[Math.floor(Math.random() * uppercase.length)];
         password += lowercase[Math.floor(Math.random() * lowercase.length)];
         password += numbers[Math.floor(Math.random() * numbers.length)];
-        password += special[Math.floor(Math.random() * special.length)];
 
-        // Fill the rest randomly
         for (let i = password.length; i < length; i++) {
             password += allChars[Math.floor(Math.random() * allChars.length)];
         }
 
-        // Shuffle the password
         return password.split('').sort(() => Math.random() - 0.5).join('');
     }
 
@@ -286,7 +281,7 @@ class UserService extends Service {
             const message = isCreation
                 ? `Math Pro: Your account has been created! Login: ${login}, Password: ${password}. Please change your password after first login. Visit: mathpro.com/login`
                 : `Math Pro: Your password has been reset. Login: ${login}, New Password: ${password}. Please login and change your password immediately. Visit: mathpro.com/login`;
-            return await messagingService.sendSms(contact, message);
+            return await messagingService.sendMessage(contact, message);
         }
     }
 
@@ -1322,29 +1317,44 @@ class UserService extends Service {
                 };
             }
 
-            // Send new credentials
-            const contact = user.email || user.phone;
-            const contactType = user.email ? 'email' : 'phone';
+            // Send new credentials — prefer phone (SMS) over email
+            const contact = user.phone || user.email;
+            const contactType = user.phone ? 'phone' : 'email';
 
-            const credentialsResult = await this.sendUserCredentials(
-                contact,
-                user.name,
-                user.login,
-                plainPassword,
-                contactType,
-                'reset'
-            );
+            if (contact) {
+                const credentialsResult = await this.sendUserCredentials(
+                    contact,
+                    user.name,
+                    user.login,
+                    plainPassword,
+                    contactType,
+                    'reset'
+                );
 
-            if (!credentialsResult.success) {
-                console.error('Failed to send new credentials:', credentialsResult.error);
-                // Don't fail the operation, just log the error
-                // TODO: Send notification to admin
+                if (!credentialsResult.success) {
+                    console.error('Failed to send new credentials:', credentialsResult.error);
+                    return {
+                        success: true,
+                        data: updateResult.data[0],
+                        password: plainPassword,
+                        smsFailed: true,
+                        message: 'Password reset but delivery failed. Please share the password manually.'
+                    };
+                }
+            } else {
+                return {
+                    success: true,
+                    data: updateResult.data[0],
+                    password: plainPassword,
+                    smsFailed: true,
+                    message: 'Password reset but user has no phone or email. Please share the password manually.'
+                };
             }
 
             return {
                 success: true,
                 data: updateResult.data[0],
-                message: `Password has been reset and sent to user's ${contactType}`
+                message: `Password has been reset and sent via ${contactType === 'phone' ? 'SMS' : 'email'}`
             };
         } catch (error) {
             console.error('Error in resetUserPassword:', error);

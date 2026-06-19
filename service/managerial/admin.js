@@ -361,6 +361,13 @@ class AdminService extends Service {
 
             if (!smsResult.success) {
                 console.error('Failed to send credentials SMS:', smsResult.error);
+                return {
+                    success: true,
+                    data: newAdmin,
+                    password: plainPassword,
+                    smsFailed: true,
+                    message: 'Admin created but SMS delivery failed. Please share the password manually.'
+                };
             }
 
             return {
@@ -746,7 +753,22 @@ class AdminService extends Service {
                 const smsResult = await messagingService.sendMessage(admin.phone, smsText);
                 if (!smsResult.success) {
                     console.error('Failed to send password reset SMS:', smsResult.error);
+                    return {
+                        success: true,
+                        data: updateResult.data[0],
+                        password: plainPassword,
+                        smsFailed: true,
+                        message: 'Password reset but SMS delivery failed. Please share the password manually.'
+                    };
                 }
+            } else {
+                return {
+                    success: true,
+                    data: updateResult.data[0],
+                    password: plainPassword,
+                    smsFailed: true,
+                    message: 'Password reset but admin has no phone number. Please share the password manually.'
+                };
             }
 
             return {

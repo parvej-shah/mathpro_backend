@@ -172,6 +172,7 @@ class BundleService extends Service {
                             'id', c.id,
                             'title', c.title,
                             'price', c.price,
+                            'x_price', c.x_price,
                             'url', c.url,
                             'tags', c.tags,
                             'chips', c.chips
@@ -212,6 +213,7 @@ class BundleService extends Service {
                                 'id', c.id,
                                 'title', c.title,
                                 'price', c.price,
+                                'x_price', c.x_price,
                                 'url', c.url,
                                 'short_description', c.short_description,
                                 'intro_video', c.intro_video,
@@ -254,6 +256,7 @@ class BundleService extends Service {
                                 'id', c.id,
                                 'title', c.title,
                                 'price', c.price,
+                                'x_price', c.x_price,
                                 'url', c.url,
                                 'short_description', c.short_description,
                                 'intro_video', c.intro_video,
@@ -466,6 +469,7 @@ class BundleService extends Service {
                         json_build_object(
                             'id', c.id,
                             'title', c.title,
+                            'x_price', c.x_price,
                             'url', c.url,
                             'short_description', c.short_description,
                             'tags', c.tags,
