@@ -1,6 +1,11 @@
 const Service = require('../base').Service;
 const bcrypt=require('bcryptjs');
 const { normalizeContact, isValidEmail, isValidPhone } = require('../../util/authHelpers');
+const AuthService = require('../managerial/auth').AuthService;
+
+const authService = new AuthService();
+
+const CHANGE_COOLDOWN_DAYS = 7;
 
 class ProfileService extends Service {
     constructor() {
@@ -116,7 +121,9 @@ class ProfileService extends Service {
                         gender: this.pickFirstProfileValue(profileData.gender),
                         classLevel,
                         version: this.pickEnumProfileValue(['Bangla', 'English'], profileData.version),
-                        department: profileData.department || null
+                        department: profileData.department || null,
+                        phone_changed_at: profileData.phone_changed_at || null,
+                        email_changed_at: profileData.email_changed_at || null
                     }
                 }
             };
@@ -184,16 +191,8 @@ class ProfileService extends Service {
 
             let finalEmail = currentUser.email;
 
-            let finalPhone = currentUser.phone;
-            if (phone && phone !== currentUser.phone) {
-                if (!isValidPhone(phone)) {
-                    return {
-                        success: false,
-                        error: 'Invalid phone number. Must be 11 digits starting with 01'
-                    };
-                }
-                finalPhone = normalizeContact(phone);
-            }
+            // Phone changes require OTP verification via PUT /user/profile/phone
+            const finalPhone = currentUser.phone;
             
             // 3. Prepare profile JSONB data
             const updatedProfile = {
@@ -279,7 +278,9 @@ class ProfileService extends Service {
                         gender: updatedProfileData.gender || null,
                         classLevel: updatedProfileData.classLevel || null,
                         version: updatedProfileData.version || null,
-                        department: updatedProfileData.department || null
+                        department: updatedProfileData.department || null,
+                        phone_changed_at: updatedProfileData.phone_changed_at || null,
+                        email_changed_at: updatedProfileData.email_changed_at || null
                     }
                 },
                 message: 'Profile updated successfully'
@@ -375,6 +376,71 @@ class ProfileService extends Service {
                 success: false,
                 error: 'Failed to update password'
             };
+        }
+    }
+
+    changePhone = async (userId, newPhone, otp) => {
+        try {
+            if (!newPhone || !otp) {
+                return { success: false, error: 'New phone number and OTP are required' };
+            }
+
+            if (!isValidPhone(newPhone)) {
+                return { success: false, error: 'Invalid phone number. Must be 11 digits starting with 01' };
+            }
+
+            const normalizedPhone = normalizeContact(newPhone);
+
+            const verifyResult = await authService.verifyOTP(normalizedPhone, otp, true);
+            if (!verifyResult.success) {
+                return verifyResult;
+            }
+
+            const duplicateCheck = await this.query(
+                `SELECT id FROM managerial_auth WHERE phone = $1 AND id != $2`,
+                [normalizedPhone, userId]
+            );
+            if (duplicateCheck.data.length > 0) {
+                return { success: false, error: 'An account already exists with this phone' };
+            }
+
+            const currentUser = await this.query(
+                `SELECT id, phone, profile FROM managerial_auth WHERE id = $1`,
+                [userId]
+            );
+            if (!currentUser.success || currentUser.data.length === 0) {
+                return { success: false, error: 'User not found' };
+            }
+
+            const user = currentUser.data[0];
+            const { safeProfile } = this.getAuthMetadata(user.profile, true);
+
+            if (safeProfile.phone_changed_at) {
+                const lastChanged = new Date(safeProfile.phone_changed_at);
+                const daysSince = (Date.now() - lastChanged.getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSince < CHANGE_COOLDOWN_DAYS) {
+                    const remaining = Math.ceil(CHANGE_COOLDOWN_DAYS - daysSince);
+                    return { success: false, error: `Phone number can only be changed once every ${CHANGE_COOLDOWN_DAYS} days. Try again in ${remaining} day(s).` };
+                }
+            }
+
+            const updatedProfile = { ...safeProfile, phone_verified: true, phone_changed_at: new Date().toISOString() };
+
+            const updateResult = await this.query(
+                `UPDATE managerial_auth
+                 SET phone = $1, login = $1, profile = $2, updated_at = NOW()
+                 WHERE id = $3`,
+                [normalizedPhone, JSON.stringify(updatedProfile), userId]
+            );
+
+            if (!updateResult.success) {
+                return { success: false, error: 'Failed to update phone number' };
+            }
+
+            return { success: true, message: 'Phone number updated successfully' };
+        } catch (error) {
+            console.error('Error in changePhone:', error);
+            return { success: false, error: 'Failed to update phone number' };
         }
     }
 }

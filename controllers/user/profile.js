@@ -143,6 +143,34 @@ class ProfileController extends Controller {
             });
         }
     }
+    /**
+     * PUT /user/profile/phone
+     * Change phone number with OTP verification
+     */
+    changePhone = async (req, res) => {
+        try {
+            const userId = req.body.user_id;
+
+            if (!userId) {
+                return res.status(401).json({ success: false, error: 'Unauthorized' });
+            }
+
+            const { newPhone, otp } = req.body;
+
+            if (!newPhone || !otp) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'New phone number and OTP are required'
+                });
+            }
+
+            const result = await profileService.changePhone(userId, newPhone, otp);
+            return res.status(result.success ? 200 : 400).json(result);
+        } catch (error) {
+            console.error('Error in changePhone controller:', error);
+            return res.status(500).json({ success: false, error: 'Internal server error' });
+        }
+    }
 }
 
 module.exports = { ProfileController };

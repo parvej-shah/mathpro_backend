@@ -48,7 +48,7 @@ class AuthController extends Controller {
             });
         }
 
-        const result = await authService.verifyOTP(contact, otp);
+        const result = await authService.verifyOTP(contact, otp, false);
         return res.status(result.success ? 200 : 400).json(result);
     }
 

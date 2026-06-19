@@ -22,4 +22,7 @@ router.route("/").put(authenticateUser, profileWriteLimit, profileController.upd
 // PUT /user/profile/password - Set or change current user's password
 router.route("/password").put(authenticateUser, profileWriteLimit, profileController.changePassword);
 
+// PUT /user/profile/phone - Change phone number with OTP verification
+router.route("/phone").put(authenticateUser, profileWriteLimit, profileController.changePhone);
+
 module.exports = router;

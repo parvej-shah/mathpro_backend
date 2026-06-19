@@ -293,6 +293,19 @@ class AuthService extends Service {
                 }
             }
 
+            if (purpose === 'phone_change') {
+                const existsResult = await this.query(
+                    `SELECT id FROM managerial_auth WHERE phone = $1`,
+                    [value]
+                );
+                if (existsResult.data.length > 0) {
+                    return {
+                        success: false,
+                        error: 'An account already exists with this phone'
+                    };
+                }
+            }
+
             // Rate limiting: per-contact resend cooldown + daily cap.
             const nowSeconds = Math.floor(Date.now() / 1000);
             const recentResult = await this.query(
@@ -328,19 +341,26 @@ class AuthService extends Service {
             const otp = generateOTP(6);
             const expiresAt = getOTPExpiration(10); // 10 minutes
 
-            await this.query(
-                `INSERT INTO otp (email, phone, contact_type, purpose, otp, timestamp, expires_at, is_used, attempts)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, false, 0)`,
+            const insertResult = await this.query(
+                `INSERT INTO otp (email, phone, purpose, otp, timestamp, expires_at, is_used, attempts)
+                 VALUES ($1, $2, $3, $4, $5, $6, false, 0)`,
                 [
                     contactType === 'email' ? value : null,
                     contactType === 'phone' ? value : null,
-                    contactType,
                     purpose,
                     otp,
                     nowSeconds,
                     expiresAt
                 ]
             );
+
+            if (!insertResult.success) {
+                console.error('Failed to store OTP');
+                return {
+                    success: false,
+                    error: 'Failed to process OTP. Please try again.'
+                };
+            }
 
             const sendResult = await messagingService.sendOTP(value, contactType, otp, purpose);
 
@@ -377,9 +397,10 @@ class AuthService extends Service {
      * VERIFY OTP - phone or email, with attempt cap.
      * @param {string} contact - Phone number or email address
      * @param {string} otp - OTP code
+     * @param {boolean} consume - Whether to mark the OTP as used (default true)
      * @returns {Promise<{success: boolean, message?: string, error?: string}>}
      */
-    verifyOTP = async (contact, otp) => {
+    verifyOTP = async (contact, otp, consume = true) => {
         try {
             const { contactType, value } = this.resolveContact(contact);
 
@@ -419,8 +440,9 @@ class AuthService extends Service {
                 return { success: false, error: 'Invalid OTP' };
             }
 
-            // Correct code — consume it.
-            await this.query(`UPDATE otp SET is_used = true WHERE id = $1`, [otpRecord.id]);
+            if (consume) {
+                await this.query(`UPDATE otp SET is_used = true WHERE id = $1`, [otpRecord.id]);
+            }
 
             console.log(`OTP verified for ${sanitizeContactForLog(value, contactType)}`);
 
@@ -443,8 +465,9 @@ class AuthService extends Service {
      */
     register = async (reqObj, deviceInfo = {}) => {
         try {
-            const { name, login, password, otp } = reqObj;
+            const { name, login, password, otp, email: rawEmail } = reqObj;
             const { contactType, value: normalizedLogin } = this.resolveContact(login);
+            const email = rawEmail && `${rawEmail}`.trim() ? `${rawEmail}`.trim().toLowerCase() : null;
 
             // Public signup is phone-only (OTP via SMS). Email accounts arrive via Google.
             if (contactType !== 'phone') {
@@ -480,6 +503,19 @@ class AuthService extends Service {
                 };
             }
 
+            if (email) {
+                const emailExists = await this.query(
+                    `SELECT id FROM managerial_auth WHERE email = $1`,
+                    [email]
+                );
+                if (emailExists.data.length > 0) {
+                    return {
+                        success: false,
+                        error: 'An account already exists with this email'
+                    };
+                }
+            }
+
             // Enforce OTP verification before creating the account.
             const otpVerification = await this.verifyOTP(normalizedLogin, otp);
             if (!otpVerification.success) {
@@ -506,7 +542,7 @@ class AuthService extends Service {
                     finalName,
                     managerialAccountTypes.regular,
                     normalizedLogin,
-                    null,
+                    email,
                     phone,
                     hashedPass,
                     JSON.stringify(profile)
@@ -530,7 +566,7 @@ class AuthService extends Service {
                         id: userId,
                         name: finalName,
                         type: managerialAccountTypes.regular,
-                        email: null,
+                        email,
                         phone
                     }
                 };
@@ -836,10 +872,24 @@ class AuthService extends Service {
             }
             const user = userResult.data[0];
 
+            // 7-day cooldown on email changes (only applies when changing, not first connect)
+            if (user.email) {
+                const existingProfile = user.profile && typeof user.profile === 'object' ? user.profile : {};
+                if (existingProfile.email_changed_at) {
+                    const lastChanged = new Date(existingProfile.email_changed_at);
+                    const daysSince = (Date.now() - lastChanged.getTime()) / (1000 * 60 * 60 * 24);
+                    if (daysSince < 7) {
+                        const remaining = Math.ceil(7 - daysSince);
+                        return { success: false, error: `Email can only be changed once every 7 days. Try again in ${remaining} day(s).` };
+                    }
+                }
+            }
+
             const updatedProfile = this.buildProfileWithAuth(user.profile, {
                 authProvider: 'google'
             }, Boolean(user.password));
             updatedProfile.email_verified = true;
+            updatedProfile.email_changed_at = new Date().toISOString();
 
             const updateResult = await this.query(
                 `UPDATE managerial_auth
