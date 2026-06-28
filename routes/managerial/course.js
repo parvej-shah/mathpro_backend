@@ -3,8 +3,13 @@ const CourseController =
   require("../../controllers/managerial/course").CourseController;
 const { requirePermission, requireCourseAccess } = require("../../service/authMiddleWares");
 const { PERMISSIONS } = require("../../util/permissions");
+const { revalidateOnWrite } = require("../../util/revalidateFrontend");
 
 const courseController = new CourseController();
+
+// A course write can change the catalog and any combo that contains it.
+// (This is the deprecated v1 router; the v2 router carries the same hook.)
+router.use(revalidateOnWrite(["courses", "combos"]));
 
 const requireCourseManage = requirePermission(PERMISSIONS.COURSE.MANAGE.ALL);
 const requireRevenueAccess = requirePermission(PERMISSIONS.COURSE.MANAGE.ALL);

@@ -7,11 +7,15 @@ const router = require('express-promise-router')();
 const CourseControllerV2 = require('../../controllers/managerial/courseV2').CourseControllerV2;
 const { requirePermission, requireCourseAccess } = require('../../service/authMiddleWares');
 const { PERMISSIONS } = require('../../util/permissions');
+const { revalidateOnWrite } = require('../../util/revalidateFrontend');
 
 const requireCourseManage = requirePermission(PERMISSIONS.COURSE.MANAGE.ALL);
 const requireCourseManageAccess = requireCourseAccess('course', 'manage', (req) => req.params.courseId);
 
 const courseControllerV2 = new CourseControllerV2();
+
+// A course write can change the catalog and any combo that contains it.
+router.use(revalidateOnWrite(['courses', 'combos']));
 
 router.route('/')
     .get(requireCourseManage, courseControllerV2.list)

@@ -2,8 +2,12 @@ const router = require("express-promise-router")();
 const { BundleController } = require("../../controllers/managerial/bundle");
 const { requirePermission, requireAnyPermission } = require("../../service/authMiddleWares");
 const { PERMISSIONS } = require("../../util/permissions");
+const { revalidateOnWrite } = require("../../util/revalidateFrontend");
 
 const bundleController = new BundleController();
+
+// A bundle write changes the combos shown on /, /combos.
+router.use(revalidateOnWrite(["combos"]));
 
 // Phase 5: Bundle management - one permission for CRUD/enhanced/courses/export/prebooking
 const requireBundleManage = requirePermission(PERMISSIONS.BUNDLE.MANAGE.ALL);

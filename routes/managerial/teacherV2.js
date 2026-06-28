@@ -8,10 +8,14 @@ const router = require('express-promise-router')();
 const TeacherControllerV2 = require('../../controllers/managerial/teacherV2').TeacherControllerV2;
 const { requirePermission } = require('../../service/authMiddleWares');
 const { PERMISSIONS } = require('../../util/permissions');
+const { revalidateOnWrite } = require('../../util/revalidateFrontend');
 
 const requireTeacherManage = requirePermission(PERMISSIONS.TEACHER.MANAGE.ALL);
 
 const teacherControllerV2 = new TeacherControllerV2();
+
+// A teacher write can change the instructors list and a course's instructors.
+router.use(revalidateOnWrite(['instructors', 'courses']));
 
 // Search teachers (must be before /:teacherId routes)
 router.route('/search')
