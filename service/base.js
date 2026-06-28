@@ -1,5 +1,10 @@
 require('dotenv').config(); // Load environment variables
 const Pool = require('pg').Pool;
+const {
+    formatQueryLog,
+    nowMs,
+    shouldLogQuery,
+} = require('../util/observability');
 
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -12,12 +17,41 @@ const pool = new Pool({
 
 
 
+function getQueryText(query) {
+    if (typeof query === 'string') return query;
+    if (query && typeof query.text === 'string') return query.text;
+    return '';
+}
+
+async function runTimedQuery(executor, query, params, meta) {
+    const startedAt = nowMs();
+    const result = await executor(query, params);
+    const durationMs = nowMs() - startedAt;
+
+    if (shouldLogQuery(durationMs)) {
+        console.log(JSON.stringify(formatQueryLog({
+            durationMs,
+            rowCount: result.rowCount,
+            sql: getQueryText(query),
+            source: meta.source,
+            pooled: meta.pooled,
+        })));
+    }
+
+    return result;
+}
+
 class Service {
     constructor() { }
 
     query = async function (query, params) {
         try {
-            const data = await pool.query(query, params);
+            const data = await runTimedQuery(
+                pool.query.bind(pool),
+                query,
+                params,
+                { source: 'Service.query', pooled: true }
+            );
             return {
                 success: true,
                 data: data.rows,
@@ -35,7 +69,24 @@ class Service {
     // Get a client from the pool for transactions
     // IMPORTANT: Always call client.release() when done!
     getClient = async function () {
-        return await pool.connect();
+        const client = await pool.connect();
+
+        if (client.__mathproTimedQueryWrapped) {
+            return client;
+        }
+
+        const originalQuery = client.query.bind(client);
+        client.query = async (query, params) => {
+            return runTimedQuery(
+                originalQuery,
+                query,
+                params,
+                { source: 'Service.getClient', pooled: false }
+            );
+        };
+        client.__mathproTimedQueryWrapped = true;
+
+        return client;
     }
 }
 exports.Service = Service;

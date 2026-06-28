@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const docs = require("./docs");
+const requestMetrics = require("./middleware/requestMetrics");
 
 const adminAuthRoutes = require("./routes/managerial/auth");
 const adminRoutes = require("./routes/managerial/admin");
@@ -29,6 +30,7 @@ const app = express();
 // Trust proxy for accurate IP addresses (important for Cloudflare and rate limiting)
 app.set('trust proxy', true);
 
+app.use(requestMetrics);
 app.use(cors());
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(bodyParser.json({ limit: "50mb" }));
