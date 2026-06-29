@@ -1232,7 +1232,7 @@ class TeacherServiceV2 extends TeacherService {
                     SELECT
                         ma.id,
                         ma.name,
-                        ma.profile,
+                        ma.profile::text AS profile_json,
                         COALESCE(
                             ARRAY_AGG(c.id ORDER BY c.id)
                             FILTER (WHERE c.id IS NOT NULL),
@@ -1254,7 +1254,7 @@ class TeacherServiceV2 extends TeacherService {
                         )
                     )
                     AND COALESCE((ma.profile->>'isActive')::boolean, true) = true
-                    GROUP BY ma.id, ma.name, ma.profile
+                    GROUP BY ma.id, ma.name, ma.profile::text
                     ORDER BY total_students DESC, courses_count DESC, ma.name ASC
                 `;
 
@@ -1266,7 +1266,9 @@ class TeacherServiceV2 extends TeacherService {
                 return {
                     success: true,
                     data: result.data.map((teacher) => {
-                        const profile = teacher.profile || {};
+                        const profile = teacher.profile_json
+                            ? JSON.parse(teacher.profile_json)
+                            : {};
                         const assignedCourses = Array.isArray(teacher.assigned_courses)
                             ? teacher.assigned_courses.filter((courseId) => courseId !== null)
                             : [];

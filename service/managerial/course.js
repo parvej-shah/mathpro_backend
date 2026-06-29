@@ -126,6 +126,15 @@ class CourseService extends Service {
     return this.getPublicLiveCourses();
   };
 
+  getPublicLiveCourses = async () => {
+    return publicLiveCourseCache.getOrSet(async () => {
+      return this.query(
+        `select * from ${this.table} where is_live = true order by serial`,
+        []
+      );
+    });
+  };
+
   // FT-style category taxonomy for the public homepage / course directory.
   // We have no category table — categories are derived from each course's free-form
   // `tags` JSON array. Order here is the display order of category sections on the page.
@@ -1330,11 +1339,3 @@ ORDER BY
 }
 
 module.exports = { CourseService };
-  getPublicLiveCourses = async () => {
-    return publicLiveCourseCache.getOrSet(async () => {
-      return this.query(
-        `select * from ${this.table} where is_live = true order by serial`,
-        []
-      );
-    });
-  };
