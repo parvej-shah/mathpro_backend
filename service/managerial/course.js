@@ -7,8 +7,10 @@ const ChapterService = require("./chapter").ChapterService;
 const ModuleService = require("./module").ModuleService;
 const MessagingService =
   require("../../service/messagingService").MessagingService;
+const { createTtlCache } = require("../../util/ttlCache");
 
 const messagingService = new MessagingService();
+const publicLiveCourseCache = createTtlCache(15000);
 
 class CourseService extends Service {
   constructor() {
@@ -121,10 +123,7 @@ class CourseService extends Service {
 
   listForUser = async (req) => {
     // Return all live courses for public access (no authentication required)
-    var query = `select * from ${this.table} where is_live = true order by serial`;
-    var params = [];
-    var result = await this.query(query, params);
-    return result;
+    return this.getPublicLiveCourses();
   };
 
   // FT-style category taxonomy for the public homepage / course directory.
@@ -146,10 +145,7 @@ class CourseService extends Service {
   // tags, etc.), so the frontend Course type is reused as-is. Courses whose tags match no known
   // category are bucketed under an "Other" category so nothing live disappears from the page.
   directoryForUser = async (req) => {
-    var result = await this.query(
-      `select * from ${this.table} where is_live = true order by serial`,
-      []
-    );
+    var result = await this.getPublicLiveCourses();
     if (!result.success) return result;
 
     var cats = CourseService.DIRECTORY_CATEGORIES;
@@ -1334,3 +1330,11 @@ ORDER BY
 }
 
 module.exports = { CourseService };
+  getPublicLiveCourses = async () => {
+    return publicLiveCourseCache.getOrSet(async () => {
+      return this.query(
+        `select * from ${this.table} where is_live = true order by serial`,
+        []
+      );
+    });
+  };

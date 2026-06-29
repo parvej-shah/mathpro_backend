@@ -10,10 +10,12 @@ const { managerialAccountTypes } = require('../../util/constants');
 const MessagingService = require('../../service/messagingService').MessagingService;
 const RoleService = require('./roleService').RoleService;
 const AdminService = require('./admin').AdminService;
+const { createTtlCache } = require('../../util/ttlCache');
 
 const messagingService = new MessagingService();
 const roleService = new RoleService();
 const adminService = new AdminService();
+const publicInstructorCache = createTtlCache(15000);
 
 class TeacherServiceV2 extends TeacherService {
     constructor() {
@@ -1225,103 +1227,67 @@ class TeacherServiceV2 extends TeacherService {
      */
     async getPublicInstructors() {
         try {
-            // Get all active teachers/instructors
-            const query = `
-                SELECT
-                    id,
-                    name,
-                    profile
-                FROM managerial_auth
-                WHERE (
-                    type IN (1, 2)
-                    OR (profile->>'category' = 'teacher' OR profile->>'category' = 'instructor')
-                )
-                AND (profile->>'isActive')::boolean = true
-                ORDER BY id ASC
-            `;
+            return publicInstructorCache.getOrSet(async () => {
+                const query = `
+                    SELECT
+                        ma.id,
+                        ma.name,
+                        ma.profile,
+                        COALESCE(
+                            ARRAY_AGG(c.id ORDER BY c.id)
+                            FILTER (WHERE c.id IS NOT NULL),
+                            '{}'
+                        ) AS assigned_courses,
+                        COUNT(c.id) AS courses_count,
+                        COALESCE(SUM(c.enrolled), 0) AS total_students
+                    FROM managerial_auth ma
+                    LEFT JOIN instructor i
+                        ON i.user_id = ma.id
+                    LEFT JOIN course c
+                        ON c.id = i.course_id
+                       AND c.is_live = true
+                    WHERE (
+                        ma.type IN (1, 2)
+                        OR (
+                            ma.profile->>'category' = 'teacher'
+                            OR ma.profile->>'category' = 'instructor'
+                        )
+                    )
+                    AND COALESCE((ma.profile->>'isActive')::boolean, true) = true
+                    GROUP BY ma.id, ma.name, ma.profile
+                    ORDER BY total_students DESC, courses_count DESC, ma.name ASC
+                `;
 
-            const result = await this.query(query, []);
-
-            if (!result.success) {
-                return result;
-            }
-
-            // Step 3: Process each instructor to get profile data, courses, and statistics
-            const instructors = await Promise.all(
-                result.data.map(async (teacher) => {
-                    const profile = teacher.profile || {};
-                    
-                    // Extract profile fields
-                    const image = profile.image || null;
-                    const role = profile.role || null;
-                    const university = profile.university || null;
-                    const credibility = profile.credibility || profile.bio || null;
-                    const achievements = Array.isArray(profile.achievements) ? profile.achievements : [];
-                    const social = profile.social || {};
-                    const isActive = profile.isActive !== undefined ? profile.isActive : true;
-
-                    // Get assigned courses IDs only (only live courses)
-                    const coursesQuery = `
-                        SELECT c.id
-                        FROM course c
-                        INNER JOIN instructor i ON c.id = i.course_id
-                        WHERE i.user_id = $1 
-                        AND c.is_live = true
-                        ORDER BY c.id ASC
-                    `;
-                    const coursesResult = await this.query(coursesQuery, [teacher.id]);
-                    
-                    const assignedCourses = coursesResult.success 
-                        ? coursesResult.data.map(course => course.id)
-                        : [];
-
-                    // Calculate courses count (for backward compatibility)
-                    const coursesCount = assignedCourses.length;
-                    
-                    // Get total students (sum of enrolled students from all live courses)
-                    const studentsQuery = `
-                        SELECT COALESCE(SUM(c.enrolled), 0) as total
-                        FROM course c
-                        INNER JOIN instructor i ON c.id = i.course_id
-                        WHERE i.user_id = $1 AND c.is_live = true
-                    `;
-                    const studentsResult = await this.query(studentsQuery, [teacher.id]);
-                    const totalStudents = studentsResult.success ? parseInt(studentsResult.data[0]?.total || 0) : 0;
-
-                    return {
-                        id: teacher.id,
-                        name: teacher.name,
-                        image: image,
-                        role: role,
-                        university: university,
-                        credibility: credibility,
-                        achievements: achievements,
-                        social: social,
-                        assignedCourses: assignedCourses,
-                        isActive: isActive,
-                        coursesCount: coursesCount,
-                        totalStudents: totalStudents
-                    };
-                })
-            );
-
-            // Step 4: Sort by totalStudents descending (most popular first)
-            // Then by coursesCount descending
-            // Then by name ascending
-            instructors.sort((a, b) => {
-                if (b.totalStudents !== a.totalStudents) {
-                    return b.totalStudents - a.totalStudents;
+                const result = await this.query(query, []);
+                if (!result.success) {
+                    return result;
                 }
-                if (b.coursesCount !== a.coursesCount) {
-                    return b.coursesCount - a.coursesCount;
-                }
-                return a.name.localeCompare(b.name);
+
+                return {
+                    success: true,
+                    data: result.data.map((teacher) => {
+                        const profile = teacher.profile || {};
+                        const assignedCourses = Array.isArray(teacher.assigned_courses)
+                            ? teacher.assigned_courses.filter((courseId) => courseId !== null)
+                            : [];
+
+                        return {
+                            id: teacher.id,
+                            name: teacher.name,
+                            image: profile.image || null,
+                            role: profile.role || null,
+                            university: profile.university || null,
+                            credibility: profile.credibility || profile.bio || null,
+                            achievements: Array.isArray(profile.achievements) ? profile.achievements : [],
+                            social: profile.social || {},
+                            assignedCourses,
+                            isActive: profile.isActive !== undefined ? profile.isActive : true,
+                            coursesCount: Number(teacher.courses_count) || 0,
+                            totalStudents: Number(teacher.total_students) || 0
+                        };
+                    })
+                };
             });
-
-            return {
-                success: true,
-                data: instructors
-            };
         } catch (error) {
             console.error('Error getting public instructors:', error);
             return {

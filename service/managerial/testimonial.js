@@ -1,4 +1,7 @@
 const Service = require("../base").Service;
+const { createTtlCache } = require("../../util/ttlCache");
+
+const publicTestimonialCache = createTtlCache(15000);
 
 class TestimonialService extends Service {
   getFeaturedQuery = () => `
@@ -19,18 +22,24 @@ class TestimonialService extends Service {
       COALESCE(c.title, '') AS course_name
     FROM public_testimonial pt
     INNER JOIN feedbacks f ON f.id = pt.feedback_id
-    LEFT JOIN managerial_auth ma ON ma.id::text = f.user_id
-    LEFT JOIN course c ON c.id::text = f.course_id
+    LEFT JOIN managerial_auth ma
+      ON f.user_id ~ '^[0-9]+$'
+     AND ma.id = f.user_id::integer
+    LEFT JOIN course c
+      ON f.course_id ~ '^[0-9]+$'
+     AND c.id = f.course_id::integer
   `;
 
   listPublic = async () => {
-    return this.query(
-      `${this.getFeaturedQuery()}
-       WHERE pt.is_active = TRUE
-         AND COALESCE(NULLIF(TRIM(f.comment), ''), '') <> ''
-       ORDER BY pt.sort_order ASC, pt.feedback_id ASC`,
-      []
-    );
+    return publicTestimonialCache.getOrSet(async () => {
+      return this.query(
+        `${this.getFeaturedQuery()}
+         WHERE pt.is_active = TRUE
+           AND COALESCE(NULLIF(TRIM(f.comment), ''), '') <> ''
+         ORDER BY pt.sort_order ASC, pt.feedback_id ASC`,
+        []
+      );
+    });
   };
 
   listAdmin = async (access) => {
