@@ -73,9 +73,17 @@ app.get("/ping", function (req, res) {
   });
 });
 
-// Add a new health endpoint
-app.get("/health", (req, res) => {
-  res.send("Math Pro Backend is LIVE!");
+// Readiness check: verifies the DB pool can actually serve a query, not just
+// that Node is alive. A wedged/failed pool returns 503 so the orchestrator
+// (Coolify healthcheck) marks the container unhealthy instead of routing to it.
+const { Service } = require("./service/base");
+const healthService = new Service();
+app.get("/health", async (req, res) => {
+  const result = await healthService.query("select 1", []);
+  if (result.success) {
+    return res.send("Math Pro Backend is LIVE!");
+  }
+  return res.status(503).send("Math Pro Backend DB unavailable");
 });
 
 app.use("/admin/auth", adminAuthRoutes);
