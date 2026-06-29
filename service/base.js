@@ -12,8 +12,18 @@ const pool = new Pool({
     database: process.env.DB_DB,
     password: process.env.DB_PASSWORD || process.env.DB_PASS,
     port: process.env.DB_PORT,
-    ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000
+    // Opt-in SSL: only enable when DB_SSL is explicitly 'true'. A missing/unknown
+    // value must default to OFF, otherwise SSL is attempted against a non-SSL
+    // Postgres and every connection is rejected, wedging the pool.
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000
+})
+
+// An error on an idle client (dropped connection, DB restart) would otherwise be
+// an unhandled 'error' event. Log it and let pg evict the client from the pool.
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle pg client', err);
 })
 
 

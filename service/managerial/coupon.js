@@ -1114,24 +1114,6 @@ class CouponService extends Service {
   };
 
   /**
-   * Get a dedicated database client for transactions
-   * @returns {Object} Database client
-   */
-  getClient = async () => {
-    const Pool = require("pg").Pool;
-    const pool = new Pool({
-      user: process.env.DB_USER,
-      host: process.env.DB_HOST,
-      database: process.env.DB_DB,
-      password: process.env.DB_PASSWORD || process.env.DB_PASS,
-      port: process.env.DB_PORT,
-      ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
-      connectionTimeoutMillis: 10000,
-    });
-    return await pool.connect();
-  };
-
-  /**
    * Record coupon usage with proper transaction handling and dedicated client connections
    * Implements requirements 7.4, 7.5, 9.1, 9.2, 9.4
    * @param {number} couponId - Coupon ID
