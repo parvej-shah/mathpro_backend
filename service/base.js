@@ -17,7 +17,13 @@ const pool = new Pool({
     // Postgres and every connection is rejected, wedging the pool.
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000
+    idleTimeoutMillis: 30000,
+    // Without TCP keepalive, a connection silently dropped by the network (NAT/firewall
+    // timeout) never errors out — the pool keeps treating it as healthy and every query
+    // routed to it hangs until connectionTimeoutMillis, wedging the whole pool. Keepalive
+    // probes let the OS detect the dead socket so pg can evict and replace it.
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
 })
 
 // An error on an idle client (dropped connection, DB restart) would otherwise be
