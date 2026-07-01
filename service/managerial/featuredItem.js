@@ -2,19 +2,26 @@ const Service = require("../base").Service;
 
 class FeaturedItemService extends Service {
   listPublic = async () => {
+    // Explicit, aligned column list — course (22 cols) and bundle (12 cols) have
+    // different schemas, so `c.*`/`b.*` in a UNION breaks. Emit the same shape from
+    // both branches (bundle lacks x_price/slug/tags → NULL) plus an item_type flag.
     return this.query(
-      `SELECT * FROM (
-         SELECT 'course' AS item_type, c.id AS item_id, pfi.sort_order, c.*
-         FROM public_featured_item pfi
-         INNER JOIN course c ON c.id = pfi.item_id AND pfi.item_type = 'course'
-         WHERE pfi.is_active = TRUE AND c.is_live = TRUE
-         UNION ALL
-         SELECT 'bundle' AS item_type, b.id AS item_id, pfi.sort_order, b.*
-         FROM public_featured_item pfi
-         INNER JOIN bundle b ON b.id = pfi.item_id AND pfi.item_type = 'bundle'
-         WHERE pfi.is_active = TRUE AND b.is_live = TRUE
-       ) featured
-       ORDER BY sort_order ASC, item_type ASC, item_id ASC`,
+      `SELECT
+         'course' AS item_type, pfi.sort_order,
+         c.id, c.title, c.short_description, c.chips, c.price, c.x_price,
+         c.url, c.slug, c.tags, c.is_live
+       FROM public_featured_item pfi
+       INNER JOIN course c ON c.id = pfi.item_id AND pfi.item_type = 'course'
+       WHERE pfi.is_active = TRUE AND c.is_live = TRUE
+       UNION ALL
+       SELECT
+         'bundle' AS item_type, pfi.sort_order,
+         b.id, b.title, b.short_description, b.chips, b.price, NULL::integer AS x_price,
+         b.url, NULL::varchar AS slug, NULL::json AS tags, b.is_live
+       FROM public_featured_item pfi
+       INNER JOIN bundle b ON b.id = pfi.item_id AND pfi.item_type = 'bundle'
+       WHERE pfi.is_active = TRUE AND b.is_live = TRUE
+       ORDER BY sort_order ASC, item_type ASC, id ASC`,
       []
     );
   };
