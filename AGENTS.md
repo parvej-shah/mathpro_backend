@@ -19,6 +19,49 @@ auth/JWT, DB schema, payments (SSLCommerz), file storage (AWS S3), PDFs/certific
 - **Verify:** `npm run lint` — this is a **syntax check only** (`node -c app.js && node -c
   index.js`), not a full linter. There is no TypeScript here; it's plain Node/CommonJS.
 
+## Database access — via SSH tunnel
+
+The DB is Coolify-managed PostgreSQL. `.env`'s `DB_HOST` is the Coolify **internal container
+hostname** (e.g. `gvanpkdbi1z06r5w8rly5d27`) — it only resolves inside Coolify's network, so
+it is **not reachable from a local/dev machine directly**. To run migrations, scripts, or
+ad-hoc queries against the real DB, open an SSH tunnel to the DB container and override
+`DB_HOST=127.0.0.1` for the command.
+
+1. **Open the tunnel** (forwards local `5432` → the DB container; runs in the background with
+   `-f`, fails fast if the port is taken):
+
+   ```bash
+   ssh -o ExitOnForwardFailure=yes -f -L 5432:172.16.1.3:5432 parvej@145.223.23.114 -N
+   ```
+
+   > The container IP (`172.16.1.3`) and jump host (`145.223.23.114`) are the current values —
+   > see the `# DB (Coolify PostgreSQL via SSH tunnel …)` comment block in `.env`. If the DB
+   > container is recreated its IP can change; update the comment in `.env` when it does.
+
+2. **Run your command with `DB_HOST=127.0.0.1`** so `pg` connects through the tunnel instead
+   of the unresolvable container hostname (all other `DB_*` vars come from `.env`):
+
+   ```bash
+   DB_HOST=127.0.0.1 node database/runMigration.js 033_public_featured_items.sql
+   DB_HOST=127.0.0.1 node scripts/db-observability-report.js
+   ```
+
+   To test a query/service directly, run a throwaway node one-liner the same way
+   (`DB_HOST=127.0.0.1 node -e "…"`) using `require('./service/base').Service`.
+
+3. **Close the tunnel when done** (don't leave it open):
+
+   ```bash
+   kill "$(pgrep -f 'ssh.*-L 5432:172.16.1.3')"
+   ```
+
+**Cautions.** This connects to the **live production DB** — there is no separate staging DB
+in `.env` (a commented Neon block exists but is not the active target). Migrations are
+generally idempotent (`CREATE TABLE IF NOT EXISTS`, `ON CONFLICT DO NOTHING`), but treat any
+write as production. `runMigration.js` takes a single migration filename; with no argument it
+runs **all** migrations in order — prefer naming the one file. A schema change here is a DB
+contract change → see the Database invariants and flag consuming clients.
+
 ## You are the contract — changes ripple to two clients
 
 Before changing any **route path, request/response shape, status code, or DB column**:

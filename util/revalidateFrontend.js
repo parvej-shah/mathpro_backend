@@ -14,7 +14,7 @@ const axios = require("axios");
  * timer is the backstop.
  *
  * Valid tags (must match the Frontend's allow-list):
- *   courses | combos | instructors | public-testimonials
+ *   courses | combos | instructors | public-testimonials | faqs
  */
 function revalidateFrontend(tags) {
   const base = process.env.FRONTEND_URL;

@@ -2,9 +2,12 @@ const router = require("express-promise-router")();
 const FAQController = require("../../controllers/managerial/faq").FAQController;
 const { requirePermission } = require("../../service/authMiddleWares");
 const { PERMISSIONS } = require("../../util/permissions");
+const { revalidateOnWrite } = require("../../util/revalidateFrontend");
 
 const faqController = new FAQController();
 const requireFaqManage = requirePermission(PERMISSIONS.COURSE.MANAGE.ALL);
+
+router.use(revalidateOnWrite(["faqs"]));
 
 router.route("/list").get(requireFaqManage, faqController.list);
 router.route("/get/:id").get(requireFaqManage, faqController.getEntry);
