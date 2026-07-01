@@ -19,6 +19,14 @@ class TestimonialController extends Controller {
     return res.status(code).json(result);
   };
 
+  createManualReview = async (req, res) => {
+    const access = await getAccessibleCourseIds(req.user.id, "feedback", "manage");
+    const result = await testimonialService.createManualFeedback(req.body, access);
+    const code =
+      !result.success && result.error === "NO_COURSE_ACCESS" ? 403 : result.success ? 200 : 400;
+    return res.status(code).json(result);
+  };
+
   update = async (req, res) => {
     const access = await getAccessibleCourseIds(req.user.id, "feedback", "manage");
     const result = await testimonialService.update(req.params.feedbackId, req.body, access);

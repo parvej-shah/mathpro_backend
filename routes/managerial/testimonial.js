@@ -12,6 +12,7 @@ router.use(revalidateOnWrite(["public-testimonials"]));
 
 router.route("/list").get(requireFeedbackManage, testimonialController.list);
 router.route("/create").post(requireFeedbackManage, testimonialController.create);
+router.route("/manual-review").post(requireFeedbackManage, testimonialController.createManualReview);
 router.route("/update/:feedbackId").put(requireFeedbackManage, testimonialController.update);
 router.route("/delete/:feedbackId").delete(requireFeedbackManage, testimonialController.deleteEntry);
 

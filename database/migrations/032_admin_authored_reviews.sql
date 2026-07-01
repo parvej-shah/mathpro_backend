@@ -1,0 +1,10 @@
+ALTER TABLE feedbacks
+    ALTER COLUMN user_id DROP NOT NULL;
+
+ALTER TABLE feedbacks
+    ADD COLUMN IF NOT EXISTS display_name VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+    ADD COLUMN IF NOT EXISTS is_admin_created BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE public_testimonial
+    ADD COLUMN IF NOT EXISTS video_url TEXT;

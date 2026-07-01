@@ -129,7 +129,7 @@ class CourseService extends Service {
   getPublicLiveCourses = async () => {
     return publicLiveCourseCache.getOrSet(async () => {
       return this.query(
-        `select * from ${this.table} where is_live = true order by serial`,
+        `select * from ${this.table} where is_live = true order by serial desc`,
         []
       );
     });

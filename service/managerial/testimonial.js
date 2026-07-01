@@ -1,5 +1,6 @@
 const Service = require("../base").Service;
 const { createTtlCache } = require("../../util/ttlCache");
+const { v4: uuidv4 } = require("uuid");
 
 const publicTestimonialCache = createTtlCache(15000);
 
@@ -9,6 +10,7 @@ class TestimonialService extends Service {
       pt.feedback_id,
       pt.sort_order,
       pt.is_active,
+      pt.video_url,
       pt.created_at,
       pt.updated_at,
       f.course_id,
@@ -17,7 +19,7 @@ class TestimonialService extends Service {
       f.comment,
       f.category,
       f.created_at AS feedback_created_at,
-      COALESCE(ma.name, ma.login, 'Anonymous') AS user_name,
+      COALESCE(f.display_name, ma.name, ma.login, 'Anonymous') AS user_name,
       COALESCE(ma.email, '') AS user_email,
       COALESCE(c.title, '') AS course_name
     FROM public_testimonial pt
@@ -79,6 +81,7 @@ class TestimonialService extends Service {
       : 0;
     const isActive =
       payload.is_active === undefined ? true : Boolean(payload.is_active);
+    const videoUrl = payload.video_url ? String(payload.video_url).trim() : null;
 
     if (!feedbackId) {
       return { success: false, error: "feedback_id is required" };
@@ -97,10 +100,10 @@ class TestimonialService extends Service {
     }
 
     return this.query(
-      `INSERT INTO public_testimonial (feedback_id, sort_order, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $4)
-       RETURNING feedback_id, sort_order, is_active, created_at, updated_at`,
-      [feedbackId, sortOrder, isActive, Math.trunc(Date.now() / 1000)]
+      `INSERT INTO public_testimonial (feedback_id, sort_order, is_active, video_url, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $5)
+       RETURNING feedback_id, sort_order, is_active, video_url, created_at, updated_at`,
+      [feedbackId, sortOrder, isActive, videoUrl, Math.trunc(Date.now() / 1000)]
     );
   };
 
@@ -115,7 +118,7 @@ class TestimonialService extends Service {
     }
 
     const current = await this.query(
-      `SELECT feedback_id, sort_order, is_active FROM public_testimonial WHERE feedback_id = $1`,
+      `SELECT feedback_id, sort_order, is_active, video_url FROM public_testimonial WHERE feedback_id = $1`,
       [feedbackId]
     );
     if (!current.success) return current;
@@ -131,15 +134,46 @@ class TestimonialService extends Service {
       payload.is_active === undefined
         ? current.data[0].is_active
         : Boolean(payload.is_active);
+    const nextVideoUrl =
+      payload.video_url === undefined
+        ? current.data[0].video_url
+        : (String(payload.video_url).trim() || null);
 
     return this.query(
       `UPDATE public_testimonial
        SET sort_order = $1,
            is_active = $2,
-           updated_at = $3
-       WHERE feedback_id = $4
-       RETURNING feedback_id, sort_order, is_active, created_at, updated_at`,
-      [nextSortOrder, nextIsActive, Math.trunc(Date.now() / 1000), feedbackId]
+           video_url = $3,
+           updated_at = $4
+       WHERE feedback_id = $5
+       RETURNING feedback_id, sort_order, is_active, video_url, created_at, updated_at`,
+      [nextSortOrder, nextIsActive, nextVideoUrl, Math.trunc(Date.now() / 1000), feedbackId]
+    );
+  };
+
+  createManualFeedback = async (payload, access) => {
+    const courseId = String(payload.course_id || "").trim();
+    const displayName = String(payload.display_name || "").trim();
+    const comment = String(payload.comment || "").trim();
+    const rating = Math.trunc(Number(payload.rating));
+    const avatarUrl = payload.avatar_url ? String(payload.avatar_url).trim() : null;
+
+    if (!courseId) return { success: false, error: "course_id is required" };
+    if (!displayName) return { success: false, error: "display_name is required" };
+    if (!comment) return { success: false, error: "comment is required" };
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return { success: false, error: "rating must be between 1 and 5" };
+    }
+    if (!this.hasCourseAccess(access, courseId)) {
+      return { success: false, error: "NO_COURSE_ACCESS", message: "No access to this course" };
+    }
+
+    const feedbackId = uuidv4();
+    return this.query(
+      `INSERT INTO feedbacks (id, course_id, user_id, rating, comment, display_name, avatar_url, is_admin_created)
+       VALUES ($1, $2, NULL, $3, $4, $5, $6, TRUE)
+       RETURNING id, course_id, rating, comment, display_name, avatar_url, is_admin_created, created_at`,
+      [feedbackId, courseId, rating, comment, displayName, avatarUrl]
     );
   };
 

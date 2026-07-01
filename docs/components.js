@@ -238,6 +238,37 @@ module.exports = {
             type: "boolean",
             example: true,
           },
+          video_url: {
+            type: "string",
+            nullable: true,
+            example: "https://www.youtube.com/shorts/abc123XYZ",
+          },
+        },
+      },
+      manualReview: {
+        type: "object",
+        properties: {
+          course_id: {
+            type: "string",
+            example: "12",
+          },
+          display_name: {
+            type: "string",
+            example: "Rafiul Islam",
+          },
+          rating: {
+            type: "integer",
+            example: 5,
+          },
+          comment: {
+            type: "string",
+            example: "This course really helped me understand calculus.",
+          },
+          avatar_url: {
+            type: "string",
+            nullable: true,
+            example: "https://cdn.mathpro.example/avatars/rafiul.jpg",
+          },
         },
       },
       chapter: {

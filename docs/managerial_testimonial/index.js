@@ -2,6 +2,7 @@ const testimonialList = require("./testimonial_list");
 const testimonialCreate = require("./testimonial_create");
 const testimonialUpdate = require("./testimonial_update");
 const testimonialDelete = require("./testimonial_delete");
+const testimonialManualReview = require("./testimonial_manual_review");
 
 module.exports = {
   paths: {
@@ -16,6 +17,9 @@ module.exports = {
     },
     "/admin/testimonial/delete/{feedbackId}": {
       ...testimonialDelete,
+    },
+    "/admin/testimonial/manual-review": {
+      ...testimonialManualReview,
     },
     "/user/testimonial/list": {
       get: {
