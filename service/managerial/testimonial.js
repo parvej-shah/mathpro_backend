@@ -19,7 +19,7 @@ class TestimonialService extends Service {
       f.comment,
       f.category,
       f.created_at AS feedback_created_at,
-      COALESCE(f.display_name, ma.name, ma.login, 'Anonymous') AS user_name,
+      COALESCE(f.display_name, ma.name, 'Anonymous') AS user_name,
       COALESCE(ma.email, '') AS user_email,
       COALESCE(c.title, '') AS course_name
     FROM public_testimonial pt
