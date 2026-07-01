@@ -21,14 +21,6 @@ router.route('/')
     .get(requireCourseManage, courseControllerV2.list)
     .post(requireCourseManage, courseControllerV2.create);
 
-router.route('/featured')
-    .get(requireCourseManage, courseControllerV2.listFeatured)
-    .post(requireCourseManage, courseControllerV2.createFeatured);
-
-router.route('/featured/:courseId')
-    .put(requireCourseManage, courseControllerV2.updateFeatured)
-    .delete(requireCourseManage, courseControllerV2.deleteFeatured);
-
 router.route('/:courseId')
     .get(requireCourseManage, courseControllerV2.getEntry)
     .put(requireCourseManageAccess, courseControllerV2.update)

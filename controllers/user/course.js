@@ -1,10 +1,10 @@
 const Controller = require("../base").Controller;
 const CourseService = require("../../service/managerial/course.js").CourseService
-const FeaturedCourseService = require("../../service/managerial/featuredCourse").FeaturedCourseService
+const FeaturedItemService = require("../../service/managerial/featuredItem").FeaturedItemService
 const RoutineService = require("../../service/managerial/routine.js").RoutineService
 
 const courseService = new CourseService()
-const featuredCourseService = new FeaturedCourseService()
+const featuredItemService = new FeaturedItemService()
 const routineService = new RoutineService()
 
 class CourseController extends Controller {
@@ -16,7 +16,7 @@ class CourseController extends Controller {
         return res.status(result.success ? 200 : 400).json(result);
     };
     featured = async (req, res) => {
-        var result = await featuredCourseService.listPublic();
+        var result = await featuredItemService.listPublic();
         return res.status(result.success ? 200 : 400).json(result);
     };
     // Public course directory grouped by category (FT-style homepage layout).

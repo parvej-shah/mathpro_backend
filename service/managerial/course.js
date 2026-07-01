@@ -718,6 +718,7 @@ ORDER BY
 
           thumbnails: {
             course_thumbnail_16_9: courseData.chips?.thumbnails?.course_thumbnail_16_9 || null,
+            course_thumbnail_card_4_3: courseData.chips?.thumbnails?.course_thumbnail_card_4_3 || null,
             trailer_video_thumb_16_9: courseData.chips?.thumbnails?.trailer_video_thumb_16_9 || null,
             facebook_community_thumb_16_9: courseData.chips?.thumbnails?.facebook_community_thumb_16_9 || null
           },

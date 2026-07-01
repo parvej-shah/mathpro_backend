@@ -5,6 +5,9 @@ const MB = 1024 * 1024;
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
+const webpExtensions = ['.webp'];
+const webpMimeTypes = ['image/webp'];
+
 const documentExtensions = ['.pdf', '.doc', '.docx', '.txt', '.md'];
 const documentMimeTypes = [
     'application/pdf',
@@ -29,21 +32,21 @@ const archiveMimeTypes = ['application/zip', 'application/x-zip-compressed', 'ap
 const uploadPolicies = {
     'teacher-image': {
         folder: 'teachers',
-        maxBytes: 5 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'routine-image': {
         folder: 'routines',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'live-class-thumbnail': {
         folder: 'live-classes',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'course-thumbnail': {
         folder: 'courses/thumbnails',
@@ -51,35 +54,65 @@ const uploadPolicies = {
         allowedExtensions: imageExtensions,
         allowedMimeTypes: imageMimeTypes
     },
+    'course-thumbnail-card': {
+        folder: 'courses/thumbnails/card',
+        maxBytes: 300 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
+    },
+    'course-thumbnail-banner': {
+        folder: 'courses/thumbnails/banner',
+        maxBytes: 250 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
+    },
+    'bundle-thumbnail-card': {
+        folder: 'bundles/thumbnails/card',
+        maxBytes: 300 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
+    },
+    'bundle-thumbnail-banner': {
+        folder: 'bundles/thumbnails/banner',
+        maxBytes: 250 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
+    },
     'course-instructor-image': {
         folder: 'courses/instructors',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'course-feedback-image': {
         folder: 'courses/feedbacks',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'contest-thumbnail': {
         folder: 'contests',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'announcement-attachment': {
         folder: 'announcements',
         maxBytes: 10 * MB,
-        allowedExtensions: [...imageExtensions, ...documentExtensions],
-        allowedMimeTypes: [...imageMimeTypes, ...documentMimeTypes]
+        allowedExtensions: documentExtensions,
+        allowedMimeTypes: documentMimeTypes
+    },
+    'announcement-image': {
+        folder: 'announcements',
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'quiz-image': {
         folder: 'quizzes/images',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     },
     'assignment-document': {
         folder: 'assignments',
@@ -119,9 +152,9 @@ const uploadPolicies = {
     },
     'book-cover': {
         folder: 'books/covers',
-        maxBytes: 10 * MB,
-        allowedExtensions: imageExtensions,
-        allowedMimeTypes: imageMimeTypes
+        maxBytes: 200 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
     }
 };
 
@@ -165,10 +198,13 @@ function validateUploadInput(purpose, fileName, contentType, contentLength) {
     }
 
     if (parsedLength > policy.maxBytes) {
+        const limitLabel = policy.maxBytes >= MB
+            ? `${Math.round(policy.maxBytes / MB)}MB`
+            : `${Math.round(policy.maxBytes / 1024)}KB`;
         return {
             valid: false,
             code: 'FILE_TOO_LARGE',
-            error: `File size exceeds ${Math.round(policy.maxBytes / MB)}MB limit`
+            error: `File size exceeds ${limitLabel} limit`
         };
     }
 

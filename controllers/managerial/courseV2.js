@@ -5,13 +5,11 @@
 const Controller = require('../base').Controller;
 const CourseServiceV2 = require('../../service/managerial/courseV2').CourseServiceV2;
 const CourseImportExportService = require('../../service/managerial/courseImportExport').CourseImportExportService;
-const FeaturedCourseService = require('../../service/managerial/featuredCourse').FeaturedCourseService;
 const ErrorHandler = require('../../util/errorHandler');
 const path = require('path');
 
 const courseServiceV2 = new CourseServiceV2();
 const importExportService = new CourseImportExportService();
-const featuredCourseService = new FeaturedCourseService();
 
 class CourseControllerV2 extends Controller {
     constructor() {
@@ -27,66 +25,6 @@ class CourseControllerV2 extends Controller {
             return res.status(result.success ? 200 : 400).json(result);
         } catch (error) {
             console.error('Error in list:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    listFeatured = async (req, res) => {
-        try {
-            const result = await featuredCourseService.listAdmin();
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in listFeatured:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    createFeatured = async (req, res) => {
-        try {
-            const result = await featuredCourseService.create(req.body);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in createFeatured:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    updateFeatured = async (req, res) => {
-        try {
-            const courseId = parseInt(req.params.courseId);
-            if (isNaN(courseId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    courseId: 'Course ID must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await featuredCourseService.update(courseId, req.body);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in updateFeatured:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
-    };
-
-    deleteFeatured = async (req, res) => {
-        try {
-            const courseId = parseInt(req.params.courseId);
-            if (isNaN(courseId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    courseId: 'Course ID must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await featuredCourseService.deleteEntry(courseId);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in deleteFeatured:', error);
             const { response, statusCode } = ErrorHandler.serverError();
             return res.status(statusCode).json(response);
         }

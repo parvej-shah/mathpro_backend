@@ -99,6 +99,7 @@ app.use("/user/module", userModuleRoutes);
 // V2 Phase 8 routes
 app.use("/v2/admin/module", require("./routes/managerial/moduleV2"));
 app.use("/v2/admin/course", require("./routes/managerial/courseV2"));
+app.use("/v2/admin/featured", require("./routes/managerial/featuredItem"));
 app.use("/v2/admin/teacher", require("./routes/managerial/teacherV2"));
 app.use("/v2/admin/upload", require("./routes/managerial/uploadV2"));
 app.use("/v2/user/upload", require("./routes/user/uploadV2"));

@@ -167,4 +167,5 @@ mistakes.
 ## Repo-local scratch
 
 - Keep repo-local TODO/plan notes here. Cross-repo backlog lives in the parent `todo.md`.
-- This repo is a **local-only git repo** (no remote). It commits separately from the others.
+- This repo has its own GitHub remote (`github.com:parvej-shah/mathpro_backend.git`). It
+  commits and pushes separately from the others.
