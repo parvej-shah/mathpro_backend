@@ -43,6 +43,7 @@ const paymentAuditLimit = actorLimiter(
 
 router.route("/initiate/:id").post(authenticateUser, paymentInitiateLimit, paymentController.initiatePayment);
 router.route("/initiate-for-bundle/:id").post(authenticateUser, paymentInitiateLimit, paymentController.initiatePaymentForBundle);
+router.route("/initiate-for-book/:id").post(authenticateUser, paymentInitiateLimit, paymentController.initiatePaymentForBook);
 router.route("/redirect/:status").post(paymentCallbackLimit, paymentController.redirect);
 router.route("/redirectNew/").post(paymentCallbackLimit, paymentController.redirectNew);
 // SSLCommerz payment callback handlers (POST -> GET redirect to frontend)

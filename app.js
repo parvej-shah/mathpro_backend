@@ -124,6 +124,7 @@ app.use("/user/bundle", require("./routes/user/bundle"));
 
 // Book catalogue routes
 app.use("/admin/book", require("./routes/managerial/book"));
+app.use("/user/book", require("./routes/user/book"));
 
 // Instructor routes (public)
 app.use("/user/instructor", require("./routes/user/instructor"));

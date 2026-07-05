@@ -3,6 +3,10 @@ const SSLCommerzPayment = require('sslcommerz-lts');
 const https = require('https');
 const http = require('http');
 
+// SSLCommerzPayment constructor's 3rd arg: true = sandbox, false = live.
+const SSLCOMMERZ_IS_LIVE = process.env.SSLCOMMERZ_LIVE === 'false' ? false : true;
+const SSLCOMMERZ_SANDBOX_FLAG = !SSLCOMMERZ_IS_LIVE;
+
 class PaymentService extends Service {
     constructor() {
         super();
@@ -343,8 +347,10 @@ class PaymentService extends Service {
                 bundleId = sel.item_id;
                 const c = await bookService.courseForBundleBook(sel.item_id, bookId);
                 if (c.success && c.data.length > 0) courseId = c.data[0].course_id;
+            } else if (sel.item_type === 'BOOK') {
+                // standalone purchase — course_id and bundle_id both stay null
             } else {
-                courseId = sel.item_id;
+                courseId = sel.item_id; // COURSE
             }
 
             const ins = await this.query(
@@ -555,7 +561,7 @@ class PaymentService extends Service {
             value_d: "COURSE", // Keep value_d as "COURSE" - coupon data stored separately
             ...gatewayAddressPayload
         };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, true);
+        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_SANDBOX_FLAG);
         try {
             var apiResponse = await sslcz.init(pgwData)
             // console.log(apiResponse)
@@ -769,7 +775,7 @@ class PaymentService extends Service {
             value_d: "BUNDLE", // Keep value_d as "BUNDLE" - coupon data stored separately
             ...gatewayAddressPayload
         };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, true);
+        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_SANDBOX_FLAG);
         try {
             var apiResponse = await sslcz.init(pgwData)
             // console.log(apiResponse)
@@ -792,6 +798,213 @@ class PaymentService extends Service {
             }
         }
 
+    }
+
+    // Standalone book purchase — no course/bundle enrollment is granted; the
+    // book itself is the purchase. Shipping is mandatory (physical good).
+    // Mirrors initiatePayment/initiatePaymentForBundle structurally, but does
+    // not call resolveBookSelection (that resolves "books attached to a
+    // course/bundle", which doesn't apply when the book is the purchase).
+    initiatePaymentForBook = async (body, book_id) => {
+        var dbResults = await Promise.all([
+            this.query(
+                `select * from managerial_auth where id = $1`,
+                [body.user_id]
+            ),
+            this.query(
+                `select * from book where id = $1 and is_active = true`,
+                [book_id]
+            )
+        ])
+
+        if (!dbResults[1].success || dbResults[1].data.length === 0) {
+            return { success: false, error: 'Book not found or unavailable' };
+        }
+
+        // Get original price from the database row — never trust a client-supplied price.
+        var originalPrice = parseFloat(dbResults[1].data[0].price);
+        var finalPrice = originalPrice;
+        var couponId = null;
+        var couponData = null;
+
+        // Shipping is mandatory for a standalone book purchase (unlike the
+        // optional include-books shipping on course/bundle checkout).
+        const s = body.shipping || {};
+        if (!s.name || !s.phone || !s.address) {
+            return { success: false, error: 'Shipping name, phone and address are required' };
+        }
+        const shipping = {
+            name: s.name,
+            phone: s.phone,
+            address: s.address,
+            city: s.city || null,
+            postcode: s.postcode || null
+        };
+
+        // Handle coupon if provided
+        if (body.coupon_code) {
+            try {
+                const CouponService = require('../managerial/coupon');
+                const couponService = new CouponService();
+
+                const validation = await couponService.validateCouponForBook(
+                    body.coupon_code,
+                    book_id,
+                    body.user_id
+                );
+
+                if (!validation.valid) {
+                    return {
+                        success: false,
+                        error: validation.error || 'Invalid coupon code'
+                    };
+                }
+
+                const priceCalc = couponService.calculateDiscount(
+                    validation.coupon,
+                    originalPrice
+                );
+
+                finalPrice = priceCalc.finalPrice;
+                couponId = validation.coupon.id;
+                couponData = validation.coupon;
+            } catch (error) {
+                console.error('Error processing book coupon:', error);
+                return {
+                    success: false,
+                    error: 'Failed to process coupon'
+                };
+            }
+        }
+
+        // Generate transaction ID BEFORE payment initiation (this will be the access code sent to user)
+        const transactionId = this.generateTransactionId(body.user_id, book_id);
+
+        // Stage the book selection so the IPN can fulfil it after the redirect
+        // round-trip — reuses the existing staging table/shape (item_type='BOOK').
+        await this.stageBookSelection(transactionId, body.user_id, 'BOOK', book_id, {
+            booksTotal: originalPrice,
+            books: [{ id: book_id }],
+            shipping
+        });
+
+        // Record coupon usage immediately (not waiting for IPN), same as course/bundle.
+        if (couponId && couponData) {
+            try {
+                const CouponService = require('../managerial/coupon');
+                const couponService = new CouponService();
+
+                const discountAmount = originalPrice - finalPrice;
+
+                let trackingStored = false;
+                try {
+                    await couponService.storePaymentCouponData(
+                        transactionId,
+                        couponData,
+                        body.user_id,
+                        book_id,
+                        'BOOK',
+                        originalPrice,
+                        discountAmount,
+                        finalPrice
+                    );
+                    trackingStored = true;
+                } catch (trackingError) {
+                    console.warn('Failed to store book coupon tracking data (non-critical):', trackingError);
+                }
+
+                const recordResult = await couponService.recordUsage(
+                    couponId,
+                    body.user_id,
+                    null, // course_id
+                    null, // bundle_id
+                    {
+                        originalPrice: originalPrice,
+                        discountAmount: discountAmount,
+                        finalPrice: finalPrice
+                    },
+                    'pending', // Will be updated to 'completed' in IPN
+                    transactionId,
+                    book_id
+                );
+
+                if (!recordResult.success) {
+                    const isDuplicateError = recordResult.error && (
+                        recordResult.error.includes('already used') ||
+                        recordResult.error.includes('pending payment')
+                    );
+
+                    if (isDuplicateError) {
+                        console.warn('Book coupon usage already recorded (idempotency):', {
+                            transactionId,
+                            couponId,
+                            error: recordResult.error
+                        });
+                    } else {
+                        console.error('Failed to record book coupon usage during payment initiation:', {
+                            transactionId,
+                            couponId,
+                            error: recordResult.error,
+                            trackingStored
+                        });
+                    }
+                } else {
+                    console.log('Book coupon usage recorded immediately (pending payment):', {
+                        transactionId,
+                        couponId,
+                        usageId: recordResult.data?.usageId,
+                        trackingStored
+                    });
+                }
+            } catch (error) {
+                console.error('Error processing book coupon during payment initiation:', {
+                    error: error.message,
+                    stack: error.stack,
+                    transactionId,
+                    couponId
+                });
+            }
+        }
+
+        const paymentCallbackBaseUrl = process.env.BACKEND_URL || process.env.PRODUCTION_URL || 'https://2m06xslkj8.execute-api.ap-southeast-2.amazonaws.com/prod';
+        const gatewayAddressPayload = this.buildGatewayAddressPayload(dbResults[0].data[0], { include: true, shipping });
+
+        var pgwData = {
+            total_amount: finalPrice.toFixed(2),
+            currency: 'BDT',
+            tran_id: transactionId,
+            success_url: `${paymentCallbackBaseUrl}/user/payment/success`,
+            fail_url: `${paymentCallbackBaseUrl}/user/payment/failure`,
+            cancel_url: `${paymentCallbackBaseUrl}/user/payment/cancel`,
+            ipn_url: process.env.IPN_URL,
+            shipping_method: 'Courier',
+            product_name: 'Math Pro Book',
+            product_category: 'Education',
+            product_profile: 'physical-goods',
+            value_a: body.user_id,
+            value_b: book_id,
+            value_c: finalPrice.toFixed(2),
+            value_d: "BOOK",
+            ...gatewayAddressPayload
+        };
+        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_SANDBOX_FLAG);
+        try {
+            var apiResponse = await sslcz.init(pgwData)
+            return {
+                success: true,
+                data: apiResponse.GatewayPageURL,
+                coupon_applied: couponId ? true : false,
+                original_price: originalPrice,
+                final_price: finalPrice,
+                discount_amount: couponId ? (originalPrice - finalPrice) : 0
+            }
+        } catch (e) {
+            console.log(e)
+            return {
+                success: false,
+                data: 'error occurred'
+            }
+        }
     }
 
     // Get comprehensive payment history and enrollment details for a user
@@ -886,6 +1099,34 @@ class PaymentService extends Service {
                 ORDER BY t.timestamp DESC
             `;
 
+            // Standalone book purchases only (course_id/bundle_id both null) — a
+            // book bought as a course/bundle addon already surfaces via its
+            // parent course/bundle entry above, so it's excluded here to avoid
+            // double-counting.
+            const bookQuery = `
+                SELECT
+                    cbp.user_id,
+                    cbp.book_id,
+                    cbp.amount_paid as paid_amount,
+                    cbp.transaction_id,
+                    cbp.timestamp as purchase_date,
+                    cbp.fulfillment_status,
+                    cbp.ship_name,
+                    cbp.ship_phone,
+                    cbp.ship_address,
+                    cbp.ship_city,
+                    cbp.ship_postcode,
+                    b.id,
+                    b.title,
+                    b.image_url as book_image_url,
+                    b.price as original_price,
+                    'book' as purchase_type
+                FROM course_book_purchase cbp
+                JOIN book b ON b.id = cbp.book_id
+                WHERE cbp.user_id = $1 AND cbp.course_id IS NULL AND cbp.bundle_id IS NULL
+                ORDER BY cbp.timestamp DESC
+            `;
+
             // Get all data in parallel for better performance
             const results = await Promise.all([
                 // 1. Get all individual course purchases/enrollments (with coupon info)
@@ -898,16 +1139,20 @@ class PaymentService extends Service {
                 // Fixed: Use phone and email columns instead of login
                 this.query(`
                     SELECT name, phone, email, profile
-                    FROM managerial_auth 
+                    FROM managerial_auth
                     WHERE id = $1
-                `, [userIdInt])
+                `, [userIdInt]),
+
+                // 4. Get standalone book purchases (shipping/fulfilment info)
+                this.query(bookQuery, [userIdInt])
             ]);
 
             const individualCourses = results[0];
             const bundlePurchases = results[1];
             const userInfo = results[2];
+            const bookPurchases = results[3];
 
-            if (!individualCourses.success || !bundlePurchases.success || !userInfo.success) {
+            if (!individualCourses.success || !bundlePurchases.success || !userInfo.success || !bookPurchases.success) {
                 return {
                     success: false,
                     error: 'Failed to retrieve payment history'
@@ -921,9 +1166,13 @@ class PaymentService extends Service {
             const totalBundleSpent = bundlePurchases.data
                 .reduce((sum, bundle) => sum + (parseFloat(bundle.paid_amount) || 0), 0);
 
-            const totalSpent = totalIndividualSpent + totalBundleSpent;
+            const totalBookSpent = bookPurchases.data
+                .reduce((sum, book) => sum + (parseFloat(book.paid_amount) || 0), 0);
+
+            const totalSpent = totalIndividualSpent + totalBundleSpent + totalBookSpent;
             const totalCourses = individualCourses.data.length;
             const totalBundles = bundlePurchases.data.length;
+            const totalBooks = bookPurchases.data.length;
 
             // Combine and sort all transactions by date (with formatted coupon info)
             const allTransactions = [
@@ -996,8 +1245,16 @@ class PaymentService extends Service {
                     delete transaction.coupon_discount_amount;
                     delete transaction.coupon_original_price;
                     delete transaction.coupon_final_price;
-                    
+
                     return transaction;
+                }),
+                ...bookPurchases.data.map(book => {
+                    return {
+                        ...book,
+                        transaction_date: book.purchase_date,
+                        item_type: 'book',
+                        coupon: null
+                    };
                 })
             ].sort((a, b) => b.transaction_date - a.transaction_date);
 
@@ -1009,12 +1266,15 @@ class PaymentService extends Service {
                         total_spent: totalSpent,
                         total_individual_spent: totalIndividualSpent,
                         total_bundle_spent: totalBundleSpent,
+                        total_book_spent: totalBookSpent,
                         total_courses_enrolled: totalCourses,
                         total_bundles_purchased: totalBundles,
+                        total_books_purchased: totalBooks,
                         total_transactions: allTransactions.length
                     },
                     individual_courses: individualCourses.data,
                     bundle_purchases: bundlePurchases.data,
+                    book_purchases: bookPurchases.data,
                     all_transactions: allTransactions
                 }
             };

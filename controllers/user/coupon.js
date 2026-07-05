@@ -9,13 +9,13 @@ class UserCouponController extends Controller {
   }
 
   /**
-   * Validate a coupon code for a specific course or bundle
+   * Validate a coupon code for a specific course, bundle, or book
    * POST /user/coupon/validate
-   * Body: { coupon_code, course_id OR bundle_id }
+   * Body: { coupon_code, course_id OR bundle_id OR book_id }
    */
   validateCoupon = async (req, res) => {
     try {
-      const { coupon_code, course_id, bundle_id } = req.body;
+      const { coupon_code, course_id, bundle_id, book_id } = req.body;
 
       if (!coupon_code) {
         return res.status(400).json({
@@ -24,18 +24,19 @@ class UserCouponController extends Controller {
         });
       }
 
-      // Must provide either course_id OR bundle_id, but not both
-      if (!course_id && !bundle_id) {
+      const providedCount = [course_id, bundle_id, book_id].filter(Boolean).length;
+
+      if (providedCount === 0) {
         return res.status(400).json({
           success: false,
-          error: "Either course_id or bundle_id is required",
+          error: "Either course_id, bundle_id or book_id is required",
         });
       }
 
-      if (course_id && bundle_id) {
+      if (providedCount > 1) {
         return res.status(400).json({
           success: false,
-          error: "Provide either course_id or bundle_id, not both",
+          error: "Provide only one of course_id, bundle_id or book_id",
         });
       }
 
@@ -63,8 +64,7 @@ class UserCouponController extends Controller {
           userId,
           requestDetails
         );
-      } else {
-        // bundle_id provided
+      } else if (bundle_id) {
         const bundleId = parseInt(bundle_id);
         if (isNaN(bundleId)) {
           return res.status(400).json({
@@ -75,6 +75,20 @@ class UserCouponController extends Controller {
         result = await couponService.validateCouponForBundle(
           coupon_code,
           bundleId,
+          userId
+        );
+      } else {
+        // book_id provided
+        const bookId = parseInt(book_id);
+        if (isNaN(bookId)) {
+          return res.status(400).json({
+            success: false,
+            error: "Valid book ID is required",
+          });
+        }
+        result = await couponService.validateCouponForBook(
+          coupon_code,
+          bookId,
           userId
         );
       }
@@ -90,13 +104,13 @@ class UserCouponController extends Controller {
   };
 
   /**
-   * Apply a coupon to calculate discounted price for a course or bundle
+   * Apply a coupon to calculate discounted price for a course, bundle, or book
    * POST /user/coupon/apply
-   * Body: { coupon_code, course_id OR bundle_id }
+   * Body: { coupon_code, course_id OR bundle_id OR book_id }
    */
   applyCoupon = async (req, res) => {
     try {
-      const { coupon_code, course_id, bundle_id } = req.body;
+      const { coupon_code, course_id, bundle_id, book_id } = req.body;
 
       if (!coupon_code) {
         return res.status(400).json({
@@ -105,18 +119,19 @@ class UserCouponController extends Controller {
         });
       }
 
-      // Must provide either course_id OR bundle_id, but not both
-      if (!course_id && !bundle_id) {
+      const providedCount = [course_id, bundle_id, book_id].filter(Boolean).length;
+
+      if (providedCount === 0) {
         return res.status(400).json({
           success: false,
-          error: "Either course_id or bundle_id is required",
+          error: "Either course_id, bundle_id or book_id is required",
         });
       }
 
-      if (course_id && bundle_id) {
+      if (providedCount > 1) {
         return res.status(400).json({
           success: false,
-          error: "Provide either course_id or bundle_id, not both",
+          error: "Provide only one of course_id, bundle_id or book_id",
         });
       }
 
@@ -124,7 +139,7 @@ class UserCouponController extends Controller {
 
       let result;
       let couponId = null;
-      
+
       if (course_id) {
         const courseId = parseInt(course_id);
         if (isNaN(courseId)) {
@@ -138,12 +153,11 @@ class UserCouponController extends Controller {
           courseId,
           userId
         );
-        
+
         if (result.success && result.data && result.data.coupon) {
           couponId = result.data.coupon.id;
         }
-      } else {
-        // bundle_id provided
+      } else if (bundle_id) {
         const bundleId = parseInt(bundle_id);
         if (isNaN(bundleId)) {
           return res.status(400).json({
@@ -156,13 +170,36 @@ class UserCouponController extends Controller {
           bundleId,
           userId
         );
-        
+
+        if (result.success && result.data && result.data.coupon) {
+          couponId = result.data.coupon.id;
+        }
+      } else {
+        // book_id provided
+        const bookId = parseInt(book_id);
+        if (isNaN(bookId)) {
+          return res.status(400).json({
+            success: false,
+            error: "Valid book ID is required",
+          });
+        }
+        result = await couponService.applyCouponToPriceForBook(
+          coupon_code,
+          bookId,
+          userId
+        );
+
         if (result.success && result.data && result.data.coupon) {
           couponId = result.data.coupon.id;
         }
       }
 
       // Track coupon click after successful application
+      // NOTE: trackCouponClick only supports course_id/bundle_id today (see
+      // coupon.js) — book clicks are intentionally not tracked here, matching
+      // the scope of this task (recordUsage/linkClickToPurchase, used at actual
+      // payment time, do support book_id; this is a separate pre-checkout
+      // "apply" click-tracking path outside that scope).
       if (result.success && couponId && userId) {
         try {
           const requestDetails = {
@@ -174,7 +211,7 @@ class UserCouponController extends Controller {
               final_price: result.data.final_price
             }
           };
-          
+
           if (course_id) {
             await couponService.trackCouponClick(
               couponId,

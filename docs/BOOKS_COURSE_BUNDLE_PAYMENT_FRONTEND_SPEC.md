@@ -520,9 +520,8 @@ Meaning:
 ## Current API Limitations
 
 - no per-book selection
-- no quantity selection
+- no quantity selection (a standalone book purchase is qty=1 per checkout; buy again for a second copy)
 - no separate bundle-book attachment table
-- no standalone API to validate shipping before payment initiation
 - no dedicated frontend polling/status API in this spec for payment completion
 
 ---
@@ -544,3 +543,68 @@ Meaning:
 3. If user opts in, collect required shipping fields
 4. Call `POST /user/payment/initiate-for-bundle/:id`
 5. Redirect user to the returned SSLCommerz URL
+
+---
+
+## Standalone book purchase
+
+A student can buy a book on its own, with no course/bundle enrollment. Unlike the
+addon flow above, shipping is **mandatory** (the book itself is the purchase) and
+a coupon code is supported (coupons scoped to specific books via the admin coupon
+system, same mechanism as course/bundle-scoped coupons).
+
+### Browse
+
+- `GET /user/book` — list active books (catalogue)
+- `GET /user/book/:id` — single active book detail
+
+Both return the `book` row shape: `id, title, image_url, description, class_levels,
+tags, price, is_active, created_at, updated_at`.
+
+### Initiate purchase
+
+`POST /user/payment/initiate-for-book/:id`
+
+Request body:
+```json
+{
+  "coupon_code": "OPTIONAL10",
+  "shipping": {
+    "name": "Student Name",
+    "phone": "01700000000",
+    "address": "House 1, Road 2, Dhaka",
+    "city": "Dhaka",
+    "postcode": "1207"
+  }
+}
+```
+`shipping.name`, `shipping.phone`, `shipping.address` are required; `city`/`postcode`
+are optional. `coupon_code` is optional.
+
+Response (on success):
+```json
+{
+  "success": true,
+  "data": "https://sandbox.sslcommerz.com/...",
+  "coupon_applied": true,
+  "original_price": 500,
+  "final_price": 450,
+  "discount_amount": 50
+}
+```
+
+### Fulfilment
+
+After a successful SSLCommerz IPN callback (`value_d = "BOOK"`), a row is inserted
+into `course_book_purchase` with `course_id = NULL` and `bundle_id = NULL` — the
+same table used for course/bundle book addons, distinguished by both foreign keys
+being null. Fulfilment status (`pending` -> `shipped` -> `delivered`/`cancelled`)
+is managed via the existing admin endpoints (`GET/PUT /admin/book/orders*`).
+
+### Billing history
+
+`GET /user/payment/history` now also returns `book_purchases` (standalone book
+orders only — an addon book bought alongside a course/bundle still surfaces via
+that course/bundle's own history entry, not here) and adds `total_book_spent`/
+`total_books_purchased` to `summary`. Standalone book entries also appear in
+`all_transactions` with `item_type: "book"`.
