@@ -575,8 +575,10 @@ class CouponService extends Service {
     userId = null,
     requestDetails = {}
   ) => {
-    // Use the comprehensive validation method
-    const result = await this.validateCouponEligibility(code, courseId, userId);
+    const result = await this.validateCouponForItem(code, "course", courseId, userId, {
+      notFoundError: "Invalid coupon code",
+      failureError: "Failed to validate coupon eligibility",
+    });
 
     // Log validation attempt
     const user = {
@@ -668,7 +670,7 @@ class CouponService extends Service {
   };
 
   getCouponByCode = async (code, notFoundError = "Invalid coupon code") => {
-    const codeValidation = this.validateCouponCode(code);
+    const codeValidation = CouponValidator.validateCouponCode(code);
     if (!codeValidation.valid) {
       return codeValidation;
     }
@@ -1024,16 +1026,18 @@ class CouponService extends Service {
   };
 
   /**
-   * Apply coupon to a course purchase (validate and calculate price)
+   * Apply coupon to an item purchase (validate and calculate price)
+   * @param {Function} validate - item-specific validator (code, itemId, userId) => validation result
+   * @param {Function} getPrice - item-specific price getter (itemId) => price result
    * @param {string} code - Coupon code
-   * @param {number} courseId - Course ID
+   * @param {number} itemId - Course/bundle/book ID
    * @param {number} userId - User ID
+   * @param {string} errorLabel - label used in the console.error message
    * @returns {Object} Application result with price details
    */
-  applyCouponToPrice = async (code, courseId, userId) => {
+  applyCouponToPriceForItem = async (validate, getPrice, code, itemId, userId, errorLabel) => {
     try {
-      // Validate coupon first
-      const validation = await this.validateCoupon(code, courseId, userId);
+      const validation = await validate(code, itemId, userId);
 
       if (!validation.valid) {
         return {
@@ -1042,15 +1046,15 @@ class CouponService extends Service {
         };
       }
 
-      const coursePriceResult = await this.getCoursePrice(courseId);
-      if (!coursePriceResult.success) {
-        return coursePriceResult;
+      const priceResult = await getPrice(itemId);
+      if (!priceResult.success) {
+        return priceResult;
       }
 
       // Calculate discount using the authoritative backend price
       const priceCalculation = this.calculateDiscount(
         validation.coupon,
-        coursePriceResult.data
+        priceResult.data
       );
 
       if (!priceCalculation.success) {
@@ -1067,12 +1071,30 @@ class CouponService extends Service {
         }
       };
     } catch (error) {
-      console.error("Error applying coupon:", error);
+      console.error(`Error applying coupon${errorLabel}:`, error);
       return {
         success: false,
         error: "Failed to apply coupon",
       };
     }
+  };
+
+  /**
+   * Apply coupon to a course purchase (validate and calculate price)
+   * @param {string} code - Coupon code
+   * @param {number} courseId - Course ID
+   * @param {number} userId - User ID
+   * @returns {Object} Application result with price details
+   */
+  applyCouponToPrice = async (code, courseId, userId) => {
+    return this.applyCouponToPriceForItem(
+      this.validateCoupon,
+      this.getCoursePrice,
+      code,
+      courseId,
+      userId,
+      ""
+    );
   };
 
   /**
@@ -1083,48 +1105,14 @@ class CouponService extends Service {
    * @returns {Object} Application result with price details
    */
   applyCouponToPriceForBundle = async (code, bundleId, userId) => {
-    try {
-      // Validate coupon first
-      const validation = await this.validateCouponForBundle(code, bundleId, userId);
-
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: validation.error,
-        };
-      }
-
-      const bundlePriceResult = await this.getBundlePrice(bundleId);
-      if (!bundlePriceResult.success) {
-        return bundlePriceResult;
-      }
-
-      // Calculate discount using the authoritative backend price
-      const priceCalculation = this.calculateDiscount(
-        validation.coupon,
-        bundlePriceResult.data
-      );
-
-      if (!priceCalculation.success) {
-        return priceCalculation;
-      }
-
-      return {
-        success: true,
-        data: {
-          coupon: validation.coupon,
-          original_price: priceCalculation.originalPrice,
-          discount_amount: priceCalculation.discountAmount,
-          final_price: priceCalculation.finalPrice
-        }
-      };
-    } catch (error) {
-      console.error("Error applying coupon for bundle:", error);
-      return {
-        success: false,
-        error: "Failed to apply coupon",
-      };
-    }
+    return this.applyCouponToPriceForItem(
+      this.validateCouponForBundle,
+      this.getBundlePrice,
+      code,
+      bundleId,
+      userId,
+      " for bundle"
+    );
   };
 
   /**
@@ -1135,46 +1123,14 @@ class CouponService extends Service {
    * @returns {Object} Application result with price details
    */
   applyCouponToPriceForBook = async (code, bookId, userId) => {
-    try {
-      const validation = await this.validateCouponForBook(code, bookId, userId);
-
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: validation.error,
-        };
-      }
-
-      const bookPriceResult = await this.getBookPrice(bookId);
-      if (!bookPriceResult.success) {
-        return bookPriceResult;
-      }
-
-      const priceCalculation = this.calculateDiscount(
-        validation.coupon,
-        bookPriceResult.data
-      );
-
-      if (!priceCalculation.success) {
-        return priceCalculation;
-      }
-
-      return {
-        success: true,
-        data: {
-          coupon: validation.coupon,
-          original_price: priceCalculation.originalPrice,
-          discount_amount: priceCalculation.discountAmount,
-          final_price: priceCalculation.finalPrice
-        }
-      };
-    } catch (error) {
-      console.error("Error applying coupon for book:", error);
-      return {
-        success: false,
-        error: "Failed to apply coupon",
-      };
-    }
+    return this.applyCouponToPriceForItem(
+      this.validateCouponForBook,
+      this.getBookPrice,
+      code,
+      bookId,
+      userId,
+      " for book"
+    );
   };
 
   /**
@@ -2639,38 +2595,6 @@ class CouponService extends Service {
   };
 
   /**
-   * Validate coupon code format and business rules with security checks
-   * @param {string} code - Coupon code to validate
-   * @returns {Object} Validation result
-   */
-  validateCouponCode = (code) => {
-    // Delegate to CouponValidator for consistent validation
-    return CouponValidator.validateCouponCode(code);
-  };
-
-  /**
-   * Validate date range for coupon validity
-   * @param {number} startTime - Start timestamp
-   * @param {number} endTime - End timestamp
-   * @returns {Object} Validation result
-   */
-  validateDateRange = (startTime, endTime) => {
-    // Delegate to CouponValidator for consistent validation
-    return CouponValidator.validateDateRange(startTime, endTime);
-  };
-
-  /**
-   * Validate discount value based on type with enhanced checks
-   * @param {string} discountType - 'fixed' or 'percentage'
-   * @param {number} discountValue - Discount value
-   * @returns {Object} Validation result
-   */
-  validateDiscountValue = (discountType, discountValue) => {
-    // Delegate to CouponValidator for consistent validation
-    return CouponValidator.validateDiscountValue(discountType, discountValue);
-  };
-
-  /**
    * Check if coupon has expired
    * @param {Object} coupon - Coupon object
    * @returns {Object} Validation result
@@ -2716,27 +2640,6 @@ class CouponService extends Service {
   };
 
   /**
-   * Check if coupon is applicable to a specific course
-   * @param {number} couponId - Coupon ID
-   * @param {number} courseId - Course ID
-   * @returns {Object} Validation result
-   */
-  checkCourseEligibility = async (couponId, courseId) => {
-    return this.checkItemEligibility(couponId, "course", courseId);
-  };
-
-  /**
-   * Check if user is eligible to use the coupon
-   * @param {number} couponId - Coupon ID
-   * @param {number} userId - User ID
-   * @param {number} courseId - Course ID
-   * @returns {Object} Validation result
-   */
-  checkUserEligibility = async (couponId, userId, courseId) => {
-    return this.checkUserItemEligibility(couponId, userId, "course", courseId);
-  };
-
-  /**
    * Validate metadata input with size limits and sanitization
    * @param {Object} metadata - Metadata object
    * @returns {Object} Validation result
@@ -2744,20 +2647,6 @@ class CouponService extends Service {
   validateMetadata = (metadata) => {
     // Delegate to CouponValidator for consistent validation
     return CouponValidator.validateMetadata(metadata);
-  };
-
-  /**
-   * Comprehensive coupon validation with all business rules
-   * @param {string} code - Coupon code
-   * @param {number} courseId - Course ID
-   * @param {number} userId - User ID (optional)
-   * @returns {Object} Comprehensive validation result
-   */
-  validateCouponEligibility = async (code, courseId, userId = null) => {
-    return this.validateCouponForItem(code, "course", courseId, userId, {
-      notFoundError: "Invalid coupon code",
-      failureError: "Failed to validate coupon eligibility",
-    });
   };
 
   /**
@@ -2988,7 +2877,7 @@ class CouponService extends Service {
 
     // Validate coupon code
     if (normalized.code !== undefined) {
-      const codeValidation = this.validateCouponCode(normalized.code);
+      const codeValidation = CouponValidator.validateCouponCode(normalized.code);
       if (!codeValidation.valid) {
         errors.push(codeValidation.error);
       } else {
@@ -3012,7 +2901,7 @@ class CouponService extends Service {
       if (discountValue === undefined || discountValue === null || discountValue === "") {
         errors.push("Discount value is required");
       } else {
-        const discountValidation = this.validateDiscountValue(
+        const discountValidation = CouponValidator.validateDiscountValue(
           discountType,
           discountValue
         );
@@ -3063,7 +2952,7 @@ class CouponService extends Service {
           errors.push("Start time and end time are required");
         }
       } else {
-        const dateValidation = this.validateDateRange(startTime, endTime);
+        const dateValidation = CouponValidator.validateDateRange(startTime, endTime);
         if (!dateValidation.valid) {
           errors.push(dateValidation.error);
         } else {

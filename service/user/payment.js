@@ -453,27 +453,7 @@ class PaymentService extends Service {
                 const couponService = new CouponService();
                 
                 const discountAmount = originalPrice - finalPrice;
-                
-                // EDGE CASE FIX: Store coupon tracking data first (for IPN reference)
-                // If this fails, we still try to record usage (non-critical)
-                let trackingStored = false;
-                try {
-                    await couponService.storePaymentCouponData(
-                        transactionId,
-                        couponData,
-                        body.user_id,
-                        course_id,
-                        'COURSE',
-                        originalPrice,
-                        discountAmount,
-                        finalPrice
-                    );
-                    trackingStored = true;
-                } catch (trackingError) {
-                    console.warn('Failed to store coupon tracking data (non-critical):', trackingError);
-                    // Continue - IPN can work without tracking data
-                }
-                
+
                 // Record coupon usage IMMEDIATELY with payment_status='pending'
                 // This ensures analytics work even if IPN fails
                 // IPN will update it to 'completed' when payment succeeds
@@ -510,8 +490,7 @@ class PaymentService extends Service {
                         console.error('Failed to record coupon usage during payment initiation:', {
                             transactionId,
                             couponId,
-                            error: recordResult.error,
-                            trackingStored
+                            error: recordResult.error
                         });
                         // Don't fail payment, but log prominently for reconciliation
                     }
@@ -519,8 +498,7 @@ class PaymentService extends Service {
                     console.log('Coupon usage recorded immediately (pending payment):', {
                         transactionId,
                         couponId,
-                        usageId: recordResult.data?.usageId,
-                        trackingStored
+                        usageId: recordResult.data?.usageId
                     });
                 }
             } catch (error) {
@@ -668,26 +646,6 @@ class PaymentService extends Service {
 
                 const discountAmount = originalPrice - finalPrice;
 
-                // EDGE CASE FIX: Store coupon tracking data first (for IPN reference)
-                // If this fails, we still try to record usage (non-critical)
-                let trackingStored = false;
-                try {
-                    await couponService.storePaymentCouponData(
-                        transactionId,
-                        couponData,
-                        body.user_id,
-                        bundle_id,
-                        'BUNDLE',
-                        originalPrice,
-                        discountAmount,
-                        finalPrice
-                    );
-                    trackingStored = true;
-                } catch (trackingError) {
-                    console.warn('Failed to store bundle coupon tracking data (non-critical):', trackingError);
-                    // Continue - IPN can work without tracking data
-                }
-                
                 // Record coupon usage IMMEDIATELY with payment_status='pending'
                 // This ensures analytics work even if IPN fails
                 // IPN will update it to 'completed' when payment succeeds
@@ -724,8 +682,7 @@ class PaymentService extends Service {
                         console.error('Failed to record bundle coupon usage during payment initiation:', {
                             transactionId,
                             couponId,
-                            error: recordResult.error,
-                            trackingStored
+                            error: recordResult.error
                         });
                         // Don't fail payment, but log prominently for reconciliation
                     }
@@ -733,8 +690,7 @@ class PaymentService extends Service {
                     console.log('Bundle coupon usage recorded immediately (pending payment):', {
                         transactionId,
                         couponId,
-                        usageId: recordResult.data?.usageId,
-                        trackingStored
+                        usageId: recordResult.data?.usageId
                     });
                 }
             } catch (error) {
@@ -896,23 +852,6 @@ class PaymentService extends Service {
 
                 const discountAmount = originalPrice - finalPrice;
 
-                let trackingStored = false;
-                try {
-                    await couponService.storePaymentCouponData(
-                        transactionId,
-                        couponData,
-                        body.user_id,
-                        book_id,
-                        'BOOK',
-                        originalPrice,
-                        discountAmount,
-                        finalPrice
-                    );
-                    trackingStored = true;
-                } catch (trackingError) {
-                    console.warn('Failed to store book coupon tracking data (non-critical):', trackingError);
-                }
-
                 const recordResult = await couponService.recordUsage(
                     couponId,
                     body.user_id,
@@ -944,16 +883,14 @@ class PaymentService extends Service {
                         console.error('Failed to record book coupon usage during payment initiation:', {
                             transactionId,
                             couponId,
-                            error: recordResult.error,
-                            trackingStored
+                            error: recordResult.error
                         });
                     }
                 } else {
                     console.log('Book coupon usage recorded immediately (pending payment):', {
                         transactionId,
                         couponId,
-                        usageId: recordResult.data?.usageId,
-                        trackingStored
+                        usageId: recordResult.data?.usageId
                     });
                 }
             } catch (error) {

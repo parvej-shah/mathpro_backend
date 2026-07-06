@@ -382,11 +382,14 @@ class PaymentController extends Controller {
                     try {
                         const CouponService = require('../../service/managerial/coupon');
                         const couponService = new CouponService();
-                        
-                        // Get coupon tracking data to find couponId
-                        const trackingResult = await couponService.getPaymentCouponData(transactionId);
-                        if (trackingResult.success && trackingResult.data) {
-                            couponId = trackingResult.data.coupon_id;
+
+                        // Get couponId from the usage record created at payment initiation
+                        const usageResult = await couponService.query(
+                            `SELECT coupon_id FROM coupon_usage WHERE transaction_id = $1`,
+                            [transactionId]
+                        );
+                        if (usageResult.success && usageResult.data.length > 0) {
+                            couponId = usageResult.data[0].coupon_id;
                             console.log('IPN: Found coupon for transaction:', {
                                 transactionId,
                                 couponId
