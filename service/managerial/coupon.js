@@ -575,8 +575,10 @@ class CouponService extends Service {
     userId = null,
     requestDetails = {}
   ) => {
-    // Use the comprehensive validation method
-    const result = await this.validateCouponEligibility(code, courseId, userId);
+    const result = await this.validateCouponForItem(code, "course", courseId, userId, {
+      notFoundError: "Invalid coupon code",
+      failureError: "Failed to validate coupon eligibility",
+    });
 
     // Log validation attempt
     const user = {
@@ -654,11 +656,21 @@ class CouponService extends Service {
       };
     }
 
+    if (itemType === "book") {
+      return {
+        itemLabel: "book",
+        itemKey: "book_id",
+        linkTable: "coupon_books",
+        linkKey: "book_id",
+        itemTable: "book",
+      };
+    }
+
     return null;
   };
 
   getCouponByCode = async (code, notFoundError = "Invalid coupon code") => {
-    const codeValidation = this.validateCouponCode(code);
+    const codeValidation = CouponValidator.validateCouponCode(code);
     if (!codeValidation.valid) {
       return codeValidation;
     }
@@ -1009,17 +1021,23 @@ class CouponService extends Service {
     return this.getItemPrice("bundle", bundleId);
   };
 
+  getBookPrice = async (bookId) => {
+    return this.getItemPrice("book", bookId);
+  };
+
   /**
-   * Apply coupon to a course purchase (validate and calculate price)
+   * Apply coupon to an item purchase (validate and calculate price)
+   * @param {Function} validate - item-specific validator (code, itemId, userId) => validation result
+   * @param {Function} getPrice - item-specific price getter (itemId) => price result
    * @param {string} code - Coupon code
-   * @param {number} courseId - Course ID
+   * @param {number} itemId - Course/bundle/book ID
    * @param {number} userId - User ID
+   * @param {string} errorLabel - label used in the console.error message
    * @returns {Object} Application result with price details
    */
-  applyCouponToPrice = async (code, courseId, userId) => {
+  applyCouponToPriceForItem = async (validate, getPrice, code, itemId, userId, errorLabel) => {
     try {
-      // Validate coupon first
-      const validation = await this.validateCoupon(code, courseId, userId);
+      const validation = await validate(code, itemId, userId);
 
       if (!validation.valid) {
         return {
@@ -1028,15 +1046,15 @@ class CouponService extends Service {
         };
       }
 
-      const coursePriceResult = await this.getCoursePrice(courseId);
-      if (!coursePriceResult.success) {
-        return coursePriceResult;
+      const priceResult = await getPrice(itemId);
+      if (!priceResult.success) {
+        return priceResult;
       }
 
       // Calculate discount using the authoritative backend price
       const priceCalculation = this.calculateDiscount(
         validation.coupon,
-        coursePriceResult.data
+        priceResult.data
       );
 
       if (!priceCalculation.success) {
@@ -1053,12 +1071,30 @@ class CouponService extends Service {
         }
       };
     } catch (error) {
-      console.error("Error applying coupon:", error);
+      console.error(`Error applying coupon${errorLabel}:`, error);
       return {
         success: false,
         error: "Failed to apply coupon",
       };
     }
+  };
+
+  /**
+   * Apply coupon to a course purchase (validate and calculate price)
+   * @param {string} code - Coupon code
+   * @param {number} courseId - Course ID
+   * @param {number} userId - User ID
+   * @returns {Object} Application result with price details
+   */
+  applyCouponToPrice = async (code, courseId, userId) => {
+    return this.applyCouponToPriceForItem(
+      this.validateCoupon,
+      this.getCoursePrice,
+      code,
+      courseId,
+      userId,
+      ""
+    );
   };
 
   /**
@@ -1069,48 +1105,32 @@ class CouponService extends Service {
    * @returns {Object} Application result with price details
    */
   applyCouponToPriceForBundle = async (code, bundleId, userId) => {
-    try {
-      // Validate coupon first
-      const validation = await this.validateCouponForBundle(code, bundleId, userId);
+    return this.applyCouponToPriceForItem(
+      this.validateCouponForBundle,
+      this.getBundlePrice,
+      code,
+      bundleId,
+      userId,
+      " for bundle"
+    );
+  };
 
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: validation.error,
-        };
-      }
-
-      const bundlePriceResult = await this.getBundlePrice(bundleId);
-      if (!bundlePriceResult.success) {
-        return bundlePriceResult;
-      }
-
-      // Calculate discount using the authoritative backend price
-      const priceCalculation = this.calculateDiscount(
-        validation.coupon,
-        bundlePriceResult.data
-      );
-
-      if (!priceCalculation.success) {
-        return priceCalculation;
-      }
-
-      return {
-        success: true,
-        data: {
-          coupon: validation.coupon,
-          original_price: priceCalculation.originalPrice,
-          discount_amount: priceCalculation.discountAmount,
-          final_price: priceCalculation.finalPrice
-        }
-      };
-    } catch (error) {
-      console.error("Error applying coupon for bundle:", error);
-      return {
-        success: false,
-        error: "Failed to apply coupon",
-      };
-    }
+  /**
+   * Apply coupon to a standalone book purchase (validate and calculate price)
+   * @param {string} code - Coupon code
+   * @param {number} bookId - Book ID
+   * @param {number} userId - User ID
+   * @returns {Object} Application result with price details
+   */
+  applyCouponToPriceForBook = async (code, bookId, userId) => {
+    return this.applyCouponToPriceForItem(
+      this.validateCouponForBook,
+      this.getBookPrice,
+      code,
+      bookId,
+      userId,
+      " for book"
+    );
   };
 
   /**
@@ -1130,14 +1150,15 @@ class CouponService extends Service {
     bundleId = null,
     priceData,
     paymentStatus = "pending",
-    transactionId = null
+    transactionId = null,
+    bookId = null
   ) => {
     let client = null;
 
     try {
       // Validate input parameters
-      // Either courseId or bundleId must be provided (but not both required)
-      if (!couponId || !userId || (!courseId && !bundleId) || !priceData) {
+      // Exactly one of courseId / bundleId / bookId must be provided
+      if (!couponId || !userId || (!courseId && !bundleId && !bookId) || !priceData) {
         return {
           success: false,
           error: "Missing required parameters for coupon usage recording",
@@ -1337,7 +1358,7 @@ class CouponService extends Service {
         if (courseId) {
           existingUsage = await client.query(
             `
-            SELECT id, payment_status FROM coupon_usage 
+            SELECT id, payment_status FROM coupon_usage
             WHERE coupon_id = $1 AND user_id = $2 AND course_id = $3
             `,
             [couponId, userId, courseId]
@@ -1345,16 +1366,24 @@ class CouponService extends Service {
         } else if (bundleId) {
           existingUsage = await client.query(
             `
-            SELECT id, payment_status FROM coupon_usage 
+            SELECT id, payment_status FROM coupon_usage
             WHERE coupon_id = $1 AND user_id = $2 AND bundle_id = $3
             `,
             [couponId, userId, bundleId]
+          );
+        } else if (bookId) {
+          existingUsage = await client.query(
+            `
+            SELECT id, payment_status FROM coupon_usage
+            WHERE coupon_id = $1 AND user_id = $2 AND book_id = $3
+            `,
+            [couponId, userId, bookId]
           );
         } else {
           await client.query("ROLLBACK");
           return {
             success: false,
-            error: "Either courseId or bundleId must be provided",
+            error: "Either courseId, bundleId or bookId must be provided",
           };
         }
 
@@ -1365,9 +1394,11 @@ class CouponService extends Service {
             await client.query("ROLLBACK");
             return {
               success: false,
-              error: courseId 
+              error: courseId
                 ? "You have already used this coupon for this course"
-                : "You have already used this coupon for this bundle",
+                : bundleId
+                  ? "You have already used this coupon for this bundle"
+                  : "You have already used this coupon for this book",
             };
           }
           
@@ -1387,9 +1418,11 @@ class CouponService extends Service {
                 await client.query("ROLLBACK");
                 return {
                   success: false,
-                  error: courseId 
+                  error: courseId
                     ? "You already have a pending payment with this coupon for this course"
-                    : "You already have a pending payment with this coupon for this bundle",
+                    : bundleId
+                      ? "You already have a pending payment with this coupon for this bundle"
+                      : "You already have a pending payment with this coupon for this book",
                 };
               }
               
@@ -1494,6 +1527,34 @@ class CouponService extends Service {
               };
             }
           }
+        } else if (bookId) {
+          const bookEligibility = await client.query(
+            `
+            SELECT cbk.coupon_id
+            FROM coupon_books cbk
+            WHERE cbk.coupon_id = $1 AND cbk.book_id = $2
+            `,
+            [couponId, bookId]
+          );
+
+          if (bookEligibility.rows.length === 0) {
+            // If payment already completed, we must honor it (discount was already given)
+            if (paymentStatus === "completed") {
+              console.warn("recordUsage: Recording usage despite book not eligible (payment already completed with discount)", {
+                couponId,
+                bookId,
+                paymentStatus
+              });
+              // Continue with recording - don't return error
+            } else {
+              // For pending payments, we can still reject if not eligible
+              await client.query("ROLLBACK");
+              return {
+                success: false,
+                error: "Coupon not applicable for this book",
+              };
+            }
+          }
         }
 
         // EDGE CASE FIX: Check if transaction_id already exists (idempotency)
@@ -1502,19 +1563,19 @@ class CouponService extends Service {
         if (transactionId) {
           const existingTransactionCheck = await client.query(
             `
-            SELECT id, coupon_id, user_id, course_id, bundle_id, payment_status 
-            FROM coupon_usage 
+            SELECT id, coupon_id, user_id, course_id, bundle_id, book_id, payment_status
+            FROM coupon_usage
             WHERE transaction_id = $1
             `,
             [transactionId]
           );
-          
+
           if (existingTransactionCheck.rows.length > 0) {
             const existing = existingTransactionCheck.rows[0];
             // Check if it's the same coupon+user+item (idempotency - OK)
-            if (existing.coupon_id === couponId && 
-                existing.user_id === userId && 
-                ((courseId && existing.course_id === courseId) || (bundleId && existing.bundle_id === bundleId))) {
+            if (existing.coupon_id === couponId &&
+                existing.user_id === userId &&
+                ((courseId && existing.course_id === courseId) || (bundleId && existing.bundle_id === bundleId) || (bookId && existing.book_id === bookId))) {
               // Same transaction - idempotency, return existing record
               console.log('recordUsage: Transaction already recorded (idempotency):', {
                 transactionId,
@@ -1571,14 +1632,14 @@ class CouponService extends Service {
           }
         }
         
-        // Record usage with proper validation (support bundle_id and transaction_id)
+        // Record usage with proper validation (support bundle_id/book_id and transaction_id)
         const usageResult = await client.query(
           `
           INSERT INTO coupon_usage (
-            coupon_id, user_id, course_id, bundle_id, original_price,
+            coupon_id, user_id, course_id, bundle_id, book_id, original_price,
             discount_amount, final_price, used_at, payment_status, transaction_id,
             metadata
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           RETURNING id
           `,
           [
@@ -1586,6 +1647,7 @@ class CouponService extends Service {
             userId,
             courseId || null,
             bundleId || null,
+            bookId || null,
             originalPrice,
             discountAmount,
             finalPrice,
@@ -1630,7 +1692,8 @@ class CouponService extends Service {
               courseId,
               bundleId,
               couponUsageId,
-              transactionId
+              transactionId,
+              bookId
             );
             
             if (linkResult.success && linkResult.data.linked) {
@@ -1778,7 +1841,7 @@ class CouponService extends Service {
    * @param {string} transactionId - Transaction ID
    * @returns {Object} Result object with success status
    */
-  linkClickToPurchase = async (couponId, userId, courseId, bundleId, couponUsageId, transactionId) => {
+  linkClickToPurchase = async (couponId, userId, courseId, bundleId, couponUsageId, transactionId, bookId = null) => {
     try {
       if (!couponId || !userId || !couponUsageId || !transactionId) {
         return {
@@ -1817,8 +1880,12 @@ class CouponService extends Service {
         selectQuery += ` AND bundle_id = $${paramIndex}`;
         selectParams.push(bundleId);
         paramIndex++;
+      } else if (bookId) {
+        selectQuery += ` AND book_id = $${paramIndex}`;
+        selectParams.push(bookId);
+        paramIndex++;
       } else {
-        selectQuery += ` AND course_id IS NULL AND bundle_id IS NULL`;
+        selectQuery += ` AND course_id IS NULL AND bundle_id IS NULL AND book_id IS NULL`;
       }
 
       selectQuery += `
@@ -2528,38 +2595,6 @@ class CouponService extends Service {
   };
 
   /**
-   * Validate coupon code format and business rules with security checks
-   * @param {string} code - Coupon code to validate
-   * @returns {Object} Validation result
-   */
-  validateCouponCode = (code) => {
-    // Delegate to CouponValidator for consistent validation
-    return CouponValidator.validateCouponCode(code);
-  };
-
-  /**
-   * Validate date range for coupon validity
-   * @param {number} startTime - Start timestamp
-   * @param {number} endTime - End timestamp
-   * @returns {Object} Validation result
-   */
-  validateDateRange = (startTime, endTime) => {
-    // Delegate to CouponValidator for consistent validation
-    return CouponValidator.validateDateRange(startTime, endTime);
-  };
-
-  /**
-   * Validate discount value based on type with enhanced checks
-   * @param {string} discountType - 'fixed' or 'percentage'
-   * @param {number} discountValue - Discount value
-   * @returns {Object} Validation result
-   */
-  validateDiscountValue = (discountType, discountValue) => {
-    // Delegate to CouponValidator for consistent validation
-    return CouponValidator.validateDiscountValue(discountType, discountValue);
-  };
-
-  /**
    * Check if coupon has expired
    * @param {Object} coupon - Coupon object
    * @returns {Object} Validation result
@@ -2605,27 +2640,6 @@ class CouponService extends Service {
   };
 
   /**
-   * Check if coupon is applicable to a specific course
-   * @param {number} couponId - Coupon ID
-   * @param {number} courseId - Course ID
-   * @returns {Object} Validation result
-   */
-  checkCourseEligibility = async (couponId, courseId) => {
-    return this.checkItemEligibility(couponId, "course", courseId);
-  };
-
-  /**
-   * Check if user is eligible to use the coupon
-   * @param {number} couponId - Coupon ID
-   * @param {number} userId - User ID
-   * @param {number} courseId - Course ID
-   * @returns {Object} Validation result
-   */
-  checkUserEligibility = async (couponId, userId, courseId) => {
-    return this.checkUserItemEligibility(couponId, userId, "course", courseId);
-  };
-
-  /**
    * Validate metadata input with size limits and sanitization
    * @param {Object} metadata - Metadata object
    * @returns {Object} Validation result
@@ -2633,20 +2647,6 @@ class CouponService extends Service {
   validateMetadata = (metadata) => {
     // Delegate to CouponValidator for consistent validation
     return CouponValidator.validateMetadata(metadata);
-  };
-
-  /**
-   * Comprehensive coupon validation with all business rules
-   * @param {string} code - Coupon code
-   * @param {number} courseId - Course ID
-   * @param {number} userId - User ID (optional)
-   * @returns {Object} Comprehensive validation result
-   */
-  validateCouponEligibility = async (code, courseId, userId = null) => {
-    return this.validateCouponForItem(code, "course", courseId, userId, {
-      notFoundError: "Invalid coupon code",
-      failureError: "Failed to validate coupon eligibility",
-    });
   };
 
   /**
@@ -2877,7 +2877,7 @@ class CouponService extends Service {
 
     // Validate coupon code
     if (normalized.code !== undefined) {
-      const codeValidation = this.validateCouponCode(normalized.code);
+      const codeValidation = CouponValidator.validateCouponCode(normalized.code);
       if (!codeValidation.valid) {
         errors.push(codeValidation.error);
       } else {
@@ -2901,7 +2901,7 @@ class CouponService extends Service {
       if (discountValue === undefined || discountValue === null || discountValue === "") {
         errors.push("Discount value is required");
       } else {
-        const discountValidation = this.validateDiscountValue(
+        const discountValidation = CouponValidator.validateDiscountValue(
           discountType,
           discountValue
         );
@@ -2952,7 +2952,7 @@ class CouponService extends Service {
           errors.push("Start time and end time are required");
         }
       } else {
-        const dateValidation = this.validateDateRange(startTime, endTime);
+        const dateValidation = CouponValidator.validateDateRange(startTime, endTime);
         if (!dateValidation.valid) {
           errors.push(dateValidation.error);
         } else {
@@ -4253,6 +4253,27 @@ class CouponService extends Service {
       notFoundError: "Coupon not found",
       usageLimitError: "Coupon usage limit reached",
       itemEligibilityError: "Coupon does not apply to this bundle",
+      completedOnly: true,
+      expiryError: (_coupon, baseError) =>
+        baseError === "Coupon is not yet active"
+          ? "Coupon has expired or not yet started"
+          : "Coupon has expired or not yet started",
+      failureError: "Failed to validate coupon",
+    });
+  };
+
+  /**
+   * Validate coupon for a standalone book purchase
+   * @param {string} couponCode - Coupon code
+   * @param {number} bookId - Book ID
+   * @param {number} userId - User ID
+   * @returns {Object} Validation result
+   */
+  validateCouponForBook = async (couponCode, bookId, userId) => {
+    return this.validateCouponForItem(couponCode, "book", bookId, userId, {
+      notFoundError: "Coupon not found",
+      usageLimitError: "Coupon usage limit reached",
+      itemEligibilityError: "Coupon does not apply to this book",
       completedOnly: true,
       expiryError: (_coupon, baseError) =>
         baseError === "Coupon is not yet active"

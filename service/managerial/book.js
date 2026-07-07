@@ -45,6 +45,18 @@ class BookService extends Service {
         return this.query(query, [id]);
     };
 
+    // ---- public (student-facing) catalogue reads -----------------------------
+
+    listActive = async () => {
+        var query = `select * from ${this.table} where is_active = true order by id desc`;
+        return this.query(query, []);
+    };
+
+    getActive = async (id) => {
+        var query = `select * from ${this.table} where ${this.pk} = $1 and is_active = true`;
+        return this.query(query, [id]);
+    };
+
     create = async (reqObj, createdBy = null) => {
         const now = parseInt(Date.now() / 1000);
         const columns = [...this.cols, `created_by`, `created_at`, `updated_at`];

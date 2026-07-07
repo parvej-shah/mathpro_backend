@@ -25,6 +25,10 @@ class PaymentController extends Controller {
       var result=await paymentService.initiatePaymentForBundle(req.body,parseInt(req.params.id))
       return res.status(result.success?200:400).json(result)
     }
+    initiatePaymentForBook =async (req,res)=>{
+      var result=await paymentService.initiatePaymentForBook(req.body,parseInt(req.params.id))
+      return res.status(result.success?200:400).json(result)
+    }
     redirect =async (req,res)=>{
         // console.log(req.query.url)
         return res.redirect(`${req.query.url}/post-payment/${req.params.status}`)
@@ -42,18 +46,22 @@ class PaymentController extends Controller {
             // Extract necessary data from the POST body
             const { tran_id, status, value_d } = req.body;
             
-            // Determine the type from value_d (COURSE or BUNDLE)
-            const type = value_d === 'BUNDLE' ? 'bundle' : 'course';
-            const itemId = req.body.value_b; // course_id or bundle_id
-            
+            // Determine the type from value_d (COURSE, BUNDLE, or BOOK)
+            const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : 'course';
+            const itemId = req.body.value_b; // course_id, bundle_id, or book_id
+
             // Build frontend URL with query parameters
             const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             let redirectUrl;
-            
+
             if (type === 'bundle') {
                 redirectUrl = tran_id
                     ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
                     : `${frontendUrl}/post-payment/success?type=bundle&bundleId=${itemId}`;
+            } else if (type === 'book') {
+                redirectUrl = tran_id
+                    ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
+                    : `${frontendUrl}/post-payment/success?type=book&bookId=${itemId}`;
             } else {
                 redirectUrl = tran_id
                     ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
@@ -74,30 +82,38 @@ class PaymentController extends Controller {
 
     // Handle SSLCommerz failure callback (POST) and redirect to frontend (GET)
     handlePaymentFailure = async (req, res) => {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
         try {
-            const { tran_id } = req.body;
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
-            let redirectUrl = `${frontendUrl}/post-payment/failure`;
-            
+            const { value_d } = req.body;
+            const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : value_d === 'COURSE' ? 'course' : null;
+            const itemId = req.body.value_b; // course_id, bundle_id, or book_id
+
+            const redirectUrl = type && itemId
+                ? `${frontendUrl}/post-payment/failure?type=${type}&itemId=${itemId}`
+                : `${frontendUrl}/post-payment/failure`;
+
             return res.redirect(redirectUrl);
         } catch (error) {
             console.error('Error in handlePaymentFailure:', error);
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             return res.redirect(`${frontendUrl}/post-payment/failure`);
         }
     }
 
     // Handle SSLCommerz cancel callback (POST) and redirect to frontend (GET)
     handlePaymentCancel = async (req, res) => {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
         try {
-            const { tran_id } = req.body;
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
-            let redirectUrl = `${frontendUrl}/post-payment/cancel`;
-            
+            const { value_d } = req.body;
+            const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : value_d === 'COURSE' ? 'course' : null;
+            const itemId = req.body.value_b; // course_id, bundle_id, or book_id
+
+            const redirectUrl = type && itemId
+                ? `${frontendUrl}/post-payment/cancel?type=${type}&itemId=${itemId}`
+                : `${frontendUrl}/post-payment/cancel`;
+
             return res.redirect(redirectUrl);
         } catch (error) {
             console.error('Error in handlePaymentCancel:', error);
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
             return res.redirect(`${frontendUrl}/post-payment/cancel`);
         }
     }
@@ -366,11 +382,14 @@ class PaymentController extends Controller {
                     try {
                         const CouponService = require('../../service/managerial/coupon');
                         const couponService = new CouponService();
-                        
-                        // Get coupon tracking data to find couponId
-                        const trackingResult = await couponService.getPaymentCouponData(transactionId);
-                        if (trackingResult.success && trackingResult.data) {
-                            couponId = trackingResult.data.coupon_id;
+
+                        // Get couponId from the usage record created at payment initiation
+                        const usageResult = await couponService.query(
+                            `SELECT coupon_id FROM coupon_usage WHERE transaction_id = $1`,
+                            [transactionId]
+                        );
+                        if (usageResult.success && usageResult.data.length > 0) {
+                            couponId = usageResult.data[0].coupon_id;
                             console.log('IPN: Found coupon for transaction:', {
                                 transactionId,
                                 couponId
@@ -743,6 +762,71 @@ class PaymentController extends Controller {
                             }
                             
                             return res.status(200).json({ success: false, error: errorMsg });
+                        }
+                    } else if (itemType === 'BOOK') {
+                        // Standalone book purchase — no course/bundle enrollment to grant;
+                        // just fulfil the staged book selection into course_book_purchase
+                        // with course_id/bundle_id both null.
+                        console.log(`Processing standalone book purchase: Book ${itemId} for User ${userId}`);
+
+                        try {
+                            const CouponService = require('../../service/managerial/coupon');
+                            const couponService = new CouponService();
+
+                            const updateResult = await couponService.updateCouponUsageStatus(transactionId, 'completed');
+                            if (updateResult.success && updateResult.data && updateResult.data.length > 0) {
+                                console.log('IPN: ✅ Book coupon usage status updated to completed', {
+                                    transactionId,
+                                    couponId: couponId || 'unknown',
+                                    updatedCount: updateResult.data.length
+                                });
+                            }
+                        } catch (couponError) {
+                            console.error('IPN: Error updating book coupon usage status (non-critical):', {
+                                transactionId,
+                                couponId: couponId || 'unknown',
+                                error: couponError.message
+                            });
+                        }
+
+                        try {
+                            const bookFulfil = await paymentService.fulfilBookSelection(transactionId);
+                            console.log('IPN: ✅ Standalone book purchase recorded', {
+                                transactionId,
+                                fulfilled: bookFulfil.fulfilled
+                            });
+
+                            if (auditLogId) {
+                                await paymentService.updatePaymentLog(auditLogId, {
+                                    processing_status: 'SUCCESS',
+                                    processing_result: {
+                                        validation: validationResult,
+                                        fulfilled: bookFulfil.fulfilled,
+                                        risk_level: validationResult?.risk_level || null,
+                                        risk_title: validationResult?.risk_title || null
+                                    }
+                                });
+                            }
+
+                            return res.status(200).json({
+                                success: true,
+                                message: 'Book purchase processed successfully',
+                                risk_level: validationResult?.risk_level || 0
+                            });
+                        } catch (bookError) {
+                            console.error('IPN: Error fulfilling standalone book purchase:', {
+                                transactionId,
+                                error: bookError.message
+                            });
+
+                            if (auditLogId) {
+                                await paymentService.updatePaymentLog(auditLogId, {
+                                    processing_status: 'FAILED',
+                                    error_message: bookError.message
+                                });
+                            }
+
+                            return res.status(200).json({ success: false, error: bookError.message || 'Book purchase processing failed' });
                         }
                     } else {
                         // Handle individual course purchase (COURSE type or legacy)

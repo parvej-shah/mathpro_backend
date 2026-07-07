@@ -287,26 +287,31 @@ class BundleService extends Service {
     }
 
     if (result.success && result.data && result.data.length > 0) {
-      try {
-        const CouponService = require('./coupon');
-        const couponService = new CouponService();
-        const bundleData = result.data[0];
-        const activeCouponsResult = await couponService.getActiveCouponsForBundle(bundleData.id);
-        
-        if (activeCouponsResult.success && activeCouponsResult.data) {
-          bundleData.active_coupons = activeCouponsResult.data.map((coupon) =>
-            couponService.formatPublicCouponPreview(coupon, bundleData.price)
-          );
-        } else {
-          result.data[0].active_coupons = [];
+      // Keep public bundle detail payload free of coupon disclosures.
+      if (userId) {
+        try {
+          const CouponService = require('./coupon');
+          const couponService = new CouponService();
+          const bundleData = result.data[0];
+          const activeCouponsResult = await couponService.getActiveCouponsForBundle(bundleData.id);
+
+          if (activeCouponsResult.success && activeCouponsResult.data) {
+            bundleData.active_coupons = activeCouponsResult.data.map((coupon) =>
+              couponService.formatPublicCouponPreview(coupon, bundleData.price)
+            );
+          } else {
+            result.data[0].active_coupons = [];
+          }
+        } catch (error) {
+          console.error('Error fetching active coupons for bundle:', error);
+          if (result.data && result.data.length > 0) {
+            result.data[0].active_coupons = [];
+          }
         }
-      } catch (error) {
-        console.error('Error fetching active coupons for bundle:', error);
-        if (result.data && result.data.length > 0) {
-          result.data[0].active_coupons = [];
-        }
+      } else {
+        result.data[0].active_coupons = [];
       }
-      
+
       const bundleData = result.data[0];
       this.attachBundleTags(bundleData);
       
