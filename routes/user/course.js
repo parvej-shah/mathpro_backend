@@ -30,6 +30,13 @@ const courseWriteLimit = actorLimiter(
   { message: "Too many course actions. Please try again later." }
 );
 
+const courseFreeEnrollLimit = actorLimiter(
+  "course:enroll-free",
+  10,
+  15 * 60 * 1000,
+  { message: "Too many enrollment attempts. Please try again later." }
+);
+
 const courseAnalyticsLimit = actorLimiter(
   "course:analytics",
   10,
@@ -41,6 +48,7 @@ router.route("/list").get(publicCourseReadLimit, courseController.list);
 router.route("/featured").get(publicCourseReadLimit, courseController.featured);
 router.route("/directory").get(publicCourseReadLimit, courseController.directory);
 router.route("/takes/:id").post(authenticateUser, courseWriteLimit, courseController.takes);
+router.route("/enroll-free/:id").post(authenticateUser, courseFreeEnrollLimit, courseController.enrollFree);
 router.route("/getfull/slug/:slug").get(optAuthenticateUser, authenticatedCourseReadLimit, courseController.getFullBySlug);
 router.route("/getfull/:id").get(optAuthenticateUser, authenticatedCourseReadLimit, courseController.getFull);
 router.route("/dashboard/:id").get(optAuthenticateUser, authenticatedCourseReadLimit, courseController.getDashboard);

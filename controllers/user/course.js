@@ -28,6 +28,11 @@ class CourseController extends Controller {
         var result = await courseService.takes(req.body.user_id, req.params.id)
         return res.status(result.success ? 200 : 400).json(result)
     }
+
+    enrollFree = async (req, res) => {
+        var result = await courseService.enrollFree(req.body.user_id, parseInt(req.params.id))
+        return res.status(result.success ? 200 : 400).json(result)
+    }
     getFull = async (req, res) => {
         var result = await courseService.getFullUser(req.body, req.params.id)
         return res.status(result.success ? 200 : 400).json(result)

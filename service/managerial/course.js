@@ -24,6 +24,7 @@ class CourseService extends Service {
     `title`,
     `x_price`,
     `price`,
+    `is_free`,
     `language`,
     `enrolled`,
     `you_get`,
@@ -46,6 +47,7 @@ class CourseService extends Service {
     `string`,
     `integer`,
     `integer`,
+    `boolean`,
     `string`,
     `integer`,
     `object`,
@@ -334,6 +336,33 @@ class CourseService extends Service {
 
     const res = await this.query(query, params);
     return res;
+  };
+
+  enrollFree = async (user_id, course_id) => {
+    const courseRes = await this.query(
+      `select is_free from course where id = $1`,
+      [course_id]
+    );
+    if (!courseRes.success || courseRes.data.length === 0) {
+      return { success: false, error: "Course not found" };
+    }
+    if (!courseRes.data[0].is_free) {
+      return { success: false, error: "This course is not free" };
+    }
+
+    const existing = await this.query(
+      `select 1 from takes where user_id = $1 and course_id = $2`,
+      [user_id, course_id]
+    );
+    if (existing.success && existing.data.length > 0) {
+      return {
+        success: true,
+        data: { alreadyEnrolled: true },
+        message: "Already enrolled",
+      };
+    }
+
+    return await this.takes(user_id, course_id, 0, null, null);
   };
 
   getScore = async (reqBody, id) => {
