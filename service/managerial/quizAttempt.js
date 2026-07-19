@@ -30,6 +30,13 @@ class QuizAttemptService extends Service {
     }
 
     // Return the saved attempt for a student, or { submitted: false }.
+    //
+    // `progress` is the authoritative one-attempt lock (submitAttempt rejects on
+    // it), but `quiz_attempt` only exists from migration 015 onward. Attempts
+    // made before that have a `progress` row and no `quiz_attempt` row, so
+    // reading only `quiz_attempt` reported submitted:false — the client then
+    // offered the exam again and the submit was rejected as already-submitted.
+    // Fall back to `progress` so those attempts still read as submitted.
     getAttempt = async (user_id, module_id) => {
         const result = await this.query(
             `select answers, verdict, score from quiz_attempt where user_id=$1 and module_id=$2 limit 1`,
@@ -38,7 +45,29 @@ class QuizAttemptService extends Service {
         if (!result.success) return { success: false, error: result.error };
 
         if (result.data.length === 0) {
-            return { success: true, data: { submitted: false } };
+            const progressRes = await this.query(
+                `select point from progress where user_id=$1 and module_id=$2 limit 1`,
+                [user_id, module_id]
+            );
+            if (!progressRes.success) return { success: false, error: progressRes.error };
+
+            if (progressRes.data.length === 0) {
+                return { success: true, data: { submitted: false } };
+            }
+
+            // Legacy attempt: the score survived in `progress`, but the chosen
+            // answers and per-question verdict were never stored. Report it as
+            // submitted with an empty reveal rather than inviting a retake.
+            return {
+                success: true,
+                data: {
+                    submitted: true,
+                    answers: {},
+                    verdict: [],
+                    score: progressRes.data[0].point ?? 0,
+                    legacy: true,
+                },
+            };
         }
         const row = result.data[0];
         return {
