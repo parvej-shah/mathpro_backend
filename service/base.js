@@ -16,6 +16,11 @@ const pool = new Pool({
     // value must default to OFF, otherwise SSL is attempted against a non-SSL
     // Postgres and every connection is rejected, wedging the pool.
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    // pg defaults to max:10, which serializes queries under concurrent load —
+    // every authenticated request already runs an isSessionActive query, so 10
+    // in-flight requests alone can saturate the pool. Raised to give headroom;
+    // override via DB_POOL_MAX if the DB's own connection limit is lower.
+    max: parseInt(process.env.DB_POOL_MAX) || 30,
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     // Without TCP keepalive, a connection silently dropped by the network (NAT/firewall

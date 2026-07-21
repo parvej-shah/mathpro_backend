@@ -5,6 +5,24 @@ const { Service } = require('./base');
 
 const sessionStore = new Service();
 
+// isSessionActive previously ran on every single authenticated request, adding
+// a serialized DB round-trip to every route. A revoked session only needs to
+// be caught within a bounded delay (not instantly), so cache the "active"
+// verdict for a few seconds per (user_id, session_id) to remove that
+// round-trip from the hot path. Revocation still takes effect within TTL.
+const SESSION_CACHE_TTL_MS = 30000;
+const sessionActiveCache = new Map(); // key -> expiresAt (only "active" results are cached)
+
+const getCachedSessionActive = (key) => {
+    const expiresAt = sessionActiveCache.get(key);
+    if (expiresAt === undefined) return false;
+    if (Date.now() >= expiresAt) {
+        sessionActiveCache.delete(key);
+        return false;
+    }
+    return true;
+};
+
 // For regular users (type=3), tokens carry a session id (sid) tracked server-side
 // to enforce the max-device limit. Returns true if the session is still active.
 // Tokens without a sid (e.g. legacy tokens issued before sessions) are allowed
@@ -12,11 +30,17 @@ const sessionStore = new Service();
 const isSessionActive = async (decoded) => {
     if (decoded.type !== managerialAccountTypes.regular) return true;
     if (!decoded.sid) return true;
+
+    const cacheKey = `${decoded.id}:${decoded.sid}`;
+    if (getCachedSessionActive(cacheKey)) return true;
+
     const result = await sessionStore.query(
         `SELECT 1 FROM auth_session WHERE user_id = $1 AND session_id = $2 LIMIT 1`,
         [parseInt(decoded.id), decoded.sid]
     );
-    return result.success && result.data.length > 0;
+    const active = result.success && result.data.length > 0;
+    if (active) sessionActiveCache.set(cacheKey, Date.now() + SESSION_CACHE_TTL_MS);
+    return active;
 };
 
 // ========================================
