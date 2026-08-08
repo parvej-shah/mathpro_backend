@@ -243,6 +243,11 @@ module.exports = {
             nullable: true,
             example: "https://www.youtube.com/shorts/abc123XYZ",
           },
+          avatar_url: {
+            type: "string",
+            nullable: true,
+            example: "https://cdn.example.com/courses/feedbacks/student.webp",
+          },
         },
       },
       manualReview: {

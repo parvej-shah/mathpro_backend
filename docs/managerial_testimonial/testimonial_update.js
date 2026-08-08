@@ -2,7 +2,8 @@ module.exports = {
   put: {
     security: [{ bearerAuth: [] }],
     tags: ["Testimonial Management"],
-    description: "Update featured testimonial ordering, publish state, or video URL",
+    description:
+      "Update featured testimonial ordering, publish state, video URL, or student avatar URL",
     operationId: "adminTestimonialUpdate",
     parameters: [{ in: "path", name: "feedbackId", required: true }],
     requestBody: {

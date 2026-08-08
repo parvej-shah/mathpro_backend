@@ -18,6 +18,7 @@ class TestimonialService extends Service {
       f.rating,
       f.comment,
       f.category,
+      f.avatar_url,
       f.created_at AS feedback_created_at,
       COALESCE(f.display_name, ma.name, 'Anonymous') AS user_name,
       COALESCE(ma.email, '') AS user_email,
@@ -138,6 +139,17 @@ class TestimonialService extends Service {
       payload.video_url === undefined
         ? current.data[0].video_url
         : (String(payload.video_url).trim() || null);
+
+    // avatar_url lives on feedbacks, not public_testimonial — patch it separately
+    // when supplied so admin can attach/replace a photo after creation.
+    if (payload.avatar_url !== undefined) {
+      const nextAvatarUrl = String(payload.avatar_url || "").trim() || null;
+      const avatarResult = await this.query(
+        `UPDATE feedbacks SET avatar_url = $1 WHERE id = $2`,
+        [nextAvatarUrl, feedbackId]
+      );
+      if (!avatarResult.success) return avatarResult;
+    }
 
     return this.query(
       `UPDATE public_testimonial
