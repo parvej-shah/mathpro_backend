@@ -19,6 +19,9 @@ class TestimonialService extends Service {
       f.comment,
       f.category,
       f.avatar_url,
+      f.institution_name,
+      f.institution_logo_url,
+      f.hook_text,
       f.created_at AS feedback_created_at,
       COALESCE(f.display_name, ma.name, 'Anonymous') AS user_name,
       COALESCE(ma.email, '') AS user_email,
@@ -140,15 +143,29 @@ class TestimonialService extends Service {
         ? current.data[0].video_url
         : (String(payload.video_url).trim() || null);
 
-    // avatar_url lives on feedbacks, not public_testimonial — patch it separately
-    // when supplied so admin can attach/replace a photo after creation.
-    if (payload.avatar_url !== undefined) {
-      const nextAvatarUrl = String(payload.avatar_url || "").trim() || null;
-      const avatarResult = await this.query(
-        `UPDATE feedbacks SET avatar_url = $1 WHERE id = $2`,
-        [nextAvatarUrl, feedbackId]
+    // avatar_url / institution_name / institution_logo_url / hook_text all live
+    // on feedbacks, not public_testimonial — patch whichever are supplied.
+    const feedbackFieldMap = {
+      avatar_url: "avatar_url",
+      institution_name: "institution_name",
+      institution_logo_url: "institution_logo_url",
+      hook_text: "hook_text",
+    };
+    const feedbackUpdates = Object.entries(feedbackFieldMap).filter(
+      ([payloadKey]) => payload[payloadKey] !== undefined
+    );
+    if (feedbackUpdates.length > 0) {
+      const setClause = feedbackUpdates
+        .map(([, column], i) => `${column} = $${i + 1}`)
+        .join(", ");
+      const values = feedbackUpdates.map(
+        ([payloadKey]) => String(payload[payloadKey] || "").trim() || null
       );
-      if (!avatarResult.success) return avatarResult;
+      const feedbackResult = await this.query(
+        `UPDATE feedbacks SET ${setClause} WHERE id = $${values.length + 1}`,
+        [...values, feedbackId]
+      );
+      if (!feedbackResult.success) return feedbackResult;
     }
 
     return this.query(
@@ -169,10 +186,17 @@ class TestimonialService extends Service {
     const comment = String(payload.comment || "").trim();
     const rating = Math.trunc(Number(payload.rating));
     const avatarUrl = payload.avatar_url ? String(payload.avatar_url).trim() : null;
+    const institutionName = String(payload.institution_name || "").trim();
+    const institutionLogoUrl = payload.institution_logo_url
+      ? String(payload.institution_logo_url).trim()
+      : null;
+    const hookText = String(payload.hook_text || "").trim();
 
     if (!courseId) return { success: false, error: "course_id is required" };
     if (!displayName) return { success: false, error: "display_name is required" };
     if (!comment) return { success: false, error: "comment is required" };
+    if (!institutionName) return { success: false, error: "institution_name is required" };
+    if (!hookText) return { success: false, error: "hook_text is required" };
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       return { success: false, error: "rating must be between 1 and 5" };
     }
@@ -182,10 +206,10 @@ class TestimonialService extends Service {
 
     const feedbackId = uuidv4();
     return this.query(
-      `INSERT INTO feedbacks (id, course_id, user_id, rating, comment, display_name, avatar_url, is_admin_created)
-       VALUES ($1, $2, NULL, $3, $4, $5, $6, TRUE)
-       RETURNING id, course_id, rating, comment, display_name, avatar_url, is_admin_created, created_at`,
-      [feedbackId, courseId, rating, comment, displayName, avatarUrl]
+      `INSERT INTO feedbacks (id, course_id, user_id, rating, comment, display_name, avatar_url, institution_name, institution_logo_url, hook_text, is_admin_created)
+       VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, TRUE)
+       RETURNING id, course_id, rating, comment, display_name, avatar_url, institution_name, institution_logo_url, hook_text, is_admin_created, created_at`,
+      [feedbackId, courseId, rating, comment, displayName, avatarUrl, institutionName, institutionLogoUrl, hookText]
     );
   };
 

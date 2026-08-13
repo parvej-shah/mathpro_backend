@@ -2,6 +2,7 @@
 -- This is the canonical bootstrap state before the current auth cleanup migrations.
 
 create table bundle
+(
     id                serial
         primary key,
     title             varchar,

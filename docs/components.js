@@ -248,6 +248,21 @@ module.exports = {
             nullable: true,
             example: "https://cdn.example.com/courses/feedbacks/student.webp",
           },
+          institution_name: {
+            type: "string",
+            nullable: true,
+            example: "Notre Dame College",
+          },
+          institution_logo_url: {
+            type: "string",
+            nullable: true,
+            example: "https://cdn.example.com/institutions/notre-dame.png",
+          },
+          hook_text: {
+            type: "string",
+            nullable: true,
+            example: "MathPro turned my weakest subject into my strongest.",
+          },
         },
       },
       manualReview: {
@@ -273,6 +288,19 @@ module.exports = {
             type: "string",
             nullable: true,
             example: "https://cdn.mathpro.example/avatars/rafiul.jpg",
+          },
+          institution_name: {
+            type: "string",
+            example: "Notre Dame College",
+          },
+          institution_logo_url: {
+            type: "string",
+            nullable: true,
+            example: "https://cdn.mathpro.example/institutions/notre-dame.png",
+          },
+          hook_text: {
+            type: "string",
+            example: "MathPro turned my weakest subject into my strongest.",
           },
         },
       },

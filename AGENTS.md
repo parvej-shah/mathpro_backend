@@ -31,10 +31,10 @@ ad-hoc queries against the real DB, open an SSH tunnel to the DB container and o
    `-f`, fails fast if the port is taken):
 
    ```bash
-   ssh -o ExitOnForwardFailure=yes -f -L 5432:172.16.1.3:5432 parvej@145.223.23.114 -N
+   ssh -o ExitOnForwardFailure=yes -f -L 5432:172.16.1.7:5432 root@200.141.8.222 -N
    ```
 
-   > The container IP (`172.16.1.3`) and jump host (`145.223.23.114`) are the current values —
+   > The container IP (`172.16.1.7`) and jump host (`200.141.8.222`) are the current values —
    > see the `# DB (Coolify PostgreSQL via SSH tunnel …)` comment block in `.env`. If the DB
    > container is recreated its IP can change; update the comment in `.env` when it does.
 
@@ -52,14 +52,16 @@ ad-hoc queries against the real DB, open an SSH tunnel to the DB container and o
 3. **Close the tunnel when done** (don't leave it open):
 
    ```bash
-   kill "$(pgrep -f 'ssh.*-L 5432:172.16.1.3')"
+   kill "$(pgrep -f 'ssh.*-L 5432:172.16.1.7')"
    ```
 
 **Cautions.** This connects to the **live production DB** — there is no separate staging DB
 in `.env` (a commented Neon block exists but is not the active target). Migrations are
 generally idempotent (`CREATE TABLE IF NOT EXISTS`, `ON CONFLICT DO NOTHING`), but treat any
-write as production. `runMigration.js` takes a single migration filename; with no argument it
-runs **all** migrations in order — prefer naming the one file. A schema change here is a DB
+write as production. `runMigration.js` records applied files in `schema_migrations`; with no
+argument it runs only pending migrations. For the one-time adoption on an existing DB, first
+baseline historical files with `node database/runMigration.js --baseline-through <file.sql>`.
+Prefer naming one file when applying a targeted schema change. A schema change here is a DB
 contract change → see the Database invariants and flag consuming clients.
 
 ## You are the contract — changes ripple to two clients
