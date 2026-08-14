@@ -90,6 +90,12 @@ const uploadPolicies = {
         allowedExtensions: webpExtensions,
         allowedMimeTypes: webpMimeTypes
     },
+    'testimonial-institution-logo': {
+        folder: 'courses/feedbacks/institutions',
+        maxBytes: 100 * 1024,
+        allowedExtensions: webpExtensions,
+        allowedMimeTypes: webpMimeTypes
+    },
     'contest-thumbnail': {
         folder: 'contests',
         maxBytes: 200 * 1024,
