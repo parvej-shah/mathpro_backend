@@ -181,6 +181,7 @@ class TestimonialService extends Service {
   };
 
   createManualFeedback = async (payload, access) => {
+    const VALID_CATEGORIES = ["content", "instructor", "platform", "course", "other"];
     const courseId = String(payload.course_id || "").trim();
     const displayName = String(payload.display_name || "").trim();
     const comment = String(payload.comment || "").trim();
@@ -191,12 +192,17 @@ class TestimonialService extends Service {
       ? String(payload.institution_logo_url).trim()
       : null;
     const hookText = String(payload.hook_text || "").trim();
+    const category = String(payload.category || "").trim();
 
     if (!courseId) return { success: false, error: "course_id is required" };
     if (!displayName) return { success: false, error: "display_name is required" };
     if (!comment) return { success: false, error: "comment is required" };
     if (!institutionName) return { success: false, error: "institution_name is required" };
     if (!hookText) return { success: false, error: "hook_text is required" };
+    if (!category) return { success: false, error: "category is required" };
+    if (!VALID_CATEGORIES.includes(category)) {
+      return { success: false, error: `category must be one of: ${VALID_CATEGORIES.join(", ")}` };
+    }
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       return { success: false, error: "rating must be between 1 and 5" };
     }
@@ -206,10 +212,10 @@ class TestimonialService extends Service {
 
     const feedbackId = uuidv4();
     return this.query(
-      `INSERT INTO feedbacks (id, course_id, user_id, rating, comment, display_name, avatar_url, institution_name, institution_logo_url, hook_text, is_admin_created)
-       VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, TRUE)
-       RETURNING id, course_id, rating, comment, display_name, avatar_url, institution_name, institution_logo_url, hook_text, is_admin_created, created_at`,
-      [feedbackId, courseId, rating, comment, displayName, avatarUrl, institutionName, institutionLogoUrl, hookText]
+      `INSERT INTO feedbacks (id, course_id, user_id, rating, comment, category, display_name, avatar_url, institution_name, institution_logo_url, hook_text, is_admin_created)
+       VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, $10, TRUE)
+       RETURNING id, course_id, rating, comment, category, display_name, avatar_url, institution_name, institution_logo_url, hook_text, is_admin_created, created_at`,
+      [feedbackId, courseId, rating, comment, category, displayName, avatarUrl, institutionName, institutionLogoUrl, hookText]
     );
   };
 

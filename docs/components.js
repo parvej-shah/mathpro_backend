@@ -284,6 +284,11 @@ module.exports = {
             type: "string",
             example: "This course really helped me understand calculus.",
           },
+          category: {
+            type: "string",
+            enum: ["content", "instructor", "platform", "course", "other"],
+            example: "instructor",
+          },
           avatar_url: {
             type: "string",
             nullable: true,
