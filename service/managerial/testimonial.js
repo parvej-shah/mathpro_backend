@@ -121,31 +121,12 @@ class TestimonialService extends Service {
       return { success: false, error: "NO_COURSE_ACCESS", message: "No access to this course" };
     }
 
-    const current = await this.query(
-      `SELECT feedback_id, sort_order, is_active, video_url FROM public_testimonial WHERE feedback_id = $1`,
-      [feedbackId]
-    );
-    if (!current.success) return current;
-    if (current.data.length === 0) {
-      return { success: false, error: "Featured testimonial not found" };
-    }
-
-    const nextSortOrder =
-      payload.sort_order === undefined
-        ? current.data[0].sort_order
-        : Math.trunc(Number(payload.sort_order) || 0);
-    const nextIsActive =
-      payload.is_active === undefined
-        ? current.data[0].is_active
-        : Boolean(payload.is_active);
-    const nextVideoUrl =
-      payload.video_url === undefined
-        ? current.data[0].video_url
-        : (String(payload.video_url).trim() || null);
-
-    // avatar_url / institution_name / institution_logo_url / hook_text all live
-    // on feedbacks, not public_testimonial — patch whichever are supplied.
+    // comment / avatar_url / institution_name / institution_logo_url / hook_text all
+    // live on feedbacks, not public_testimonial — patch whichever are supplied. This
+    // works regardless of featured status, so the Review Library (not yet featured)
+    // can edit these too, not just the Featured selection.
     const feedbackFieldMap = {
+      comment: "comment",
       avatar_url: "avatar_url",
       institution_name: "institution_name",
       institution_logo_url: "institution_logo_url",
@@ -167,6 +148,37 @@ class TestimonialService extends Service {
       );
       if (!feedbackResult.success) return feedbackResult;
     }
+
+    // sort_order / is_active / video_url only make sense for an already-featured row.
+    const hasFeaturedFieldUpdate =
+      payload.sort_order !== undefined ||
+      payload.is_active !== undefined ||
+      payload.video_url !== undefined;
+    if (!hasFeaturedFieldUpdate) {
+      return { success: true, data: [{ feedback_id: feedbackId }] };
+    }
+
+    const current = await this.query(
+      `SELECT feedback_id, sort_order, is_active, video_url FROM public_testimonial WHERE feedback_id = $1`,
+      [feedbackId]
+    );
+    if (!current.success) return current;
+    if (current.data.length === 0) {
+      return { success: false, error: "Featured testimonial not found" };
+    }
+
+    const nextSortOrder =
+      payload.sort_order === undefined
+        ? current.data[0].sort_order
+        : Math.trunc(Number(payload.sort_order) || 0);
+    const nextIsActive =
+      payload.is_active === undefined
+        ? current.data[0].is_active
+        : Boolean(payload.is_active);
+    const nextVideoUrl =
+      payload.video_url === undefined
+        ? current.data[0].video_url
+        : (String(payload.video_url).trim() || null);
 
     return this.query(
       `UPDATE public_testimonial
