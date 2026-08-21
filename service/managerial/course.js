@@ -196,18 +196,28 @@ class CourseService extends Service {
     );
     var other = { id: cats.length + 1, slug: "other", category_name: "Other", courses: [] };
 
-    var classify = (tags) => {
+    var classifyAll = (tags) => {
       var normalized = (Array.isArray(tags) ? tags : [])
         .map((t) => String(t).trim().toLowerCase());
+      
+      let matchedSlugs = new Set();
       for (const c of cats) {
-        if (c.match.some((m) => normalized.some(t => t.includes(m.toLowerCase())))) return c.slug;
+        if (c.match.some((m) => normalized.some(t => t.includes(m.toLowerCase())))) {
+            matchedSlugs.add(c.slug);
+        }
       }
-      return null;
+      return Array.from(matchedSlugs);
     };
 
     for (const course of result.data) {
-      var slug = classify(course.tags);
-      (slug ? buckets.get(slug) : other).courses.push(course);
+      var slugs = classifyAll(course.tags);
+      if (slugs.length > 0) {
+        slugs.forEach((slug) => {
+            buckets.get(slug).courses.push(course);
+        });
+      } else {
+        other.courses.push(course);
+      }
     }
 
     var data = cats
