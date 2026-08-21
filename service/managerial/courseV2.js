@@ -255,8 +255,49 @@ class CourseServiceV2 extends Service {
     }
 
     async deleteEntry(id) {
-        const query = `delete from ${this.table} where ${this.pk}=$1`;
-        return this.query(query, [id]);
+        const client = await this.getClient();
+        try {
+            await client.query('BEGIN');
+            // 1. Remove from featured_item
+            await client.query("delete from featured_item where item_type='course' and item_id=$1", [id]);
+            // 2. Remove from bundle_courses
+            await client.query("delete from bundle_courses where course_id=$1", [id]);
+            // 3. Delete chapters and modules with child dependencies
+            const chaptersRes = await client.query("select id from chapter where course_id=$1", [id]);
+            const chapterIds = chaptersRes.rows.map(r => r.id);
+            if (chapterIds.length > 0) {
+                const modulesRes = await client.query("select id from module where chapter_id = ANY($1::int[])", [chapterIds]);
+                const moduleIds = modulesRes.rows.map(r => r.id);
+                if (moduleIds.length > 0) {
+                    await client.query("delete from progress where module_id = ANY($1::int[])", [moduleIds]);
+                    await client.query("delete from module_feedback where module_id = ANY($1::int[])", [moduleIds]);
+                    await client.query("delete from user_module_views where module_id = ANY($1::int[])", [moduleIds]);
+                    await client.query("delete from module where id = ANY($1::int[])", [moduleIds]);
+                }
+                await client.query("delete from chapter where id = ANY($1::int[])", [chapterIds]);
+            }
+            // 4. Remove other course relationships
+            await client.query("delete from instructor where course_id=$1", [id]);
+            await client.query("delete from course_feedback where course_id=$1", [id]);
+            await client.query("delete from user_module_views where course_id=$1", [id]);
+            await client.query("delete from takes where course_id=$1", [id]);
+            // 5. Delete course
+            const result = await client.query(`delete from ${this.table} where ${this.pk}=$1 returning *`, [id]);
+            await client.query('COMMIT');
+            return {
+                success: true,
+                data: result.rows,
+            };
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error("Error in CourseServiceV2.deleteEntry:", error);
+            return {
+                success: false,
+                error: error.message,
+            };
+        } finally {
+            client.release();
+        }
     }
 
     async getUserProgress(userId, courseId) {

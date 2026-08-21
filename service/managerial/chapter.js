@@ -134,10 +134,34 @@ class ChapterService extends Service {
   };
 
   deleteEntry = async (id) => {
-    var query = `delete from ${this.table} where ${this.pk}=$1`;
-    var params = [id];
-    var result = await this.query(query, params);
-    return result;
+    const client = await this.getClient();
+    try {
+      await client.query('BEGIN');
+      const modulesRes = await client.query("select id from module where chapter_id=$1", [id]);
+      const moduleIds = modulesRes.rows.map(r => r.id);
+      if (moduleIds.length > 0) {
+        await client.query("delete from progress where module_id = ANY($1::int[])", [moduleIds]);
+        await client.query("delete from module_feedback where module_id = ANY($1::int[])", [moduleIds]);
+        await client.query("delete from user_module_views where module_id = ANY($1::int[])", [moduleIds]);
+        await client.query("delete from module where id = ANY($1::int[])", [moduleIds]);
+      }
+      const query = `delete from ${this.table} where ${this.pk}=$1 returning *`;
+      const result = await client.query(query, [id]);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        data: result.rows,
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error("Error in ChapterService.deleteEntry:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    } finally {
+      client.release();
+    }
   };
 }
 
