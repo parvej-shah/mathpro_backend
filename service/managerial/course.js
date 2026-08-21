@@ -144,8 +144,37 @@ class CourseService extends Service {
   // category; the first category (by this order) whose match set hits a course's tags wins.
   static DIRECTORY_CATEGORIES = [
     { slug: "class-8", name: "Class 8", match: ["class 8", "class8", "class-8", "অষ্টম শ্রেণি", "অষ্টম"] },
+    
+    // Specific JSC Cohorts (26-32)
+    { slug: "jsc-26", name: "JSC 26", match: ["jsc 26", "jsc-26"] },
+    { slug: "jsc-27", name: "JSC 27", match: ["jsc 27", "jsc-27"] },
+    { slug: "jsc-28", name: "JSC 28", match: ["jsc 28", "jsc-28"] },
+    { slug: "jsc-29", name: "JSC 29", match: ["jsc 29", "jsc-29"] },
+    { slug: "jsc-30", name: "JSC 30", match: ["jsc 30", "jsc-30"] },
+    { slug: "jsc-31", name: "JSC 31", match: ["jsc 31", "jsc-31"] },
+    { slug: "jsc-32", name: "JSC 32", match: ["jsc 32", "jsc-32"] },
+    { slug: "jsc", name: "JSC", match: ["jsc", "জেএসসি"] },
+
+    // Specific SSC Cohorts (26-32)
+    { slug: "ssc-26", name: "SSC 26", match: ["ssc 26", "ssc-26"] },
+    { slug: "ssc-27", name: "SSC 27", match: ["ssc 27", "ssc-27"] },
+    { slug: "ssc-28", name: "SSC 28", match: ["ssc 28", "ssc-28"] },
+    { slug: "ssc-29", name: "SSC 29", match: ["ssc 29", "ssc-29"] },
+    { slug: "ssc-30", name: "SSC 30", match: ["ssc 30", "ssc-30"] },
+    { slug: "ssc-31", name: "SSC 31", match: ["ssc 31", "ssc-31"] },
+    { slug: "ssc-32", name: "SSC 32", match: ["ssc 32", "ssc-32"] },
     { slug: "ssc", name: "SSC", match: ["ssc", "এসএসসি", "মাধ্যমিক"] },
+    
+    // Specific HSC Cohorts (26-32)
+    { slug: "hsc-26", name: "HSC 26", match: ["hsc 26", "hsc-26"] },
+    { slug: "hsc-27", name: "HSC 27", match: ["hsc 27", "hsc-27"] },
+    { slug: "hsc-28", name: "HSC 28", match: ["hsc 28", "hsc-28"] },
+    { slug: "hsc-29", name: "HSC 29", match: ["hsc 29", "hsc-29"] },
+    { slug: "hsc-30", name: "HSC 30", match: ["hsc 30", "hsc-30"] },
+    { slug: "hsc-31", name: "HSC 31", match: ["hsc 31", "hsc-31"] },
+    { slug: "hsc-32", name: "HSC 32", match: ["hsc 32", "hsc-32"] },
     { slug: "hsc", name: "HSC", match: ["hsc", "এইচএসসি", "উচ্চ মাধ্যমিক"] },
+    
     { slug: "admission", name: "ADMISSION", match: ["admission", "এডমিশন", "ভর্তি"] },
     { slug: "skill-development", name: "Skill Development", match: ["skill development", "skill-development", "skill", "স্কিল"] },
   ];
