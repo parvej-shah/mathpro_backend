@@ -11,7 +11,7 @@ class UserBundleController extends Controller {
   // Get all available bundles for users
   list = async (req, res) => {
     try {
-      const result = await bundleService.list();
+      const result = await bundleService.list({ isLiveOnly: true });
       return res.status(result.success ? 200 : 400).json(result);
     } catch (error) {
       console.error("User bundle list error:", error);
@@ -35,6 +35,11 @@ class UserBundleController extends Controller {
 
       const userId = req.body?.user_id ? parseInt(req.body.user_id) : null;
       const result = await bundleService.get(parseInt(id, 10), userId);
+      
+      if (result.success && Array.isArray(result.data) && result.data.length > 0 && result.data[0].is_live === false) {
+        return res.status(404).json({ success: false, error: "Bundle not found" });
+      }
+      
       return res.status(result.success ? 200 : 400).json(result);
     } catch (error) {
       console.error("User bundle get error:", error);
@@ -51,6 +56,11 @@ class UserBundleController extends Controller {
       const userId = req.body?.user_id ? parseInt(req.body.user_id) : null;
 
       const result = await bundleService.getBySlug(slug, userId);
+      
+      if (result.success && Array.isArray(result.data) && result.data.length > 0 && result.data[0].is_live === false) {
+        return res.status(404).json({ success: false, error: "Bundle not found" });
+      }
+      
       return res.status(result.success ? 200 : 400).json(result);
     } catch (error) {
       console.error("User bundle get by slug error:", error);

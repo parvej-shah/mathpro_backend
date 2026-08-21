@@ -162,7 +162,12 @@ class BundleService extends Service {
     }
   };
 
-  list = async () => {
+  list = async (options = { isLiveOnly: false }) => {
+    let whereClause = "";
+    if (options.isLiveOnly) {
+      whereClause = "WHERE b.is_live = true";
+    }
+
     const query = `
             SELECT 
                 b.*,
@@ -186,6 +191,7 @@ class BundleService extends Service {
             FROM bundle b
             LEFT JOIN bundle_course bc ON b.id = bc.bundle_id
             LEFT JOIN course c ON bc.course_id = c.id
+            ${whereClause}
             GROUP BY b.id
             ORDER BY b.id DESC
         `;
