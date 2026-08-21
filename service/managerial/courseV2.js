@@ -116,11 +116,20 @@ class CourseServiceV2 extends Service {
     }
 
     async update(id, reqObj) {
+        const updateKeys = this.cols.filter((column) => reqObj[column] !== undefined);
+        if (updateKeys.length === 0) {
+            return { success: true, data: [] };
+        }
+        let setClause = '';
+        updateKeys.forEach((column, index) => {
+            setClause += `\n                ${column} = $${index + 1}`;
+            if (index < updateKeys.length - 1) setClause += ',';
+        });
         const query = `
-            update ${this.table} set ${this.getUpdatePairs()} where ${this.pk}=$${this.cols.length + 1}
+            update ${this.table} set ${setClause} where ${this.pk}=$${updateKeys.length + 1} returning *
         `;
         const params = [
-            ...this.cols.map((column) => this.normalizeColumnValue(column, reqObj[column])),
+            ...updateKeys.map((column) => this.normalizeColumnValue(column, reqObj[column])),
             id,
         ];
         return this.query(query, params);
