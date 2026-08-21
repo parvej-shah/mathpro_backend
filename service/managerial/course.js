@@ -171,7 +171,7 @@ class CourseService extends Service {
       var normalized = (Array.isArray(tags) ? tags : [])
         .map((t) => String(t).trim().toLowerCase());
       for (const c of cats) {
-        if (c.match.some((m) => normalized.includes(m.toLowerCase()))) return c.slug;
+        if (c.match.some((m) => normalized.some(t => t.includes(m.toLowerCase())))) return c.slug;
       }
       return null;
     };
