@@ -854,10 +854,9 @@ ORDER BY
   };
 
   deleteEntry = async (id) => {
-    var query = `delete from ${this.table} where ${this.pk}=$1`;
-    var params = [id];
-    var result = await this.query(query, params);
-    return result;
+    const { CourseServiceV2 } = require("./courseV2");
+    const courseServiceV2 = new CourseServiceV2();
+    return courseServiceV2.deleteEntry(id);
   };
 
   getRanking = async (reqBody, id, offset, limit) => {

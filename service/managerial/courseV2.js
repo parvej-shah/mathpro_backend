@@ -258,10 +258,10 @@ class CourseServiceV2 extends Service {
         const client = await this.getClient();
         try {
             await client.query('BEGIN');
-            // 1. Remove from featured_item
-            await client.query("delete from featured_item where item_type='course' and item_id=$1", [id]);
-            // 2. Remove from bundle_courses
-            await client.query("delete from bundle_courses where course_id=$1", [id]);
+            // 1. Remove from public_featured_item
+            await client.query("delete from public_featured_item where item_type='course' and item_id=$1", [id]);
+            // 2. Remove from bundle_course
+            await client.query("delete from bundle_course where course_id=$1", [id]);
             // 3. Delete chapters and modules with child dependencies
             const chaptersRes = await client.query("select id from chapter where course_id=$1", [id]);
             const chapterIds = chaptersRes.rows.map(r => r.id);
@@ -281,6 +281,12 @@ class CourseServiceV2 extends Service {
             await client.query("delete from course_feedback where course_id=$1", [id]);
             await client.query("delete from user_module_views where course_id=$1", [id]);
             await client.query("delete from takes where course_id=$1", [id]);
+            await client.query("delete from course_routine where course_id=$1", [id]);
+            await client.query("delete from coupon_courses where course_id=$1", [id]);
+            await client.query("delete from prebooking where course_id=$1", [id]);
+            await client.query("delete from notification where course_id=$1", [id]);
+            await client.query("delete from user_course_streaks where course_id=$1", [id]);
+            await client.query("delete from feedbacks where course_id=$1::varchar", [String(id)]);
             // 5. Delete course
             const result = await client.query(`delete from ${this.table} where ${this.pk}=$1 returning *`, [id]);
             await client.query('COMMIT');
