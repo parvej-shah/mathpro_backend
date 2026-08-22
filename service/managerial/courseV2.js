@@ -278,7 +278,6 @@ class CourseServiceV2 extends Service {
             }
             // 4. Remove other course relationships
             await client.query("delete from instructor where course_id=$1", [id]);
-            await client.query("delete from course_feedback where course_id=$1", [id]);
             await client.query("delete from user_module_views where course_id=$1", [id]);
             await client.query("delete from takes where course_id=$1", [id]);
             await client.query("delete from course_routine where course_id=$1", [id]);
