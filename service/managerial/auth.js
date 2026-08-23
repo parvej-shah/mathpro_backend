@@ -205,11 +205,14 @@ class AuthService extends Service {
                 };
             }
 
-            if (configuredClientId && tokenInfo.aud !== configuredClientId) {
-                return {
-                    success: false,
-                    error: 'Google token audience mismatch'
-                };
+            if (configuredClientId) {
+                const allowedAudiences = configuredClientId.split(',').map((s) => s.trim()).filter(Boolean);
+                if (allowedAudiences.length > 0 && !allowedAudiences.includes(tokenInfo.aud)) {
+                    return {
+                        success: false,
+                        error: 'Google token audience mismatch'
+                    };
+                }
             }
 
             return {
