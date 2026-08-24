@@ -66,12 +66,15 @@ var authenticateAdmin=(req, res, next)=>{
 var authenticateUser=async (req, res, next)=>{
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
-    if (token == null) return res.sendStatus(401)
+    if (token == null) {
+        return res.status(401).json({
+            success: false,
+            message: 'Authentication required',
+            error: 'NO_TOKEN'
+        });
+    }
     try{
         var decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if(decoded.type!==managerialAccountTypes.regular) {
-            return res.sendStatus(403)
-        }
         if (!(await isSessionActive(decoded))) {
             return res.status(401).json({
                 success: false,
@@ -83,7 +86,18 @@ var authenticateUser=async (req, res, next)=>{
         req.body['user_id']=parseInt(decoded.id)
         next()
     }catch(err){
-        return res.sendStatus(403)
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Your session has expired. Please log in again.',
+                error: 'TOKEN_EXPIRED'
+            });
+        }
+        return res.status(401).json({
+            success: false,
+            message: 'Invalid authentication token.',
+            error: 'INVALID_TOKEN'
+        });
     }
 }
 
