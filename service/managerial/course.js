@@ -427,12 +427,13 @@ class CourseService extends Service {
     }
   };
   getUserProgress = async (user_id, course_id) => {
-    var query = `SELECT
-    managerial_auth.id AS user_id,chapter.id as chapter_id,chapter.title as chapter_name,
+    const query = `SELECT
+    chapter.id AS chapter_id,
+    chapter.title AS chapter_name,
     COUNT(DISTINCT module.id) AS total_modules_assigned,
-    COUNT(DISTINCT module.id) FILTER (WHERE progress.point IS NOT NULL) AS completed_modules,
+    COUNT(DISTINCT module.id) FILTER (WHERE progress.id IS NOT NULL) AS completed_modules,
     ROUND(
-        (COUNT(DISTINCT module.id) FILTER (WHERE progress.point IS NOT NULL)::decimal / NULLIF(COUNT(DISTINCT module.id), 0)) * 100,
+        COALESCE((COUNT(DISTINCT module.id) FILTER (WHERE progress.id IS NOT NULL)::decimal / NULLIF(COUNT(DISTINCT module.id), 0)) * 100, 0),
         2
     ) AS completion_percentage,
     COALESCE(
@@ -441,31 +442,21 @@ class CourseService extends Service {
                 'moduleId', module.id,
                 'moduleName', module.title,
                 'point', progress.point,
-                'moduleMaxScore',module.score,
-                'moduleType', module.data->>'category'
-            ) ORDER BY module.id
+                'moduleMaxScore', module.score,
+                'moduleType', COALESCE(module.data->>'category', 'VIDEO'),
+                'completed', (progress.id IS NOT NULL)
+            ) ORDER BY COALESCE(module.serial, module.id)
         ) FILTER (WHERE module.id IS NOT NULL),
         '[]'::json
     ) AS modules
-FROM
-    managerial_auth
--- Get courses each user is taking
-LEFT JOIN takes ON takes.user_id = managerial_auth.id
--- Get chapters in those courses
-LEFT JOIN course ON course.id = $1
-LEFT JOIN chapter ON chapter.course_id = course.id
--- Get modules in those chapters
+FROM chapter
 LEFT JOIN module ON module.chapter_id = chapter.id
--- Get progress for each module (if any)
-LEFT JOIN progress ON progress.user_id = managerial_auth.id AND progress.module_id = module.id
-WHERE managerial_auth.id = $2
-GROUP BY
-    managerial_auth.id,
-    chapter.id
-ORDER BY
-    chapter.id;`;
-    var params = [course_id, user_id];
-    var result = await this.query(query, params);
+LEFT JOIN progress ON progress.module_id = module.id AND progress.user_id = $2
+WHERE chapter.course_id = $1
+GROUP BY chapter.id, chapter.title, chapter.serial
+ORDER BY COALESCE(chapter.serial, chapter.id);`;
+    const params = [course_id, user_id];
+    const result = await this.query(query, params);
     return result;
   };
   getFullUser = async (reqBody, id) => {
