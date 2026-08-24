@@ -32,8 +32,8 @@ app.set('trust proxy', true);
 
 app.use(requestMetrics);
 app.use(cors());
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "15mb", extended: true }));
+app.use(bodyParser.json({ limit: "15mb" }));
 
 app.use(
   cors({
