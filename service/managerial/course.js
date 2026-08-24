@@ -431,9 +431,9 @@ class CourseService extends Service {
     chapter.id AS chapter_id,
     chapter.title AS chapter_name,
     COUNT(DISTINCT module.id) AS total_modules_assigned,
-    COUNT(DISTINCT module.id) FILTER (WHERE progress.id IS NOT NULL) AS completed_modules,
+    COUNT(DISTINCT module.id) FILTER (WHERE progress.module_id IS NOT NULL) AS completed_modules,
     ROUND(
-        COALESCE((COUNT(DISTINCT module.id) FILTER (WHERE progress.id IS NOT NULL)::decimal / NULLIF(COUNT(DISTINCT module.id), 0)) * 100, 0),
+        COALESCE((COUNT(DISTINCT module.id) FILTER (WHERE progress.module_id IS NOT NULL)::decimal / NULLIF(COUNT(DISTINCT module.id), 0)) * 100, 0),
         2
     ) AS completion_percentage,
     COALESCE(
@@ -444,7 +444,7 @@ class CourseService extends Service {
                 'point', progress.point,
                 'moduleMaxScore', module.score,
                 'moduleType', COALESCE(module.data->>'category', 'VIDEO'),
-                'completed', (progress.id IS NOT NULL)
+                'completed', (progress.module_id IS NOT NULL)
             ) ORDER BY COALESCE(module.serial, module.id)
         ) FILTER (WHERE module.id IS NOT NULL),
         '[]'::json
