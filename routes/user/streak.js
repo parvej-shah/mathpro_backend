@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router();
+const router = require("express-promise-router")();
 const StreakController = require('../../controllers/user/streakController');
 const { authenticateUser } = require('../../service/authMiddleWares');
 const { actorLimiter } = require('../../util/rateLimitPolicies');

@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router();
+const router = require("express-promise-router")();
 const AdminStreakController = require('../../controllers/managerial/streakController');
 const { requirePermission } = require('../../service/authMiddleWares');
 const { PERMISSIONS } = require('../../util/permissions');

@@ -153,4 +153,17 @@ const adminModuleFeedbackRoutes = require("./routes/managerial/moduleFeedback");
 app.use("/user/module-feedback", userModuleFeedbackRoutes);
 app.use("/admin/module-feedback", adminModuleFeedbackRoutes);
 
+// Global error handler middleware (Express 4)
+// Catches any unhandled errors passed to next(err) and sends clean JSON response instead of crashing
+app.use((err, req, res, next) => {
+  console.error('Express global error handler caught:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  return res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Internal Server Error',
+  });
+});
+
 module.exports = app;
