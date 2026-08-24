@@ -473,7 +473,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
     var courseData = initialData[0];
     var progress = initialData[1];
     if (reqBody.user_id === 23) progress = 10000;
-    if (courseData.data.length === 0)
+    if (!courseData || !courseData.data || !Array.isArray(courseData.data) || courseData.data.length === 0)
       return {
         success: false,
         data: null,
@@ -502,7 +502,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
     }
 
     // Calculate enrollment: if course is in a bundle, sum all courses in bundle + bundle purchases
-    var directEnrollments = parseInt(initialData[2].data[0].count);
+    var directEnrollments = (initialData[2]?.data?.[0]?.count) ? parseInt(initialData[2].data[0].count) : 0;
     var totalEnrollment = directEnrollments;
     
     // Check if course is in a bundle (via chips.bundle_id or bundle_course table)
@@ -559,7 +559,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
     }
     
     resultObject["enrolled"] = totalEnrollment;
-    resultObject["prebooking"] = parseInt(initialData[3].data[0].n);
+    resultObject["prebooking"] = (initialData[3]?.data?.[0]?.n) ? parseInt(initialData[3].data[0].n) : 0;
 
     // Keep public course detail payload free of coupon disclosures.
     if (reqBody.auth) {
@@ -583,22 +583,34 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
       resultObject["active_coupons"] = [];
     }
 
-    var chapters = await this.chapterService.list(id);
-    chapters = chapters.data;
+    var chaptersResult = await this.chapterService.list(id);
+    var chapters = (chaptersResult && chaptersResult.data && Array.isArray(chaptersResult.data)) ? chaptersResult.data : [];
     var moduleRequests = chapters.map((c) => this.moduleService.list(c.id));
     var modulesData = await Promise.all(moduleRequests);
-    modulesData.map((m, i) => {
+    modulesData.forEach((m, i) => {
       var modules = [];
-      m.data.map((mod) => {
+      const rawModules = (m && m.data && Array.isArray(m.data)) ? m.data : [];
+      rawModules.forEach((mod) => {
         var currModule = { ...mod };
         var currModuleData = currModule.data;
 
-        if (
-          (!currModule["is_live"] || (!isTaken && !currModule["is_free"])) &&
-          Object.keys(currModuleData).indexOf("category") >= 0
-        )
-          currModuleData = { category: currModuleData.category };
-        currModule.data = currModuleData;
+        if (!isTaken && !currModule.is_free) {
+          // Strictly redact paid modules from unauthorized students
+          if (currModuleData && typeof currModuleData === "object") {
+            currModuleData = { category: currModuleData.category || "VIDEO" };
+          } else {
+            currModuleData = { category: "VIDEO" };
+          }
+          currModule.data = currModuleData;
+          currModule.pdf_drive_link = null;
+          currModule.description = "";
+          currModule.metadata = null;
+          currModule.live_meeting_id = null;
+          currModule.live_meeting_pass = null;
+          currModule.live_scheduled_at = null;
+        } else {
+          currModule.data = currModuleData;
+        }
         modules.push(currModule);
       });
       chapters[i]["modules"] = modules;
