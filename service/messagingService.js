@@ -48,9 +48,11 @@ class MessagingService{
      */
     sendMessage=async (phone,text)=>{
       try{
+        const apiKey = process.env.BULKSMS_API_KEY || BULKSMS_API_KEY;
+        const senderId = process.env.BULKSMS_SENDER_ID || BULKSMS_SENDER_ID;
         // URL-encode the message text to prevent special characters from breaking URL
         const encodedMessage = encodeURIComponent(text);
-        var response = await axios.post(`http://bulksmsbd.net/api/smsapi?api_key=${BULKSMS_API_KEY}&type=text&number=${phone}&senderid=${BULKSMS_SENDER_ID}&message=${encodedMessage}`);
+        var response = await axios.post(`https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${phone}&senderid=${senderId}&message=${encodedMessage}`);
         
         // Parse API response code - handle different response formats
         let apiCode = null;
@@ -95,13 +97,15 @@ class MessagingService{
      */
     sendBulkSms = async (phones, text) => {
         try {
+            const apiKey = process.env.BULKSMS_API_KEY || BULKSMS_API_KEY;
+            const senderId = process.env.BULKSMS_SENDER_ID || BULKSMS_SENDER_ID;
             // URL-encode the message text
             const encodedMessage = encodeURIComponent(text);
             // Comma-separated phone numbers
             const phoneNumbers = phones.join(',');
             
             const response = await axios.post(
-                `http://bulksmsbd.net/api/smsapi?api_key=${BULKSMS_API_KEY}&type=text&number=${phoneNumbers}&senderid=${BULKSMS_SENDER_ID}&message=${encodedMessage}`
+                `https://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${phoneNumbers}&senderid=${senderId}&message=${encodedMessage}`
             );
             
             // Parse API response code - handle different response formats
@@ -147,6 +151,8 @@ class MessagingService{
      */
     sendBulkSmsManyToMany = async (messages) => {
         try {
+            const apiKey = process.env.BULKSMS_API_KEY || BULKSMS_API_KEY;
+            const senderId = process.env.BULKSMS_SENDER_ID || BULKSMS_SENDER_ID;
             // Format messages according to API spec
             const formattedMessages = messages.map(msg => ({
                 to: msg.to,
@@ -154,10 +160,10 @@ class MessagingService{
             }));
             
             const response = await axios.post(
-                `http://bulksmsbd.net/api/smsapimany`,
+                `https://bulksmsbd.net/api/smsapimany`,
                 {
-                    api_key: BULKSMS_API_KEY,
-                    senderid: BULKSMS_SENDER_ID,
+                    api_key: apiKey,
+                    senderid: senderId,
                     messages: formattedMessages
                 }
             );
