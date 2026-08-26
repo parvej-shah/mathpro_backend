@@ -219,7 +219,7 @@ module.exports = {
                           properties: {
                             is_live: { type: "boolean", example: true },
                             language: { type: "string", example: "বাংলা" },
-                            url: { type: "string", example: "https://courses.mathpro.com/course-details/10" },
+                            url: { type: "string", example: "https://mathpro.academy/course-details/10" },
                             slug: { type: "string", nullable: true, example: "discrete-math" },
                             tags: { type: "array", items: { type: "string" }, example: ["CSE", "Math"] },
                             course_outline: { type: "string", nullable: true, example: "https://drive.google.com/file/d/.../view" },

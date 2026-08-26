@@ -51,7 +51,7 @@ class PaymentController extends Controller {
             const itemId = req.body.value_b; // course_id, bundle_id, or book_id
 
             // Build frontend URL with query parameters
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
             let redirectUrl;
 
             if (type === 'bundle') {
@@ -75,14 +75,14 @@ class PaymentController extends Controller {
         } catch (error) {
             console.error('Error in handlePaymentSuccess:', error);
             // Fallback to generic success page
-            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
             return res.redirect(`${frontendUrl}/dashboard`); // Redirect to dashboard if something goes wrong (user can see their purchases there)
         }
     }
 
     // Handle SSLCommerz failure callback (POST) and redirect to frontend (GET)
     handlePaymentFailure = async (req, res) => {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
         try {
             const { value_d } = req.body;
             const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : value_d === 'COURSE' ? 'course' : null;
@@ -101,7 +101,7 @@ class PaymentController extends Controller {
 
     // Handle SSLCommerz cancel callback (POST) and redirect to frontend (GET)
     handlePaymentCancel = async (req, res) => {
-        const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
         try {
             const { value_d } = req.body;
             const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : value_d === 'COURSE' ? 'course' : null;
@@ -503,7 +503,7 @@ class PaymentController extends Controller {
                                     const bundleTitle = bundle.title;
                                     const courseCount = bundleWithCourses.courses ? bundleWithCourses.courses.length : 0;
                                     
-                                    const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+                                    const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
                                     
                                     const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
                                     
@@ -923,7 +923,7 @@ class PaymentController extends Controller {
                                     // Get course title
                                     const courseTitle = dbResults[1].data[0].title;
                                     
-                                    const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+                                    const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
                                     
                                     const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
                                     
@@ -1428,7 +1428,7 @@ class PaymentController extends Controller {
                             const user = dbResults[0].data[0];
                             const userPhone = user.login || user.phone;
                             const userEmail = user.profile?.email || user.email;
-                            const frontendUrl = process.env.FRONTEND_URL || 'https://courses.mathpro.com';
+                            const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
                             
                             if (itemType === 'BUNDLE') {
                                 const bundle = dbResults[1].data[0];
