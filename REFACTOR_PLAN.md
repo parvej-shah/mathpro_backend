@@ -264,31 +264,38 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
 
 ### Phase 3 — Thin controllers & de-duplicated plumbing
 
-- [ ] **3.1 Controller boilerplate.** With 2.2 + 2.3 in place, remove the per-method
+- [x] **3.1 Controller boilerplate.** With 2.2 + 2.3 in place, remove the per-method
   `try/catch` that only maps to 500 (`express-promise-router` already forwards rejections).
   *Duplicate Code → Pull Up Method / Extract Method.* Do it one controller per PR, V2
   controllers first (heaviest boilerplate: `teacherV2`, `courseV2`, `moduleV2`, `featuredItem`,
   `uploadV2`). *M.*
-- [ ] **3.2 Move SQL out of controllers** (*Feature Envy → Move Method*):
+  Done: V2 controllers in Phase 2; the other 151 methods (19 controllers) now use `catchAs(BODY, handler)` (`controllers/base.js`), which keeps each endpoint's own 500 body (clients show it), so no reply changed. Verified by AST comparison (old file + the one transform == new file).
+- [x] **3.2 Move SQL out of controllers** (*Feature Envy → Move Method*):
   `managerial/course.js` (6 queries), `managerial/bundle.js` (2), `managerial/streakController.js`,
   `managerial/coupon.js:538`, `user/payment.js:387`. Each query becomes a named service method.
   *M.*
-- [ ] **3.3 Auth middleware** (*Duplicate Code → Parameterize Method*): one
+  Done: course (4 methods, the prebooking read was duplicated), bundle, streak, coupon, and the IPN coupon lookup; SQL text unchanged, `test/service/controllerQueries.test.js`. The other payment-controller queries move with the Phase 4 IPN rewrite.
+- [x] **3.3 Auth middleware** (*Duplicate Code → Parameterize Method*): one
   `permissionGuard(predicate, requiredList)` factory backing `requirePermission`,
   `requireAnyPermission` and `requireAllPermissions`. Exports, error bodies and status codes
   stay identical. **Must not change JWT verify/claims** (invariant § Auth). *M.* ✅ dedicated tests
   for 401/403/allow on each guard, written **before** the change.
-- [ ] **3.4 Upload controllers** (*Duplicate Code → Extract Function*): shared helper for
+  Done: one `permissionGuard(deny)` behind requirePermission / Any / All / requireScopeAccess / requireCourseAccess (474 → 321 lines). Tests first: `test/middleware/permissionGuards.test.js` (25).
+- [x] **3.4 Upload controllers** (*Duplicate Code → Extract Function*): shared helper for
   `controllers/{user,managerial}/uploadV2.js`. *L.*
-- [ ] **3.5 Feedback controllers** (*Duplicate Code → Extract Function*): shared helper for
+  Done: `controllers/shared/presignedUpload.js`; `test/contract/uploadV2.test.js` passes on old and new code.
+- [x] **3.5 Feedback controllers** (*Duplicate Code → Extract Function*): shared helper for
   `managerial/{feedback,moduleFeedback}.js`. *L.*
-- [ ] **3.6 Remaining intra-file clones** from the jscpd report (`moduleViews` controller/service,
+  Done: `controllers/shared/courseAccess.js` (`rejectCourseFilter`, `noCourseAccess`) + `util/csv.js`; `test/contract/feedbackCourseFilter.test.js` written first.
+- [x] **3.6 Remaining intra-file clones** from the jscpd report (`moduleViews` controller/service,
   `analyticsController`, `CouponValidator`, `courseImportExport`, `routine`, `announcement`,
   `user/bundle`). *Extract Method*, one file per PR. *L.*
-- [ ] **3.7 Input validation** (*Long Method / Primitive Obsession → Introduce Parameter Object*):
+  Done, one commit per file, each with a test that passes on old and new code (or a differential check: CouponValidator 184,320 inputs, analyticsController 4,050 calls against a stubbed service). jscpd: 40 → 20 clones, 671 → 336 duplicated lines. Left (not on the list): `user/coupon` (fixed in 3.7), `courseV2`, `role`, `user`, `messagingService`, `roleService`, `testimonial`.
+- [x] **3.7 Input validation** (*Long Method / Primitive Obsession → Introduce Parameter Object*):
   small `validate(schema)` helper (no new lib unless agreed) used by routes that hand-parse
   `req.body`. Must reproduce **current** messages and status codes; start with auth, payment,
   coupon. *M.*
+  Done for auth (`middleware/validate.js`: `validate({ required, error })` on 9 routes, placed after the limiters) and coupon (`parseCouponRequest`). Payment's input checks live in the service and go with Phase 4 (4.2/R4). Pinned by `test/contract/inputValidation.test.js`.
 
 ### Phase R — Reusability: shared building blocks
 
