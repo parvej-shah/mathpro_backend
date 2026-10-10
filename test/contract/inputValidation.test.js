@@ -78,3 +78,38 @@ for (const action of ['validate', 'apply']) {
         assert.notStrictEqual(unknown.body.error, 'Valid course ID is required');
     });
 }
+
+test('coupon validate/apply happy paths: course and bundle, with click tracking on apply', async () => {
+    const t = Math.floor(Date.now() / 1000);
+    await pool.query(
+        `INSERT INTO coupons (id, name, code, discount_type, discount_value, start_time, end_time, created_at, updated_at, status)
+         VALUES (841, 'IV', 'IVCOURSE', 'fixed', 100, $1, $2, $1, $1, 'active'),
+                (842, 'IV2', 'IVBUNDLE', 'percentage', 10, $1, $2, $1, $1, 'active')`,
+        [t - 60, t + 3600]
+    );
+    await pool.query('INSERT INTO coupon_courses (coupon_id, course_id, created_at) VALUES (841, 1, $1)', [t]);
+    await pool.query('INSERT INTO coupon_bundles (coupon_id, bundle_id, created_at) VALUES (842, 1, $1)', [t]);
+
+    const v1 = await call('post', '/user/coupon/validate', { coupon_code: 'IVCOURSE', course_id: '1' }, studentToken());
+    assert.strictEqual(v1.status, 200, JSON.stringify(v1.body));
+    assert.strictEqual(v1.body.valid, true);
+    const v2 = await call('post', '/user/coupon/validate', { coupon_code: 'IVBUNDLE', bundle_id: 1 }, studentToken());
+    assert.strictEqual(v2.body.valid, true, JSON.stringify(v2.body));
+
+    const a1 = await call('post', '/user/coupon/apply', { coupon_code: 'IVCOURSE', course_id: 1 }, studentToken());
+    assert.strictEqual(a1.status, 200, JSON.stringify(a1.body));
+    assert.deepStrictEqual(
+        [a1.body.data.original_price, a1.body.data.discount_amount, a1.body.data.final_price],
+        [1000, 100, 900]
+    );
+    const a2 = await call('post', '/user/coupon/apply', { coupon_code: 'IVBUNDLE', bundle_id: '1' }, studentToken());
+    assert.deepStrictEqual([a2.body.data.original_price, a2.body.data.final_price], [900, 810]);
+
+    const clicks = (await pool.query(
+        'SELECT coupon_id, user_id, course_id, bundle_id FROM coupon_clicks WHERE coupon_id IN (841, 842) ORDER BY coupon_id'
+    )).rows;
+    assert.deepStrictEqual(clicks, [
+        { coupon_id: 841, user_id: 2, course_id: 1, bundle_id: null },
+        { coupon_id: 842, user_id: 2, course_id: null, bundle_id: 1 },
+    ]);
+});

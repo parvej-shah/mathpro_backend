@@ -4,6 +4,28 @@ const CouponService = require("../../service/managerial/coupon");
 
 const couponService = new CouponService();
 
+// Reads `{ coupon_code, course_id | bundle_id | book_id }`. Returns `{ error }` (the 400 message)
+// or `{ couponCode, type: "course" | "bundle" | "book", id }`.
+const COUPON_TARGETS = [["course_id", "course"], ["bundle_id", "bundle"], ["book_id", "book"]];
+const parseCouponRequest = (body) => {
+  if (!body.coupon_code) {
+    return { error: "Coupon code is required" };
+  }
+  const given = COUPON_TARGETS.filter(([field]) => body[field]);
+  if (given.length === 0) {
+    return { error: "Either course_id, bundle_id or book_id is required" };
+  }
+  if (given.length > 1) {
+    return { error: "Provide only one of course_id, bundle_id or book_id" };
+  }
+  const [field, type] = given[0];
+  const id = parseInt(body[field]);
+  if (isNaN(id)) {
+    return { error: `Valid ${type} ID is required` };
+  }
+  return { couponCode: body.coupon_code, type, id };
+};
+
 class UserCouponController extends Controller {
   constructor() {
     super();
@@ -15,29 +37,9 @@ class UserCouponController extends Controller {
    * Body: { coupon_code, course_id OR bundle_id OR book_id }
    */
   validateCoupon = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const { coupon_code, course_id, bundle_id, book_id } = req.body;
-
-    if (!coupon_code) {
-      return res.status(400).json({
-        success: false,
-        error: "Coupon code is required",
-      });
-    }
-
-    const providedCount = [course_id, bundle_id, book_id].filter(Boolean).length;
-
-    if (providedCount === 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Either course_id, bundle_id or book_id is required",
-      });
-    }
-
-    if (providedCount > 1) {
-      return res.status(400).json({
-        success: false,
-        error: "Provide only one of course_id, bundle_id or book_id",
-      });
+    const target = parseCouponRequest(req.body);
+    if (target.error) {
+      return res.status(400).json({ success: false, error: target.error });
     }
 
     const userId = req.body.auth === true ? parseInt(req.body.user_id) : null;
@@ -50,47 +52,12 @@ class UserCouponController extends Controller {
     };
 
     let result;
-    if (course_id) {
-      const courseId = parseInt(course_id);
-      if (isNaN(courseId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid course ID is required",
-        });
-      }
-      result = await couponService.validateCoupon(
-        coupon_code,
-        courseId,
-        userId,
-        requestDetails
-      );
-    } else if (bundle_id) {
-      const bundleId = parseInt(bundle_id);
-      if (isNaN(bundleId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid bundle ID is required",
-        });
-      }
-      result = await couponService.validateCouponForBundle(
-        coupon_code,
-        bundleId,
-        userId
-      );
+    if (target.type === "course") {
+      result = await couponService.validateCoupon(target.couponCode, target.id, userId, requestDetails);
+    } else if (target.type === "bundle") {
+      result = await couponService.validateCouponForBundle(target.couponCode, target.id, userId);
     } else {
-      // book_id provided
-      const bookId = parseInt(book_id);
-      if (isNaN(bookId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid book ID is required",
-        });
-      }
-      result = await couponService.validateCouponForBook(
-        coupon_code,
-        bookId,
-        userId
-      );
+      result = await couponService.validateCouponForBook(target.couponCode, target.id, userId);
     }
 
     return res.status(result.valid ? 200 : 400).json(result);
@@ -102,89 +69,22 @@ class UserCouponController extends Controller {
    * Body: { coupon_code, course_id OR bundle_id OR book_id }
    */
   applyCoupon = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const { coupon_code, course_id, bundle_id, book_id } = req.body;
-
-    if (!coupon_code) {
-      return res.status(400).json({
-        success: false,
-        error: "Coupon code is required",
-      });
-    }
-
-    const providedCount = [course_id, bundle_id, book_id].filter(Boolean).length;
-
-    if (providedCount === 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Either course_id, bundle_id or book_id is required",
-      });
-    }
-
-    if (providedCount > 1) {
-      return res.status(400).json({
-        success: false,
-        error: "Provide only one of course_id, bundle_id or book_id",
-      });
+    const target = parseCouponRequest(req.body);
+    if (target.error) {
+      return res.status(400).json({ success: false, error: target.error });
     }
 
     const userId = req.body.auth === true ? parseInt(req.body.user_id) : null;
 
     let result;
-    let couponId = null;
-
-    if (course_id) {
-      const courseId = parseInt(course_id);
-      if (isNaN(courseId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid course ID is required",
-        });
-      }
-      result = await couponService.applyCouponToPrice(
-        coupon_code,
-        courseId,
-        userId
-      );
-
-      if (result.success && result.data && result.data.coupon) {
-        couponId = result.data.coupon.id;
-      }
-    } else if (bundle_id) {
-      const bundleId = parseInt(bundle_id);
-      if (isNaN(bundleId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid bundle ID is required",
-        });
-      }
-      result = await couponService.applyCouponToPriceForBundle(
-        coupon_code,
-        bundleId,
-        userId
-      );
-
-      if (result.success && result.data && result.data.coupon) {
-        couponId = result.data.coupon.id;
-      }
+    if (target.type === "course") {
+      result = await couponService.applyCouponToPrice(target.couponCode, target.id, userId);
+    } else if (target.type === "bundle") {
+      result = await couponService.applyCouponToPriceForBundle(target.couponCode, target.id, userId);
     } else {
-      // book_id provided
-      const bookId = parseInt(book_id);
-      if (isNaN(bookId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid book ID is required",
-        });
-      }
-      result = await couponService.applyCouponToPriceForBook(
-        coupon_code,
-        bookId,
-        userId
-      );
-
-      if (result.success && result.data && result.data.coupon) {
-        couponId = result.data.coupon.id;
-      }
+      result = await couponService.applyCouponToPriceForBook(target.couponCode, target.id, userId);
     }
+    const couponId = result.success && result.data && result.data.coupon ? result.data.coupon.id : null;
 
     // Track coupon click after successful application
     // NOTE: trackCouponClick only supports course_id/bundle_id today (see
@@ -204,22 +104,10 @@ class UserCouponController extends Controller {
           }
         };
 
-        if (course_id) {
-          await couponService.trackCouponClick(
-            couponId,
-            userId,
-            parseInt(course_id),
-            null,
-            requestDetails
-          );
-        } else if (bundle_id) {
-          await couponService.trackCouponClick(
-            couponId,
-            userId,
-            null,
-            parseInt(bundle_id),
-            requestDetails
-          );
+        if (target.type === "course") {
+          await couponService.trackCouponClick(couponId, userId, target.id, null, requestDetails);
+        } else if (target.type === "bundle") {
+          await couponService.trackCouponClick(couponId, userId, null, target.id, requestDetails);
         }
       } catch (trackError) {
         // Non-critical error - don't fail the request if tracking fails
