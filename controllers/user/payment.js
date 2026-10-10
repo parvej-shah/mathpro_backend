@@ -3,7 +3,7 @@ const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/course
 
 
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { respond, catchAs } = require('../base');
 const PaymentService=require("../../service/user/payment.js").PaymentService
 const CourseService=require("../../service/managerial/course").CourseService
 
@@ -1219,237 +1219,212 @@ class PaymentController extends Controller {
         }
     }
 
-    getPaymentHistory = async (req, res) => {
-        try {
-            const userId = req.user?.id || req.body.user_id;
-            if (!userId) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'User ID is required'
-                });
-            }
-
-            const result = await paymentService.getPaymentHistoryAndEnrollments(userId);
-            return respond(res, result);
-        } catch (error) {
-            logger.error('Error in getPaymentHistory controller:', error);
-            return res.status(500).json({
+    getPaymentHistory = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
+        const userId = req.user?.id || req.body.user_id;
+        if (!userId) {
+            return res.status(400).json({
                 success: false,
-                error: 'Internal server error'
+                error: 'User ID is required'
             });
         }
-    }
+
+        const result = await paymentService.getPaymentHistoryAndEnrollments(userId);
+        return respond(res, result);
+    })
 
     // Get payment audit logs (new API - doesn't break existing functionality)
     // Supports both user and admin authentication
-    getPaymentAuditLogs = async (req, res) => {
-        try {
-            // Get accessible course IDs for the current user
-            const userId = req.user?.id || req.body.user_id;
-            const access = await getAccessibleCourseIds(userId, 'payment', 'manage');
+    getPaymentAuditLogs = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
+        // Get accessible course IDs for the current user
+        const userId = req.user?.id || req.body.user_id;
+        const access = await getAccessibleCourseIds(userId, 'payment', 'manage');
 
-            const filters = {
-                user_id: req.query.user_id,
-                sslcommerz_tran_id: req.query.sslcommerz_tran_id || req.body.sslcommerz_tran_id,
-                internal_transaction_id: req.query.internal_transaction_id || req.body.internal_transaction_id,
-                item_type: req.query.item_type || req.body.item_type,
-                status: req.query.status || req.body.status,
-                processing_status: req.query.processing_status || req.body.processing_status,
-                limit: parseInt(req.query.limit || req.body.limit || 100),
-                offset: parseInt(req.query.offset || req.body.offset || 0),
-                accessible_course_ids: access.hasGlobalAccess ? null : access.courseIds
-            };
+        const filters = {
+            user_id: req.query.user_id,
+            sslcommerz_tran_id: req.query.sslcommerz_tran_id || req.body.sslcommerz_tran_id,
+            internal_transaction_id: req.query.internal_transaction_id || req.body.internal_transaction_id,
+            item_type: req.query.item_type || req.body.item_type,
+            status: req.query.status || req.body.status,
+            processing_status: req.query.processing_status || req.body.processing_status,
+            limit: parseInt(req.query.limit || req.body.limit || 100),
+            offset: parseInt(req.query.offset || req.body.offset || 0),
+            accessible_course_ids: access.hasGlobalAccess ? null : access.courseIds
+        };
 
-            // Remove undefined/null/empty filters
-            Object.keys(filters).forEach(key => {
-                if (filters[key] === undefined || filters[key] === null || filters[key] === '') {
-                    delete filters[key];
-                }
-            });
+        // Remove undefined/null/empty filters
+        Object.keys(filters).forEach(key => {
+            if (filters[key] === undefined || filters[key] === null || filters[key] === '') {
+                delete filters[key];
+            }
+        });
 
-            const result = await paymentService.getPaymentAuditLogs(filters);
-            return respond(res, result);
-        } catch (error) {
-            logger.error('Error in getPaymentAuditLogs controller:', error);
-            return res.status(500).json({
-                success: false,
-                error: 'Internal server error'
-            });
-        }
-    }
+        const result = await paymentService.getPaymentAuditLogs(filters);
+        return respond(res, result);
+    })
 
     // Export payment audit logs (returns all matching records without pagination)
     // Admin only - for CSV export functionality
-    exportPaymentAuditLogs = async (req, res) => {
-        try {
-            // Get accessible course IDs for the current user
-            const userId = req.user?.id || req.body.user_id;
-            const access = await getAccessibleCourseIds(userId, 'payment', 'manage');
-            
-            // Build filters - ignore limit and offset for export
-            const filters = {
-                user_id: req.query.user_id,
-                sslcommerz_tran_id: req.query.sslcommerz_tran_id || req.body.sslcommerz_tran_id,
-                internal_transaction_id: req.query.internal_transaction_id || req.body.internal_transaction_id,
-                item_type: req.query.item_type || req.body.item_type,
-                status: req.query.status || req.body.status,
-                processing_status: req.query.processing_status || req.body.processing_status,
-                accessible_course_ids: access.hasGlobalAccess ? null : access.courseIds
-            };
+    exportPaymentAuditLogs = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
+        // Get accessible course IDs for the current user
+        const userId = req.user?.id || req.body.user_id;
+        const access = await getAccessibleCourseIds(userId, 'payment', 'manage');
+        
+        // Build filters - ignore limit and offset for export
+        const filters = {
+            user_id: req.query.user_id,
+            sslcommerz_tran_id: req.query.sslcommerz_tran_id || req.body.sslcommerz_tran_id,
+            internal_transaction_id: req.query.internal_transaction_id || req.body.internal_transaction_id,
+            item_type: req.query.item_type || req.body.item_type,
+            status: req.query.status || req.body.status,
+            processing_status: req.query.processing_status || req.body.processing_status,
+            accessible_course_ids: access.hasGlobalAccess ? null : access.courseIds
+        };
 
-            // Remove undefined/null/empty filters
-            Object.keys(filters).forEach(key => {
-                if (filters[key] === undefined || filters[key] === null || filters[key] === '') {
-                    delete filters[key];
-                }
-            });
+        // Remove undefined/null/empty filters
+        Object.keys(filters).forEach(key => {
+            if (filters[key] === undefined || filters[key] === null || filters[key] === '') {
+                delete filters[key];
+            }
+        });
 
-            const result = await paymentService.exportPaymentAuditLogs(filters);
-            return respond(res, result);
-        } catch (error) {
-            logger.error('Error in exportPaymentAuditLogs controller:', error);
-            return res.status(500).json({
-                success: false,
-                error: 'Internal server error'
-            });
-        }
-    }
+        const result = await paymentService.exportPaymentAuditLogs(filters);
+        return respond(res, result);
+    })
 
     // Manual reconciliation endpoint (new API - doesn't break existing functionality)
     // Supports both user and admin authentication
-    reconcilePayment = async (req, res) => {
-        try {
-            const sslcommerz_tran_id = req.body.sslcommerz_tran_id || req.params.sslcommerz_tran_id;
-            // Support both authenticateUser (req.user.id) and authenticateAdmin (req.body.user_id)
-            const reconciled_by = req.user?.id || req.body.user_id || req.body.reconciled_by;
-            const notes = req.body.notes || null;
+    reconcilePayment = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
+        const sslcommerz_tran_id = req.body.sslcommerz_tran_id || req.params.sslcommerz_tran_id;
+        // Support both authenticateUser (req.user.id) and authenticateAdmin (req.body.user_id)
+        const reconciled_by = req.user?.id || req.body.user_id || req.body.reconciled_by;
+        const notes = req.body.notes || null;
 
-            if (!sslcommerz_tran_id) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'SSLCommerz transaction ID is required'
-                });
-            }
+        if (!sslcommerz_tran_id) {
+            return res.status(400).json({
+                success: false,
+                error: 'SSLCommerz transaction ID is required'
+            });
+        }
 
-            // Check access to the specific transaction
-            const logResult = await paymentService.query(
-                `SELECT item_id, item_type FROM payment_audit_log WHERE sslcommerz_tran_id = $1 LIMIT 1`,
-                [sslcommerz_tran_id]
-            );
+        // Check access to the specific transaction
+        const logResult = await paymentService.query(
+            `SELECT item_id, item_type FROM payment_audit_log WHERE sslcommerz_tran_id = $1 LIMIT 1`,
+            [sslcommerz_tran_id]
+        );
 
-            if (logResult.success && logResult.data && logResult.data.length > 0) {
-                const { item_id, item_type } = logResult.data[0];
+        if (logResult.success && logResult.data && logResult.data.length > 0) {
+            const { item_id, item_type } = logResult.data[0];
+            
+            if (item_type === 'COURSE') {
+                const access = await checkCourseAccess(reconciled_by, 'payment', 'manage', item_id);
+                if (!access.hasAccess) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'NO_COURSE_ACCESS',
+                        message: 'No access to reconcile payments for this course'
+                    });
+                }
+            } else if (item_type === 'BUNDLE') {
+                // Check if user has access to ANY course in the bundle
+                const { BundleService } = require('../../service/managerial/bundle');
+                const bundleService = new BundleService();
+                const bundleResult = await bundleService.get(item_id);
                 
-                if (item_type === 'COURSE') {
-                    const access = await checkCourseAccess(reconciled_by, 'payment', 'manage', item_id);
-                    if (!access.hasAccess) {
-                        return res.status(403).json({
-                            success: false,
-                            error: 'NO_COURSE_ACCESS',
-                            message: 'No access to reconcile payments for this course'
-                        });
-                    }
-                } else if (item_type === 'BUNDLE') {
-                    // Check if user has access to ANY course in the bundle
-                    const { BundleService } = require('../../service/managerial/bundle');
-                    const bundleService = new BundleService();
-                    const bundleResult = await bundleService.get(item_id);
+                if (bundleResult.success && bundleResult.data && bundleResult.data.length > 0) {
+                    const courses = bundleResult.data[0].courses || [];
+                    let hasAnyAccess = false;
                     
-                    if (bundleResult.success && bundleResult.data && bundleResult.data.length > 0) {
-                        const courses = bundleResult.data[0].courses || [];
-                        let hasAnyAccess = false;
-                        
-                        // If user has global access, they're good
-                        const globalAccess = await getAccessibleCourseIds(reconciled_by, 'payment', 'manage');
-                        if (globalAccess.hasGlobalAccess) {
-                            hasAnyAccess = true;
-                        } else {
-                            // Check individual courses
-                            for (const course of courses) {
-                                if (globalAccess.courseIds.includes(course.id)) {
-                                    hasAnyAccess = true;
-                                    break;
-                                }
+                    // If user has global access, they're good
+                    const globalAccess = await getAccessibleCourseIds(reconciled_by, 'payment', 'manage');
+                    if (globalAccess.hasGlobalAccess) {
+                        hasAnyAccess = true;
+                    } else {
+                        // Check individual courses
+                        for (const course of courses) {
+                            if (globalAccess.courseIds.includes(course.id)) {
+                                hasAnyAccess = true;
+                                break;
                             }
                         }
-                        
-                        if (!hasAnyAccess) {
-                            return res.status(403).json({
-                                success: false,
-                                error: 'NO_BUNDLE_ACCESS',
-                                message: 'No access to reconcile payments for this bundle'
-                            });
-                        }
+                    }
+                    
+                    if (!hasAnyAccess) {
+                        return res.status(403).json({
+                            success: false,
+                            error: 'NO_BUNDLE_ACCESS',
+                            message: 'No access to reconcile payments for this bundle'
+                        });
                     }
                 }
             }
+        }
 
 
-            if (!reconciled_by) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Reconciled by (user ID) is required'
-                });
-            }
+        if (!reconciled_by) {
+            return res.status(400).json({
+                success: false,
+                error: 'Reconciled by (user ID) is required'
+            });
+        }
 
-            const result = await paymentService.reconcilePayment(sslcommerz_tran_id, reconciled_by, notes);
-            
-            // CRITICAL: Send notifications after successful reconciliation (non-blocking)
-            // Only send if enrollment succeeded
-            if (result.success && result.data && result.data.enrollment_succeeded) {
-                try {
-                    // Get payment log to get user and item details
-                    // Note: There can be multiple entries for same transaction (multiple IPN callbacks)
-                    // Find the VALID entry or use the most recent one
-                    const logResult = await paymentService.query(
-                        `SELECT * FROM payment_audit_log WHERE sslcommerz_tran_id = $1 ORDER BY timestamp DESC`,
-                        [sslcommerz_tran_id]
-                    );
+        const result = await paymentService.reconcilePayment(sslcommerz_tran_id, reconciled_by, notes);
+        
+        // CRITICAL: Send notifications after successful reconciliation (non-blocking)
+        // Only send if enrollment succeeded
+        if (result.success && result.data && result.data.enrollment_succeeded) {
+            try {
+                // Get payment log to get user and item details
+                // Note: There can be multiple entries for same transaction (multiple IPN callbacks)
+                // Find the VALID entry or use the most recent one
+                const logResult = await paymentService.query(
+                    `SELECT * FROM payment_audit_log WHERE sslcommerz_tran_id = $1 ORDER BY timestamp DESC`,
+                    [sslcommerz_tran_id]
+                );
+                
+                if (logResult.success && logResult.data && logResult.data.length > 0) {
+                    // Find VALID entry if exists, otherwise use most recent
+                    const validLog = logResult.data.find(entry => entry.status === 'VALID');
+                    const log = validLog || logResult.data[0];
+                    const userId = log.user_id;
+                    const itemId = log.item_id;
+                    const itemType = log.item_type;
+                    const transactionId = log.internal_transaction_id || 
+                        paymentService.generateTransactionId(userId, itemId);
                     
-                    if (logResult.success && logResult.data && logResult.data.length > 0) {
-                        // Find VALID entry if exists, otherwise use most recent
-                        const validLog = logResult.data.find(entry => entry.status === 'VALID');
-                        const log = validLog || logResult.data[0];
-                        const userId = log.user_id;
-                        const itemId = log.item_id;
-                        const itemType = log.item_type;
-                        const transactionId = log.internal_transaction_id || 
-                            paymentService.generateTransactionId(userId, itemId);
+                    // Get user and item details for notifications
+                    const dbResults = await Promise.all([
+                        paymentService.query(`SELECT * FROM managerial_auth WHERE id = $1`, [userId]),
+                        itemType === 'BUNDLE' 
+                            ? paymentService.query(`SELECT * FROM bundle WHERE id = $1`, [itemId])
+                            : paymentService.query(`SELECT * FROM course WHERE id = $1`, [itemId])
+                    ]);
+                    
+                    if (dbResults[0].success && dbResults[0].data && dbResults[0].data.length > 0 &&
+                        dbResults[1].success && dbResults[1].data && dbResults[1].data.length > 0) {
                         
-                        // Get user and item details for notifications
-                        const dbResults = await Promise.all([
-                            paymentService.query(`SELECT * FROM managerial_auth WHERE id = $1`, [userId]),
-                            itemType === 'BUNDLE' 
-                                ? paymentService.query(`SELECT * FROM bundle WHERE id = $1`, [itemId])
-                                : paymentService.query(`SELECT * FROM course WHERE id = $1`, [itemId])
-                        ]);
+                        const user = dbResults[0].data[0];
+                        const userPhone = user.login || user.phone;
+                        const userEmail = user.profile?.email || user.email;
+                        const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
                         
-                        if (dbResults[0].success && dbResults[0].data && dbResults[0].data.length > 0 &&
-                            dbResults[1].success && dbResults[1].data && dbResults[1].data.length > 0) {
+                        if (itemType === 'BUNDLE') {
+                            const bundle = dbResults[1].data[0];
+                            const bundleTitle = bundle.title;
+                            const bundleId = bundle.id;
                             
-                            const user = dbResults[0].data[0];
-                            const userPhone = user.login || user.phone;
-                            const userEmail = user.profile?.email || user.email;
-                            const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
+                            // Get bundle with courses for email
+                            const { BundleService } = require('../../service/managerial/bundle');
+                            const bundleService = new BundleService();
+                            const bundleWithCourses = await bundleService.get(bundleId);
+                            const courseCount = bundleWithCourses.success && bundleWithCourses.data && bundleWithCourses.data.length > 0
+                                ? (bundleWithCourses.data[0].courses ? bundleWithCourses.data[0].courses.length : 0)
+                                : 0;
                             
-                            if (itemType === 'BUNDLE') {
-                                const bundle = dbResults[1].data[0];
-                                const bundleTitle = bundle.title;
-                                const bundleId = bundle.id;
-                                
-                                // Get bundle with courses for email
-                                const { BundleService } = require('../../service/managerial/bundle');
-                                const bundleService = new BundleService();
-                                const bundleWithCourses = await bundleService.get(bundleId);
-                                const courseCount = bundleWithCourses.success && bundleWithCourses.data && bundleWithCourses.data.length > 0
-                                    ? (bundleWithCourses.data[0].courses ? bundleWithCourses.data[0].courses.length : 0)
-                                    : 0;
-                                
-                                const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
-                                const dashboardUrl = `${frontendUrl}/dashboard`;
-                                const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from Math Pro! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
-                                
-                                const emailText = `<!DOCTYPE html>
+                            const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
+                            const dashboardUrl = `${frontendUrl}/dashboard`;
+                            const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from Math Pro! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
+                            
+                            const emailText = `<!DOCTYPE html>
                                 <html lang="en">
                                 <head>
                                   <meta charset="UTF-8">
@@ -1484,35 +1459,35 @@ class PaymentController extends Controller {
                                   </div>
                                 </body>
                                 </html>`;
-                                
-                                // Send notifications (non-blocking)
-                                if (userPhone || userEmail) {
-                                    Promise.all([
-                                        userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
-                                            logger.error('Reconciliation: Bundle SMS send error:', err);
-                                            return { success: false };
-                                        }) : Promise.resolve({ success: false, error: 'No phone' }),
-                                        userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | Math Pro', emailText).catch(err => {
-                                            logger.error('Reconciliation: Bundle Email send error:', err);
-                                            return { success: false };
-                                        }) : Promise.resolve({ success: false, error: 'No email' })
-                                    ]).then(() => {
-                                        console.log('Reconciliation: Notifications sent for bundle purchase');
-                                    }).catch(err => {
-                                        logger.error('Reconciliation: Notification error:', err);
-                                    });
-                                }
-                            } else {
-                                // Course purchase
-                                const course = dbResults[1].data[0];
-                                const courseTitle = course.title;
-                                const courseId = course.id;
-                                
-                                const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
-                                const dashboardUrl = `${frontendUrl}/dashboard/${courseId}`;
-                                const text = `Dear ${user.name}, you have successfully purchased "${courseTitle}" course from Math Pro. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
-                                
-                                const emailText = `<!DOCTYPE html>
+                            
+                            // Send notifications (non-blocking)
+                            if (userPhone || userEmail) {
+                                Promise.all([
+                                    userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
+                                        logger.error('Reconciliation: Bundle SMS send error:', err);
+                                        return { success: false };
+                                    }) : Promise.resolve({ success: false, error: 'No phone' }),
+                                    userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | Math Pro', emailText).catch(err => {
+                                        logger.error('Reconciliation: Bundle Email send error:', err);
+                                        return { success: false };
+                                    }) : Promise.resolve({ success: false, error: 'No email' })
+                                ]).then(() => {
+                                    console.log('Reconciliation: Notifications sent for bundle purchase');
+                                }).catch(err => {
+                                    logger.error('Reconciliation: Notification error:', err);
+                                });
+                            }
+                        } else {
+                            // Course purchase
+                            const course = dbResults[1].data[0];
+                            const courseTitle = course.title;
+                            const courseId = course.id;
+                            
+                            const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
+                            const dashboardUrl = `${frontendUrl}/dashboard/${courseId}`;
+                            const text = `Dear ${user.name}, you have successfully purchased "${courseTitle}" course from Math Pro. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
+                            
+                            const emailText = `<!DOCTYPE html>
                                 <html lang="en">
                                 <head>
                                   <meta charset="UTF-8">
@@ -1546,42 +1521,35 @@ class PaymentController extends Controller {
                                   </div>
                                 </body>
                                 </html>`;
-                                
-                                // Send notifications (non-blocking)
-                                if (userPhone || userEmail) {
-                                    Promise.all([
-                                        userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
-                                            logger.error('Reconciliation: Course SMS send error:', err);
-                                            return { success: false };
-                                        }) : Promise.resolve({ success: false, error: 'No phone' }),
-                                        userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | Math Pro', emailText).catch(err => {
-                                            logger.error('Reconciliation: Course Email send error:', err);
-                                            return { success: false };
-                                        }) : Promise.resolve({ success: false, error: 'No email' })
-                                    ]).then(() => {
-                                        console.log('Reconciliation: Notifications sent for course purchase');
-                                    }).catch(err => {
-                                        logger.error('Reconciliation: Notification error:', err);
-                                    });
-                                }
+                            
+                            // Send notifications (non-blocking)
+                            if (userPhone || userEmail) {
+                                Promise.all([
+                                    userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
+                                        logger.error('Reconciliation: Course SMS send error:', err);
+                                        return { success: false };
+                                    }) : Promise.resolve({ success: false, error: 'No phone' }),
+                                    userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | Math Pro', emailText).catch(err => {
+                                        logger.error('Reconciliation: Course Email send error:', err);
+                                        return { success: false };
+                                    }) : Promise.resolve({ success: false, error: 'No email' })
+                                ]).then(() => {
+                                    console.log('Reconciliation: Notifications sent for course purchase');
+                                }).catch(err => {
+                                    logger.error('Reconciliation: Notification error:', err);
+                                });
                             }
                         }
                     }
-                } catch (notificationError) {
-                    // CRITICAL: Never fail reconciliation due to notification errors
-                    logger.error('Reconciliation: Error sending notifications (non-critical):', notificationError);
                 }
+            } catch (notificationError) {
+                // CRITICAL: Never fail reconciliation due to notification errors
+                logger.error('Reconciliation: Error sending notifications (non-critical):', notificationError);
             }
-            
-            return respond(res, result);
-        } catch (error) {
-            logger.error('Error in reconcilePayment controller:', error);
-            return res.status(500).json({
-                success: false,
-                error: 'Internal server error'
-            });
         }
-    }
+        
+        return respond(res, result);
+    })
 }
 
 module.exports={PaymentController}

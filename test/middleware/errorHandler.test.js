@@ -100,3 +100,32 @@ test('respond() keeps the 200/400 envelope and never serializes an Error object'
     assert.strictEqual(leak.status, 400);
     assert.deepStrictEqual(leak.body, { success: false, error: 'Database error.' });
 });
+
+test('catchAs() sends the endpoint\'s own 500 body on a throw and stays out of the way otherwise', async () => {
+    const { catchAs } = require('../../controllers/base');
+    const router = require('express-promise-router')();
+    router.get('/ok', catchAs({ success: false, error: 'Failed' }, async (req, res) => res.json({ success: true })));
+    router.get('/static', catchAs({ success: false, error: 'Failed to fetch things' }, async () => {
+        throw new Error('boom');
+    }));
+    router.get('/dynamic', catchAs((e) => ({ success: false, error: 'Internal server error', details: e.message }), async () => {
+        throw new Error('boom');
+    }));
+    router.get('/sent', catchAs({ success: false }, async (req, res) => {
+        res.status(201).json({ partial: true });
+        throw new Error('after send');
+    }));
+    const app = express();
+    app.use(router);
+    app.use(errorHandler);
+
+    assert.deepStrictEqual((await request(app).get('/ok')).body, { success: true });
+    const stat = await request(app).get('/static');
+    assert.strictEqual(stat.status, 500);
+    assert.deepStrictEqual(stat.body, { success: false, error: 'Failed to fetch things' });
+    const dyn = await request(app).get('/dynamic');
+    assert.deepStrictEqual(dyn.body, { success: false, error: 'Internal server error', details: 'boom' });
+    const sent = await request(app).get('/sent');
+    assert.strictEqual(sent.status, 201);
+    assert.deepStrictEqual(sent.body, { partial: true });
+});

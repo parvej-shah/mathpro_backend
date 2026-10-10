@@ -1,12 +1,11 @@
 require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { respond, catchAs } = require('../base');
 const CourseService =
   require("../../service/managerial/course.js").CourseService;
 const RevenueService =
   require("../../service/managerial/revenueService").RevenueService;
 const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
-const logger = require('../../util/logger');
 
 const courseService = new CourseService();
 const revenueService = new RevenueService();
@@ -213,79 +212,63 @@ class CourseController extends Controller {
   };
 
   // Update UTM field for a course prebooking
-  updatePrebookingUtm = async (req, res) => {
-    try {
-      const { prebookingId } = req.params;
-      const { utm } = req.body;
+  updatePrebookingUtm = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
+    const { prebookingId } = req.params;
+    const { utm } = req.body;
 
-      if (!prebookingId) {
-        return res.status(400).json({
-          success: false,
-          error: "Prebooking ID is required",
-        });
-      }
-
-      const query = `UPDATE prebooking SET utm = $1 WHERE id = $2 RETURNING *`;
-      const params = [utm || null, parseInt(prebookingId)];
-      const result = await courseService.query(query, params);
-
-      if (result.success && result.data.length > 0) {
-        return res.status(200).json({
-          success: true,
-          message: "UTM field updated successfully",
-          data: result.data[0],
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          error: "Failed to update UTM field or prebooking not found",
-        });
-      }
-    } catch (error) {
-      logger.error("Update prebooking UTM error:", error);
-      return res.status(500).json({
+    if (!prebookingId) {
+      return res.status(400).json({
         success: false,
-        error: "Internal server error",
+        error: "Prebooking ID is required",
       });
     }
-  };
+
+    const query = `UPDATE prebooking SET utm = $1 WHERE id = $2 RETURNING *`;
+    const params = [utm || null, parseInt(prebookingId)];
+    const result = await courseService.query(query, params);
+
+    if (result.success && result.data.length > 0) {
+      return res.status(200).json({
+        success: true,
+        message: "UTM field updated successfully",
+        data: result.data[0],
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: "Failed to update UTM field or prebooking not found",
+      });
+    }
+  });
 
   // Delete UTM field for a course prebooking (set to NULL)
-  deletePrebookingUtm = async (req, res) => {
-    try {
-      const { prebookingId } = req.params;
+  deletePrebookingUtm = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
+    const { prebookingId } = req.params;
 
-      if (!prebookingId) {
-        return res.status(400).json({
-          success: false,
-          error: "Prebooking ID is required",
-        });
-      }
-
-      const query = `UPDATE prebooking SET utm = NULL WHERE id = $1 RETURNING *`;
-      const params = [parseInt(prebookingId)];
-      const result = await courseService.query(query, params);
-
-      if (result.success && result.data.length > 0) {
-        return res.status(200).json({
-          success: true,
-          message: "UTM field deleted successfully",
-          data: result.data[0],
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          error: "Failed to delete UTM field or prebooking not found",
-        });
-      }
-    } catch (error) {
-      logger.error("Delete prebooking UTM error:", error);
-      return res.status(500).json({
+    if (!prebookingId) {
+      return res.status(400).json({
         success: false,
-        error: "Internal server error",
+        error: "Prebooking ID is required",
       });
     }
-  };
+
+    const query = `UPDATE prebooking SET utm = NULL WHERE id = $1 RETURNING *`;
+    const params = [parseInt(prebookingId)];
+    const result = await courseService.query(query, params);
+
+    if (result.success && result.data.length > 0) {
+      return res.status(200).json({
+        success: true,
+        message: "UTM field deleted successfully",
+        data: result.data[0],
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: "Failed to delete UTM field or prebooking not found",
+      });
+    }
+  });
 
   // getAllCoursePerchases=async (req,res)=>{
   //     var query=`

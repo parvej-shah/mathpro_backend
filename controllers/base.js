@@ -16,5 +16,21 @@ function respond(res, result) {
     return res.status(result.success ? 200 : 400).json(result);
 }
 
+// Wraps a handler so an unexpected error is logged and answered 500 with `body`: the reply
+// that endpoint has always sent, which clients show as-is. `body` may be a function of the
+// error. Replaces the try/catch that every such method used to carry.
+function catchAs(body, handler) {
+    return async (req, res, next) => {
+        try {
+            return await handler(req, res, next);
+        } catch (error) {
+            if (res.headersSent) throw error;
+            logger.error('http_error', error, { method: req.method, path: req.originalUrl });
+            return res.status(500).json(typeof body === 'function' ? body(error) : body);
+        }
+    };
+}
+
 exports.Controller = Controller;
 exports.respond = respond;
+exports.catchAs = catchAs;
