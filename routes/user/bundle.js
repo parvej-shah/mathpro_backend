@@ -13,24 +13,32 @@ router.route("/slug/:slug").get(optAuthenticateUser, bundleController.getBySlug)
 router.route("/:id").get(optAuthenticateUser, bundleController.get);
 
 // Authenticated user endpoints with URL parameters
+// The :user_id in these URLs must be the caller's own id (from the token). Without this check
+// any logged-in student could read another student's purchases by changing the URL.
+const ownUserIdOnly = (req, res, next) => {
+  if (parseInt(req.params.user_id) !== parseInt(req.user.id)) {
+    return res.status(403).json({ success: false, error: "Unauthorized" });
+  }
+  return next();
+};
 router
   .route("/my-bundles/:user_id")
-  .get(authenticateUser, bundleController.getMyBundles);
+  .get(authenticateUser, ownUserIdOnly, bundleController.getMyBundles);
 router
   .route("/bundle-courses/:user_id")
-  .get(authenticateUser, bundleController.getBundleCourses);
+  .get(authenticateUser, ownUserIdOnly, bundleController.getBundleCourses);
 router
   .route("/all-courses/:user_id")
-  .get(authenticateUser, bundleController.getAllCourses);
+  .get(authenticateUser, ownUserIdOnly, bundleController.getAllCourses);
 router
   .route("/:id/check-purchase/:user_id")
-  .get(authenticateUser, bundleController.checkPurchaseStatus);
+  .get(authenticateUser, ownUserIdOnly, bundleController.checkPurchaseStatus);
 router
   .route("/:id/check-prebook/:user_id")
-  .get(authenticateUser, bundleController.checkPrebookStatus);
+  .get(authenticateUser, ownUserIdOnly, bundleController.checkPrebookStatus);
 router
   .route("/:id/check-duplicates/:user_id")
-  .get(authenticateUser, bundleController.checkDuplicateCourses);
+  .get(authenticateUser, ownUserIdOnly, bundleController.checkDuplicateCourses);
 router
   .route("/:id/course-access")
   .get(optAuthenticateUser, bundleController.getCourseAccess);

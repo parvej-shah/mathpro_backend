@@ -2451,11 +2451,11 @@
   "error": "string"
  },
  "GET /user/bundle/:id/check-duplicates/:user_id [student]": {
-  "status": 200,
+  "status": 403,
   "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
  },
  "GET /user/bundle/:id/check-duplicates/:user_id [admin]": {
   "status": 200,
@@ -2472,11 +2472,11 @@
   "error": "string"
  },
  "GET /user/bundle/:id/check-prebook/:user_id [student]": {
-  "status": 200,
+  "status": 403,
   "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
  },
  "GET /user/bundle/:id/check-prebook/:user_id [admin]": {
   "status": 200,
@@ -2493,11 +2493,11 @@
   "error": "string"
  },
  "GET /user/bundle/:id/check-purchase/:user_id [student]": {
-  "status": 200,
+  "status": 403,
   "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
  },
  "GET /user/bundle/:id/check-purchase/:user_id [admin]": {
   "status": 200,
@@ -2556,11 +2556,11 @@
   "error": "string"
  },
  "GET /user/bundle/all-courses/:user_id [student]": {
-  "status": 200,
+  "status": 403,
   "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
  },
  "GET /user/bundle/all-courses/:user_id [admin]": {
   "status": 200,
@@ -2598,11 +2598,11 @@
   "error": "string"
  },
  "GET /user/bundle/bundle-courses/:user_id [student]": {
-  "status": 200,
+  "status": 403,
   "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
  },
  "GET /user/bundle/bundle-courses/:user_id [admin]": {
   "status": 200,
@@ -2640,11 +2640,11 @@
   "error": "string"
  },
  "GET /user/bundle/my-bundles/:user_id [student]": {
-  "status": 200,
+  "status": 403,
   "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
  },
  "GET /user/bundle/my-bundles/:user_id [admin]": {
   "status": 200,

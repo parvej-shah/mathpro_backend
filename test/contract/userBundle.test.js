@@ -40,7 +40,6 @@ for (const name of ['my-bundles', 'bundle-courses', 'all-courses']) {
 
 test('check-purchase / check-prebook / check-duplicates', async () => {
     assert.deepStrictEqual((await get(`/user/bundle/1/check-purchase/${STUDENT.id}`)).body, { success: true, data: { purchased: true } });
-    assert.deepStrictEqual((await get('/user/bundle/1/check-purchase/999')).body, { success: true, data: { purchased: false } });
     assert.deepStrictEqual((await get(`/user/bundle/1/check-prebook/${STUDENT.id}`)).body, { success: true, data: { prebooked: false } });
     const dup = await get(`/user/bundle/1/check-duplicates/${STUDENT.id}`);
     assert.strictEqual(dup.status, 200);
