@@ -4,6 +4,21 @@ const { ModuleViewsService } = require("../../service/user/moduleViews");
 
 const moduleViewsService = new ModuleViewsService();
 
+// A failed service result: "not enrolled" is a 403, anything else a 400; `error` is always a string.
+const sendFailure = (res, result) => {
+    const errorMessage = result.error?.message || result.error || 'Unknown error';
+    if (typeof errorMessage === 'string' && errorMessage.includes("not enrolled")) {
+        return res.status(403).json({
+            success: false,
+            error: errorMessage
+        });
+    }
+    return res.status(400).json({
+        success: false,
+        error: typeof errorMessage === 'string' ? errorMessage : 'An error occurred'
+    });
+};
+
 class ModuleViewsController extends Controller {
     constructor() {
         super();
@@ -48,20 +63,7 @@ class ModuleViewsController extends Controller {
             chapterId
         );
 
-        if (!result.success) {
-            // Check if it's an enrollment error
-            const errorMessage = result.error?.message || result.error || 'Unknown error';
-            if (typeof errorMessage === 'string' && errorMessage.includes("not enrolled")) {
-                return res.status(403).json({
-                    success: false,
-                    error: errorMessage
-                });
-            }
-            return res.status(400).json({
-                success: false,
-                error: typeof errorMessage === 'string' ? errorMessage : 'An error occurred'
-            });
-        }
+        if (!result.success) return sendFailure(res, result);
 
         return res.status(200).json({
             success: true,
@@ -95,20 +97,7 @@ class ModuleViewsController extends Controller {
 
         const result = await moduleViewsService.getMostRecent(userId, courseId);
 
-        if (!result.success) {
-            // Check if it's an enrollment error
-            const errorMessage = result.error?.message || result.error || 'Unknown error';
-            if (typeof errorMessage === 'string' && errorMessage.includes("not enrolled")) {
-                return res.status(403).json({
-                    success: false,
-                    error: errorMessage
-                });
-            }
-            return res.status(400).json({
-                success: false,
-                error: typeof errorMessage === 'string' ? errorMessage : 'An error occurred'
-            });
-        }
+        if (!result.success) return sendFailure(res, result);
 
         return res.status(200).json({
             success: true,
