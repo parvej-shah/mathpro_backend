@@ -6,6 +6,7 @@
 //   const gw = sslcommerzStub.install();
 //   gw.inits                       // form fields of every session-init POST, in order
 //   gw.setValidation(tranId, {...}) // element[0] the validation API returns for tranId
+//   gw.initReply = 'text'          // next session-init answers with this raw body instead
 //   gw.restore();
 const https = require('https');
 const { Writable, PassThrough } = require('stream');
@@ -27,6 +28,7 @@ function install() {
         inits: [],
         validationCalls: [],
         validations: new Map(),
+        initReply: null,
         setValidation(tranId, element) {
             state.validations.set(tranId, element);
         },
@@ -40,6 +42,11 @@ function install() {
         if (url.pathname === '/gwprocess/v4/api.php') {
             const fields = parseMultipart(body);
             state.inits.push(fields);
+            if (state.initReply !== null) {
+                const reply = state.initReply;
+                state.initReply = null;
+                return reply;
+            }
             return {
                 status: 'SUCCESS',
                 sessionkey: `SESSION-${fields.tran_id}`,
@@ -82,7 +89,7 @@ function install() {
             res.rawHeaders = ['Content-Type', 'application/json'];
             if (callback) callback(res);
             req.emit('response', res);
-            res.end(JSON.stringify(payload));
+            res.end(typeof payload === 'string' ? payload : JSON.stringify(payload));
         });
         return req;
     };
