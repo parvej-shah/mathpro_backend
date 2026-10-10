@@ -10,77 +10,45 @@ class FeaturedItemController extends Controller {
     }
 
     list = async (req, res) => {
-        try {
-            const result = await featuredItemService.listAdmin();
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in list:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
+        const result = await featuredItemService.listAdmin();
+        return res.status(result.success ? 200 : 400).json(result);
     };
 
     create = async (req, res) => {
-        try {
-            const result = await featuredItemService.create(req.body);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in create:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
+        const result = await featuredItemService.create(req.body);
+        return res.status(result.success ? 200 : 400).json(result);
     };
 
     update = async (req, res) => {
-        try {
-            const { itemType, itemId } = req.params;
-            const parsedItemId = parseInt(itemId);
-            if (isNaN(parsedItemId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    itemId: 'itemId must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await featuredItemService.update(itemType, parsedItemId, req.body);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in update:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
+        const { itemType, itemId } = req.params;
+        const parsedItemId = parseInt(itemId);
+        if (isNaN(parsedItemId)) {
+            throw ErrorHandler.validationError({
+                itemId: 'itemId must be a valid number'
+            });
         }
+
+        const result = await featuredItemService.update(itemType, parsedItemId, req.body);
+        return res.status(result.success ? 200 : 400).json(result);
     };
 
     reorder = async (req, res) => {
-        try {
-            const { items } = req.body;
-            const result = await featuredItemService.reorder(items);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in reorder:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
-        }
+        const { items } = req.body;
+        const result = await featuredItemService.reorder(items);
+        return res.status(result.success ? 200 : 400).json(result);
     };
 
     deleteEntry = async (req, res) => {
-        try {
-            const { itemType, itemId } = req.params;
-            const parsedItemId = parseInt(itemId);
-            if (isNaN(parsedItemId)) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    itemId: 'itemId must be a valid number'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await featuredItemService.deleteEntry(itemType, parsedItemId);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in deleteEntry:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
+        const { itemType, itemId } = req.params;
+        const parsedItemId = parseInt(itemId);
+        if (isNaN(parsedItemId)) {
+            throw ErrorHandler.validationError({
+                itemId: 'itemId must be a valid number'
+            });
         }
+
+        const result = await featuredItemService.deleteEntry(itemType, parsedItemId);
+        return res.status(result.success ? 200 : 400).json(result);
     };
 }
 

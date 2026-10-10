@@ -8,83 +8,67 @@ class UploadControllerV2 extends Controller {
     }
 
     createPresignedUrl = async (req, res) => {
-        try {
-            const {
-                purpose,
-                file_name: fileName,
-                content_type: contentType,
-                content_length: contentLength
-            } = req.body;
+        const {
+            purpose,
+            file_name: fileName,
+            content_type: contentType,
+            content_length: contentLength
+        } = req.body;
 
-            if (!purpose) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    purpose: 'purpose is required'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await presignedUploadService.createPresignedUpload({
-                purpose,
-                fileName,
-                contentType,
-                contentLength
+        if (!purpose) {
+            throw ErrorHandler.validationError({
+                purpose: 'purpose is required'
             });
-
-            if (!result.success) {
-                const status = result.code === 'UPLOAD_CONFIGURATION_ERROR' ? 500 : 422;
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    null,
-                    status
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in createPresignedUrl:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
         }
+
+        const result = await presignedUploadService.createPresignedUpload({
+            purpose,
+            fileName,
+            contentType,
+            contentLength
+        });
+
+        if (!result.success) {
+            const status = result.code === 'UPLOAD_CONFIGURATION_ERROR' ? 500 : 422;
+            throw ErrorHandler.createErrorResponse(
+                result.error,
+                result.code,
+                null,
+                status
+            );
+        }
+
+        return res.status(200).json(result);
     };
 
     deleteObject = async (req, res) => {
-        try {
-            const {
-                key,
-                public_url: publicUrl
-            } = req.body;
+        const {
+            key,
+            public_url: publicUrl
+        } = req.body;
 
-            if (!key && !publicUrl) {
-                const { response, statusCode } = ErrorHandler.validationError({
-                    key: 'key or public_url is required'
-                });
-                return res.status(statusCode).json(response);
-            }
-
-            const result = await presignedUploadService.deleteObject({
-                key,
-                publicUrl
+        if (!key && !publicUrl) {
+            throw ErrorHandler.validationError({
+                key: 'key or public_url is required'
             });
-
-            if (!result.success) {
-                const status = result.code === 'UPLOAD_CONFIGURATION_ERROR' ? 500 : 400;
-                const { response, statusCode } = ErrorHandler.createErrorResponse(
-                    result.error,
-                    result.code,
-                    null,
-                    status
-                );
-                return res.status(statusCode).json(response);
-            }
-
-            return res.status(200).json(result);
-        } catch (error) {
-            console.error('Error in deleteObject:', error);
-            const { response, statusCode } = ErrorHandler.serverError();
-            return res.status(statusCode).json(response);
         }
+
+        const result = await presignedUploadService.deleteObject({
+            key,
+            publicUrl
+        });
+
+        if (!result.success) {
+            const status = result.code === 'UPLOAD_CONFIGURATION_ERROR' ? 500 : 400;
+            throw ErrorHandler.createErrorResponse(
+                result.error,
+                result.code,
+                null,
+                status
+            );
+        }
+
+        return res.status(200).json(result);
     };
 }
 

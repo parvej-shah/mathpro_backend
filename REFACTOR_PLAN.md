@@ -249,7 +249,7 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
 - [x] **2.7 Process-level handling** *(Coolify container verified `restart=unless-stopped`. Deviation: `unhandledRejection` is logged but NOT fatal, because fire-and-forget SMS/email promises would otherwise restart the process and drop in-flight requests; `uncaughtException` shuts down gracefully and exits 1.)* (`index.js`): on `uncaughtException` / `unhandledRejection`,
   log, then run the existing graceful `shutdown` and exit non-zero so Coolify restarts a clean
   process. Also close the pg pool in `shutdown`. *M:* verify Coolify restart policy first.
-- [ ] **2.8 Unify V1/V2 error shapes behind the middleware.** `util/errorHandler.js` becomes
+- [x] **2.8 Unify V1/V2 error shapes behind the middleware.** *(Done: ErrorHandler factories return AppErrors, `/v2`-scoped `v2Shape` keeps the V2 500 body; 114 hand-built sends → `throw`, 43 try/catch-500 wrappers removed from the 6 V2 controllers, net −360 lines; contract snapshot unchanged.)* `util/errorHandler.js` becomes
   a thin wrapper that throws `AppError`, so the V2 controllers lose their 15-line blocks.
   Output stays byte-identical (`code`, `timestamp`, `details`). *M.*
 - [~] **2.9 Structured logging helper** *(`util/logger.js` added and used by Service, the error middleware and process handlers; bulk `console.log(error)` replacement open)* (`util/logger.js`, JSON lines like `observability.js`)

@@ -141,6 +141,7 @@ const adminModuleFeedbackRoutes = require("./routes/managerial/moduleFeedback");
 app.use("/user/module-feedback", userModuleFeedbackRoutes);
 app.use("/admin/module-feedback", adminModuleFeedbackRoutes);
 
+app.use("/v2", require("./util/errorHandler").v2Shape);
 app.use(require("./middleware/errorHandler"));
 
 module.exports = app;

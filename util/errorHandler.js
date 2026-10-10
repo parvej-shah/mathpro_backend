@@ -1,51 +1,35 @@
 /**
- * Consistent error response handler for Phase 8 APIs
- * Ensures all v2 endpoints return standardized error formats
+ * Error shape for the /v2 APIs: `{ success: false, error, code, timestamp, details? }`.
+ *
+ * Each factory returns an AppError carrying that body. Controllers `throw` it and the
+ * central middleware (middleware/errorHandler.js) sends it with its status.
  */
+const { AppError } = require('../errors/AppError');
 
 class ErrorHandler {
     /**
-     * Create a standardized error response
      * @param {string} error - Human-readable error message
      * @param {string} code - Error code (e.g., 'MODULE_NOT_FOUND')
      * @param {object} details - Field-level validation errors
      * @param {number} statusCode - HTTP status code
-     * @returns {object} Standardized error response
+     * @returns {AppError}
      */
     static createErrorResponse(error, code, details = null, statusCode = 400) {
-        const response = {
-            success: false,
-            error: error,
-            code: code,
-            timestamp: new Date().toISOString()
-        };
-
+        // `error` is repeated in the body so the key order (and an absent message) stays
+        // exactly what the clients have always received.
+        const body = { error, code, timestamp: new Date().toISOString() };
         if (details) {
-            response.details = details;
+            body.details = details;
         }
-
-        return { response, statusCode };
+        return new AppError(String(error ?? ''), { status: statusCode, body });
     }
 
-    /**
-     * Handle validation errors with field-level details
-     * @param {object} validationErrors - Object with field names as keys and error messages as values
-     * @returns {object} Standardized validation error response
-     */
+    /** 422 with field-level details: `{ field: message }`. */
     static validationError(validationErrors) {
-        return this.createErrorResponse(
-            'Validation failed',
-            'VALIDATION_ERROR',
-            validationErrors,
-            422
-        );
+        return this.createErrorResponse('Validation failed', 'VALIDATION_ERROR', validationErrors, 422);
     }
 
-    /**
-     * Handle not found errors
-     * @param {string} resource - Resource name (e.g., 'Module', 'Course')
-     * @returns {object} Standardized not found error response
-     */
+    /** 404 `<Resource> not found` with code `<RESOURCE>_NOT_FOUND`. */
     static notFound(resource) {
         return this.createErrorResponse(
             `${resource} not found`,
@@ -55,44 +39,30 @@ class ErrorHandler {
         );
     }
 
-    /**
-     * Handle unauthorized errors
-     * @returns {object} Standardized unauthorized error response
-     */
     static unauthorized() {
-        return this.createErrorResponse(
-            'Authentication required',
-            'UNAUTHORIZED',
-            null,
-            401
-        );
+        return this.createErrorResponse('Authentication required', 'UNAUTHORIZED', null, 401);
     }
 
-    /**
-     * Handle forbidden errors
-     * @returns {object} Standardized forbidden error response
-     */
     static forbidden() {
-        return this.createErrorResponse(
-            'Insufficient permissions',
-            'FORBIDDEN',
-            null,
-            403
-        );
+        return this.createErrorResponse('Insufficient permissions', 'FORBIDDEN', null, 403);
+    }
+
+    static serverError(message = 'Internal server error') {
+        return this.createErrorResponse(message, 'INTERNAL_SERVER_ERROR', null, 500);
     }
 
     /**
-     * Handle server errors
-     * @param {string} message - Error message
-     * @returns {object} Standardized server error response
+     * Error middleware for the /v2 mounts: gives unexpected errors the V2 500 shape
+     * (keeping the original as `cause` for the log), then hands everything on to the
+     * central handler.
      */
-    static serverError(message = 'Internal server error') {
-        return this.createErrorResponse(
-            message,
-            'INTERNAL_SERVER_ERROR',
-            null,
-            500
-        );
+    static v2Shape(err, req, res, next) {
+        if (err instanceof AppError || (err && err.expose && err.status < 500)) {
+            return next(err);
+        }
+        const serverError = ErrorHandler.serverError();
+        serverError.cause = err;
+        return next(serverError);
     }
 }
 

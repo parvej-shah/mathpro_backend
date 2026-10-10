@@ -59,3 +59,26 @@ test('malformed JSON bodies keep their 400 from Express', async () => {
     assert.strictEqual(res.body.success, false);
     assert.strictEqual(typeof res.body.error, 'string');
 });
+
+test('under /v2, unexpected errors keep the V2 500 shape (code + timestamp)', async () => {
+    const ErrorHandler = require('../../util/errorHandler');
+    // Same as the real V2 routers: express-promise-router forwards rejected handlers.
+    const router = require('express-promise-router')();
+    router.get('/boom', async () => { throw new TypeError('cannot read x of undefined'); });
+    router.get('/missing', async () => { throw ErrorHandler.notFound('Module'); });
+    const app = express();
+    app.use('/v2/x', router);
+    app.use('/v2', ErrorHandler.v2Shape);
+    app.use(errorHandler);
+
+    const boom = await request(app).get('/v2/x/boom');
+    assert.strictEqual(boom.status, 500);
+    assert.deepStrictEqual(Object.keys(boom.body), ['success', 'error', 'code', 'timestamp']);
+    assert.strictEqual(boom.body.error, 'Internal server error');
+    assert.strictEqual(boom.body.code, 'INTERNAL_SERVER_ERROR');
+
+    const missing = await request(app).get('/v2/x/missing');
+    assert.strictEqual(missing.status, 404);
+    assert.deepStrictEqual(Object.keys(missing.body), ['success', 'error', 'code', 'timestamp']);
+    assert.strictEqual(missing.body.code, 'MODULE_NOT_FOUND');
+});
