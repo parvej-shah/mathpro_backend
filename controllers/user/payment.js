@@ -5,6 +5,7 @@ const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/course
 const Controller = require("../base").Controller;
 const { respond, catchAs } = require('../base');
 const PaymentService=require("../../service/user/payment.js").PaymentService
+const sslcommerz = require('../../integrations/sslcommerz');
 const CourseService=require("../../service/managerial/course").CourseService
 
 const MessagingService=require('../../service/messagingService.js').MessagingService
@@ -227,7 +228,7 @@ class PaymentController extends Controller {
                     val_id: req.body.val_id
                 });
                 
-                validationResult = await paymentService.validateTransactionWithSSLCommerz(
+                validationResult = await sslcommerz.validateTransaction(
                     sslcommerzTranId,
                     req.body.val_id || null,
                     req.body.sessionkey || null

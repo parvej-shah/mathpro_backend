@@ -1,10 +1,11 @@
 // Fake SSLCommerz at the network boundary (Node's https.request), so payment code is
 // exercised unchanged: sslcommerz-lts reaches it via node-fetch for `init`, and
-// PaymentService.validateTransactionWithSSLCommerz calls https.request directly.
+// integrations/sslcommerz.js validateTransaction calls https.request directly.
 // Every other host falls through to the real https.request (which test/setup.js blocks).
 //
 //   const gw = sslcommerzStub.install();
 //   gw.inits                       // form fields of every session-init POST, in order
+//   gw.hosts                       // 'host/path' of every SSLCommerz call, in order
 //   gw.setValidation(tranId, {...}) // element[0] the validation API returns for tranId
 //   gw.initReply = 'text'          // next session-init answers with this raw body instead
 //   gw.restore();
@@ -26,6 +27,7 @@ function install() {
     const original = https.request;
     const state = {
         inits: [],
+        hosts: [],
         validationCalls: [],
         validations: new Map(),
         initReply: null,
@@ -69,6 +71,7 @@ function install() {
         const options = args[0];
         const hostname = (options && typeof options === 'object' && (options.hostname || options.host)) || '';
         if (!HOST.test(hostname)) return original.apply(https, args);
+        state.hosts.push(`${hostname}${new URL(options.path || '/', 'https://x').pathname}`);
         const callback = args.find((a) => typeof a === 'function');
 
         const chunks = [];
