@@ -1,5 +1,6 @@
 require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const { BundleService } = require("../../service/managerial/bundle");
 
 const bundleService = new BundleService();
@@ -27,7 +28,7 @@ class BundleController extends Controller {
         url: url || null,
       });
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle create error:", error);
       return res.status(500).json({
@@ -75,7 +76,7 @@ class BundleController extends Controller {
         is_active: is_active !== undefined ? is_active : true,
       });
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Enhanced bundle create error:", error);
       return res.status(500).json({
@@ -104,7 +105,7 @@ class BundleController extends Controller {
         url: url || null,
       });
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle update error:", error);
       return res.status(500).json({
@@ -153,7 +154,7 @@ class BundleController extends Controller {
         is_active: is_active !== undefined ? is_active : true,
       });
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Enhanced bundle update error:", error);
       return res.status(500).json({
@@ -168,7 +169,7 @@ class BundleController extends Controller {
     try {
       const { id } = req.params;
       const result = await bundleService.delete(parseInt(id));
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle delete error:", error);
       return res.status(500).json({
@@ -182,7 +183,7 @@ class BundleController extends Controller {
   list = async (req, res) => {
     try {
       const result = await bundleService.list();
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle list error:", error);
       return res.status(500).json({
@@ -204,7 +205,7 @@ class BundleController extends Controller {
       }
       const userId = req.body?.user_id ? parseInt(req.body.user_id) : null;
       const result = await bundleService.get(parseInt(id), userId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle get error:", error);
       return res.status(500).json({
@@ -219,7 +220,7 @@ class BundleController extends Controller {
       const { slug } = req.params;
       const userId = req.body?.user_id ? parseInt(req.body.user_id) : null;
       const result = await bundleService.getBySlug(slug, userId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle get by slug error:", error);
       return res.status(500).json({
@@ -247,7 +248,7 @@ class BundleController extends Controller {
         courseIds.map((id) => parseInt(id))
       );
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Add courses to bundle error:", error);
       return res.status(500).json({
@@ -262,7 +263,7 @@ class BundleController extends Controller {
     try {
       const { id } = req.params;
       const result = await bundleService.getBundleStats(parseInt(id));
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Bundle stats error:", error);
       return res.status(500).json({
@@ -293,7 +294,7 @@ class BundleController extends Controller {
       }
       
       const result = await bundleService.getAllBundlePurchases(bundleId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Get bundle purchases error:", error);
       return res.status(500).json({
@@ -319,7 +320,7 @@ class BundleController extends Controller {
       }
 
       const result = await bundleService.getAllBundlePurchasesApi(bundleId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Get bundle purchases API error:", error);
       return res.status(500).json({
@@ -408,7 +409,7 @@ class BundleController extends Controller {
         ? parseInt(req.query.bundle_id)
         : null;
       const result = await bundleService.getAllBundlePrebookings(bundleId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Get bundle prebookings error:", error);
       return res.status(500).json({

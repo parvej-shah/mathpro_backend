@@ -1,4 +1,5 @@
 const Controller = require("../base.js").Controller;
+const { respond } = require('../base');
 const BookService = require("../../service/managerial/book.js").BookService;
 
 const bookService = new BookService();
@@ -14,34 +15,34 @@ class BookController extends Controller {
 
     list = async (req, res) => {
         var result = await bookService.list();
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     getEntry = async (req, res) => {
         var result = await bookService.get(parseInt(req.params.id));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     create = async (req, res) => {
         var result = await bookService.create(req.body, req.user && req.user.id);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     update = async (req, res) => {
         var result = await bookService.update(parseInt(req.params.id), req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     deleteEntry = async (req, res) => {
         var result = await bookService.deleteEntry(parseInt(req.params.id));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // ---- course_book link ----------------------------------------------------
 
     listForCourse = async (req, res) => {
         var result = await bookService.listForCourse(parseInt(req.params.courseId));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     attach = async (req, res) => {
@@ -50,7 +51,7 @@ class BookController extends Controller {
             return res.status(400).json({ success: false, error: 'book_id is required' });
         }
         var result = await bookService.attach(parseInt(req.params.courseId), bookId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     detach = async (req, res) => {
@@ -58,14 +59,14 @@ class BookController extends Controller {
             parseInt(req.params.courseId),
             parseInt(req.params.bookId)
         );
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // ---- admin fulfilment ----------------------------------------------------
 
     listOrders = async (req, res) => {
         var result = await bookService.listOrders(req.query.status || null);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     updateOrderStatus = async (req, res) => {
@@ -77,7 +78,7 @@ class BookController extends Controller {
             });
         }
         var result = await bookService.updateOrderStatus(parseInt(req.params.id), status);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 }
 

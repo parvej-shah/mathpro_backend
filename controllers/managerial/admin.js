@@ -1,4 +1,5 @@
 const Controller = require('../base').Controller;
+const { respond } = require('../base');
 const AdminService = require('../../service/managerial/admin').AdminService;
 
 const adminService = new AdminService();
@@ -15,7 +16,7 @@ class AdminController extends Controller {
     list = async (req, res) => {
         try {
             const result = await adminService.list();
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in admin list controller:', error);
             return res.status(500).json({
@@ -88,7 +89,7 @@ class AdminController extends Controller {
 
             const updaterId = req.body.user_id;
             const result = await adminService.update(id, req.body, updaterId);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in admin update controller:', error);
             return res.status(500).json({
@@ -125,7 +126,7 @@ class AdminController extends Controller {
 
             const updaterId = req.body.user_id;
             const result = await adminService.setPassword(id, updaterId, currentPassword);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in admin setPassword controller:', error);
             return res.status(500).json({
@@ -161,7 +162,7 @@ class AdminController extends Controller {
             }
 
             const result = await adminService.promote(id, type);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in admin promote controller:', error);
             return res.status(500).json({
@@ -188,7 +189,7 @@ class AdminController extends Controller {
             }
 
             const result = await adminService.searchUsers(query);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in searchUsers controller:', error);
             return res.status(500).json({
@@ -215,7 +216,7 @@ class AdminController extends Controller {
             }
 
             const result = await adminService.delete(id);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in admin delete controller:', error);
             return res.status(500).json({

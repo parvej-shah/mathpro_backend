@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const RoutineService = require("../../service/managerial/routine.js").RoutineService;
 const { checkCourseAccess, assertCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
 
@@ -14,7 +15,7 @@ class RoutineController extends Controller {
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'routine', 'manage');
         var result = await routineService.list(req, access);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // List routines for a specific course
@@ -32,7 +33,7 @@ class RoutineController extends Controller {
         }
 
         var result = await routineService.listByCourse(courseId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // Create a new routine
@@ -50,7 +51,7 @@ class RoutineController extends Controller {
         }
         
         var result = await routineService.create(courseId, req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // Update a routine
@@ -68,7 +69,7 @@ class RoutineController extends Controller {
         }
         
         var result = await routineService.update(routineId, req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // Get single routine
@@ -86,7 +87,7 @@ class RoutineController extends Controller {
         }
 
         var result = await routineService.get(routineId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // Delete a routine
@@ -105,7 +106,7 @@ class RoutineController extends Controller {
         }
         
         var result = await routineService.deleteEntry(routineId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     // Toggle active status
@@ -127,7 +128,7 @@ class RoutineController extends Controller {
             routineId, 
             req.body.is_active
         );
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 }
 

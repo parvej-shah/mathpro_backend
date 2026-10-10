@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const { BundleService } = require("../../service/managerial/bundle");
 
 const bundleService = new BundleService();
@@ -12,7 +13,7 @@ class UserBundleController extends Controller {
   list = async (req, res) => {
     try {
       const result = await bundleService.list({ isLiveOnly: true });
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("User bundle list error:", error);
       return res.status(500).json({
@@ -40,7 +41,7 @@ class UserBundleController extends Controller {
         return res.status(404).json({ success: false, error: "Bundle not found" });
       }
       
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("User bundle get error:", error);
       return res.status(500).json({
@@ -61,7 +62,7 @@ class UserBundleController extends Controller {
         return res.status(404).json({ success: false, error: "Bundle not found" });
       }
       
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("User bundle get by slug error:", error);
       return res.status(500).json({
@@ -101,7 +102,7 @@ class UserBundleController extends Controller {
       console.log("Service result:", result.success ? "SUCCESS" : "ERROR");
       console.log("=== END GET MY BUNDLES API ===");
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("❌ Get my bundles error:", error);
       return res.status(500).json({
@@ -210,7 +211,7 @@ class UserBundleController extends Controller {
       );
       console.log("=== END GET BUNDLE COURSES API ===");
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("❌ Get bundle courses error:", error);
       console.error("Error stack:", error.stack);
@@ -240,7 +241,7 @@ class UserBundleController extends Controller {
         parseInt(id)
       );
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Check duplicate courses error:", error);
       return res.status(500).json({
@@ -286,7 +287,7 @@ class UserBundleController extends Controller {
       );
       console.log("=== END GET ALL COURSES API ===");
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("❌ Get all courses error:", error);
       console.error("Error stack:", error.stack);
@@ -336,7 +337,7 @@ class UserBundleController extends Controller {
       const result = await bundleService.get(bundleIdInt, userIdInt);
       console.log("=== END GET COURSE ACCESS API ===");
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("❌ Get course access error:", error);
       return res.status(500).json({

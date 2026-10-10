@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const ModuleService=require("../../service/managerial/module.js").ModuleService;
 const { resolveCourseId, checkCourseAccess, assertCourseAccess } = require("../../util/courseAccessHelpers");
 
@@ -10,7 +11,7 @@ class ModuleController extends Controller {
     }
     list =async (req,res)=>{
         var result=await moduleService.list(req.params.id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     create =async (req,res)=>{
         const chapterId = parseInt(req.params.id);
@@ -36,7 +37,7 @@ class ModuleController extends Controller {
         }
         
         var result=await moduleService.create(chapterId,req.body)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     update =async (req,res)=>{
         const moduleId = parseInt(req.params.id);
@@ -53,12 +54,12 @@ class ModuleController extends Controller {
         }
         
         var result=await moduleService.update(moduleId,req.body)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     
     getEntry =async (req,res)=>{
         var result=await moduleService.get(req.params.id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     deleteEntry =async (req,res)=>{
         const moduleId = parseInt(req.params.id);
@@ -75,7 +76,7 @@ class ModuleController extends Controller {
         }
         
         var result=await moduleService.deleteEntry(moduleId)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     addProgress =async (req,res)=>{
         var result=await moduleService.completeModule(
@@ -84,19 +85,19 @@ class ModuleController extends Controller {
             parseInt(req.query.points),
             req.query.type
         )
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     getEntryUser =async (req,res)=>{
         var result=await moduleService.get(req.params.id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     getLiveModules =async (req,res)=>{
         var result=await moduleService.getLiveModulesForUser(req.user.id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     getLiveModulesForCourse =async (req,res)=>{
         var result=await moduleService.getLiveModulesForCourse(req.user.id, req.params.courseId)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
 
     

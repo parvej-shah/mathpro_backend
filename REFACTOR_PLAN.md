@@ -226,7 +226,7 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
 - [x] **2.2 Central error middleware** (`middleware/errorHandler.js`) replaces the inline one in
   `app.js`. `AppError` → its status + the **existing envelope**. Unknown errors → 500 with a
   generic message, full log with `x-request-id`. Never serialize raw errors. *M.* ✅ 0.3 green.
-- [ ] **2.3 `respond(res, result)` helper** (*Duplicate Code → Extract Method*), equivalent to
+- [x] **2.3 `respond(res, result)` helper** *(Done in `controllers/base.js`: 185 sites in 30 controllers; the 5 non-standard ones (text reply, 403 mapping in testimonial) left as they are. Snapshot unchanged.)* (*Duplicate Code → Extract Method*), equivalent to
   `res.status(result.success ? 200 : 400).json(result)` but strips any non-plain `error`
   object. Mechanically replace the 168 sites. *M,* done per router, one PR per feature. ✅ 0.3 green.
 - [~] **2.4 `withTransaction(fn)` on `Service`** *(helper + tests done; migrated `module.completeModule`, `quizAttempt.submitAttempt`, `featuredItem.reorder`; the remaining hand-rolled transactions are open)* (*Duplicate Code → Extract Method*):

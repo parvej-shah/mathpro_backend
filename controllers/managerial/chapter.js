@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const ChapterService=require("../../service/managerial/chapter.js").ChapterService;
 const { checkCourseAccess, assertCourseAccess } = require("../../util/courseAccessHelpers");
 
@@ -10,7 +11,7 @@ class ChapterController extends Controller {
     }
     list =async (req,res)=>{
         var result=await chapterService.list(req.params.id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     create =async (req,res)=>{
         const courseId = parseInt(req.params.id);
@@ -27,7 +28,7 @@ class ChapterController extends Controller {
         }
         
         var result=await chapterService.create(courseId,req.body)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     update =async (req,res)=>{
         const chapterId = parseInt(req.params.id);
@@ -44,11 +45,11 @@ class ChapterController extends Controller {
         }
         
         var result=await chapterService.update(chapterId,req.body)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     getEntry =async (req,res)=>{
         var result=await chapterService.get(req.params.id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     deleteEntry =async (req,res)=>{
         const chapterId = parseInt(req.params.id);
@@ -65,7 +66,7 @@ class ChapterController extends Controller {
         }
         
         var result=await chapterService.deleteEntry(chapterId)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
 }
 

@@ -1,4 +1,5 @@
 const Controller = require("../base.js").Controller;
+const { respond } = require('../base');
 const AnnouncementService=require("../../service/managerial/announcement.js").AnnouncementService;
 const { checkCourseAccess, assertCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
 
@@ -15,7 +16,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'announcement', 'manage');
         var result=await announcementService.getAllAnnouncementsPaginated(parseInt(req.query.limit), parseInt(req.query.offset), access)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     getAnnouncementsCourseWise =async (req,res)=>{
         const courseId = parseInt(req.params.courseId);
@@ -31,7 +32,7 @@ class AnnouncementController extends Controller {
         }
 
         var result=await announcementService.getAllAnnouncementsCourseWisePaginated(courseId, parseInt(req.query.limit), parseInt(req.query.offset))
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     getAnnouncementById =async (req,res)=>{
         const announcementId = parseInt(req.params.id);
@@ -47,7 +48,7 @@ class AnnouncementController extends Controller {
         }
 
         var result=await announcementService.getEntry(announcementId)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     create = async (req,res)=>{
        // console.log("From controller: ",req.body);
@@ -65,7 +66,7 @@ class AnnouncementController extends Controller {
         }
         
         var result=await announcementService.create(courseId,req.body)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     delete = async (req,res)=>{
         const announcementId = parseInt(req.params.id);
@@ -82,7 +83,7 @@ class AnnouncementController extends Controller {
         }
         
         var result=await announcementService.deleteEntry(announcementId)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     update = async (req,res)=>{
         const announcementId = parseInt(req.params.id);
@@ -99,7 +100,7 @@ class AnnouncementController extends Controller {
         }
         
         var result=await announcementService.updateEntry(announcementId,req.body)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     send = async (req,res)=>{
         const announcementId = parseInt(req.params.id);
@@ -116,7 +117,7 @@ class AnnouncementController extends Controller {
         }
         
         var result=await announcementService.send(announcementId)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
 }
 

@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const CourseService = require("../../service/managerial/course.js").CourseService
 const FeaturedItemService = require("../../service/managerial/featuredItem").FeaturedItemService
 const RoutineService = require("../../service/managerial/routine.js").RoutineService
@@ -13,35 +14,35 @@ class CourseController extends Controller {
     }
     list = async (req, res) => {
         var result = await courseService.listForUser(req);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
     featured = async (req, res) => {
         var result = await featuredItemService.listPublic();
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
     // Public course directory grouped by category (FT-style homepage layout).
     directory = async (req, res) => {
         var result = await courseService.directoryForUser(req);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     enrollFree = async (req, res) => {
         var result = await courseService.enrollFree(req.body.user_id, parseInt(req.params.id))
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
     getFull = async (req, res) => {
         var result = await courseService.getFullUser(req.body, req.params.id)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     getFullBySlug = async (req, res) => {
         var result = await courseService.getFullUserBySlug(req.body, req.params.slug)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     getRanking = async (req, res) => {
         var result = await courseService.getRanking(req.body, parseInt(req.params.id), parseInt(req.query.offset), parseInt(req.query.limit))
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     prebook = async (req, res) => {
@@ -61,40 +62,40 @@ class CourseController extends Controller {
         }
 
         var result = await courseService.prebook(req.params.id, req.body)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     applyCoupon = async (req, res) => {
         var result = await courseService.applyCoupon(req.body.user_id, req.params.course_id, req.body.coupon)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     getAnalytics = async (req, res) => {
         var result = await courseService.getAnalytics()
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     // Dashboard listing: enrolled courses + purchased bundles with thumbnails/slug/progress.
     getMyDashboard = async (req, res) => {
         var result = await courseService.getMyDashboard(req.body.user_id)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     getEnrolledCoursesByUserId = async (req, res) => {
         var result = await courseService.getEnrolledCoursesByUserId(req.body.user_id)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     // Get current week's routine for a course
     getRoutine = async (req, res) => {
         var result = await routineService.getCurrentRoutine(parseInt(req.params.courseId))
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 
     // Get lightweight dashboard data for a course
     getDashboard = async (req, res) => {
         var result = await courseService.getDashboard(req.body, req.params.id)
-        return res.status(result.success ? 200 : 400).json(result)
+        return respond(res, result)
     }
 }
 

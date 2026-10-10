@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const AuthService=require("../../service/managerial/auth").AuthService
 
 const authService=new AuthService()
@@ -30,7 +31,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.requestOTP(contact, 'registration');
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -49,7 +50,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.verifyOTP(contact, otp, false);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -87,7 +88,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.login(req.body, getDeviceInfo(req));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -106,7 +107,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.googleLogin(req.body, getDeviceInfo(req));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -125,7 +126,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.linkPhone(req.body.user_id, req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -144,7 +145,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.connectGoogle(req.body.user_id, req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -153,7 +154,7 @@ class AuthController extends Controller {
      */
     logout = async (req, res) => {
         const result = await authService.revokeSession(req.body.user_id, req.user?.sid);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -162,7 +163,7 @@ class AuthController extends Controller {
      */
     getSessions = async (req, res) => {
         const result = await authService.listSessions(req.body.user_id);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     /**
@@ -181,7 +182,7 @@ class AuthController extends Controller {
         }
 
         const result = await authService.requestOTP(contact, 'password_reset');
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
     
     /**
@@ -200,17 +201,17 @@ class AuthController extends Controller {
         }
         
         const result = await authService.resetPasswordWithOTP(contact, otp, newPassword);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     getProfile=async (req,res)=>{
         var result=await authService.getProfile(req.body.user_id)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
 
     setProfile=async (req,res)=>{
         var result=await authService.setProfile(req.body.user_id,req.body.name,req.body.profile)
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
 }
 

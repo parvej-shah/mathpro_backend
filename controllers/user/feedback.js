@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const FeedbackService = require("../../service/feedback").FeedbackService;
 
 const feedbackService = new FeedbackService();
@@ -72,7 +73,7 @@ class FeedbackController extends Controller {
             }
 
             const result = await feedbackService.checkUserFeedback(userId, courseId);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in checkFeedbackStatus:', error);
             return res.status(500).json({
@@ -90,7 +91,7 @@ class FeedbackController extends Controller {
             const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 per page
 
             const result = await feedbackService.getCourseFeedbacks(courseId, page, limit);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getCourseFeedbacks:', error);
             return res.status(500).json({
@@ -135,7 +136,7 @@ class FeedbackController extends Controller {
                 return res.status(403).json(result);
             }
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in updateFeedback:', error);
             return res.status(500).json({
@@ -157,7 +158,7 @@ class FeedbackController extends Controller {
                 return res.status(403).json(result);
             }
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in deleteFeedback:', error);
             return res.status(500).json({

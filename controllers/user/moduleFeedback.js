@@ -1,4 +1,5 @@
 const Controller = require('../base').Controller;
+const { respond } = require('../base');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 
 const moduleFeedbackService = new ModuleFeedbackService();
@@ -33,7 +34,7 @@ class ModuleFeedbackController extends Controller {
                 comment
             });
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in submitFeedback:', error);
             return res.status(500).json({
@@ -64,7 +65,7 @@ class ModuleFeedbackController extends Controller {
                 parseInt(userId)
             );
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getModuleFeedback:', error);
             return res.status(500).json({
@@ -95,7 +96,7 @@ class ModuleFeedbackController extends Controller {
                 parseInt(userId)
             );
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getCourseFeedback:', error);
             return res.status(500).json({
@@ -157,7 +158,7 @@ class ModuleFeedbackController extends Controller {
                 parseInt(userId)
             );
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getModuleStats:', error);
             return res.status(500).json({
@@ -174,7 +175,7 @@ class ModuleFeedbackController extends Controller {
     getAvailableReasons = async (req, res) => {
         try {
             const result = await moduleFeedbackService.getAllReasons(true); // Only active reasons
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getAvailableReasons:', error);
             return res.status(500).json({

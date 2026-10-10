@@ -82,3 +82,21 @@ test('under /v2, unexpected errors keep the V2 500 shape (code + timestamp)', as
     assert.deepStrictEqual(Object.keys(missing.body), ['success', 'error', 'code', 'timestamp']);
     assert.strictEqual(missing.body.code, 'MODULE_NOT_FOUND');
 });
+
+test('respond() keeps the 200/400 envelope and never serializes an Error object', async () => {
+    const { respond } = require('../../controllers/base');
+    const app = express();
+    app.get('/ok', (req, res) => respond(res, { success: true, data: [1] }));
+    app.get('/fail', (req, res) => respond(res, { success: false, error: 'nope' }));
+    app.get('/leak', (req, res) => respond(res, {
+        success: false, error: Object.assign(new Error('relation "secret_table" does not exist'), { code: '42P01' }),
+    }));
+
+    assert.deepStrictEqual((await request(app).get('/ok')).body, { success: true, data: [1] });
+    const fail = await request(app).get('/fail');
+    assert.strictEqual(fail.status, 400);
+    assert.deepStrictEqual(fail.body, { success: false, error: 'nope' });
+    const leak = await request(app).get('/leak');
+    assert.strictEqual(leak.status, 400);
+    assert.deepStrictEqual(leak.body, { success: false, error: 'Database error.' });
+});

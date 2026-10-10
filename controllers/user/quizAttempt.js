@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const { QuizAttemptService } = require("../../service/managerial/quizAttempt.js");
 
 const quizAttemptService = new QuizAttemptService();
@@ -11,7 +12,7 @@ class QuizAttemptController extends Controller {
     // GET /user/module/quiz/:id/attempt
     getAttempt = async (req, res) => {
         const result = await quizAttemptService.getAttempt(req.user.id, parseInt(req.params.id));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 
     // POST /user/module/quiz/:id/submit  { answers: { "0": "...", ... } }
@@ -22,7 +23,7 @@ class QuizAttemptController extends Controller {
             parseInt(req.params.id),
             answers,
         );
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     }
 }
 

@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const TestimonialService = require("../../service/managerial/testimonial").TestimonialService;
 const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
 
@@ -8,7 +9,7 @@ class TestimonialController extends Controller {
   list = async (req, res) => {
     const access = await getAccessibleCourseIds(req.user.id, "feedback", "manage");
     const result = await testimonialService.listAdmin(access);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   create = async (req, res) => {

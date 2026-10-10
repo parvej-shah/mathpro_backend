@@ -3,6 +3,7 @@ const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/course
 
 
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const PaymentService=require("../../service/user/payment.js").PaymentService
 const CourseService=require("../../service/managerial/course").CourseService
 
@@ -19,15 +20,15 @@ class PaymentController extends Controller {
     }
     initiatePayment =async (req,res)=>{
         var result=await paymentService.initiatePayment(req.body,parseInt(req.params.id))
-        return res.status(result.success?200:400).json(result)
+        return respond(res, result)
     }
     initiatePaymentForBundle =async (req,res)=>{
       var result=await paymentService.initiatePaymentForBundle(req.body,parseInt(req.params.id))
-      return res.status(result.success?200:400).json(result)
+      return respond(res, result)
     }
     initiatePaymentForBook =async (req,res)=>{
       var result=await paymentService.initiatePaymentForBook(req.body,parseInt(req.params.id))
-      return res.status(result.success?200:400).json(result)
+      return respond(res, result)
     }
     redirect =async (req,res)=>{
         // console.log(req.query.url)
@@ -1228,7 +1229,7 @@ class PaymentController extends Controller {
             }
 
             const result = await paymentService.getPaymentHistoryAndEnrollments(userId);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getPaymentHistory controller:', error);
             return res.status(500).json({
@@ -1266,7 +1267,7 @@ class PaymentController extends Controller {
             });
 
             const result = await paymentService.getPaymentAuditLogs(filters);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getPaymentAuditLogs controller:', error);
             return res.status(500).json({
@@ -1303,7 +1304,7 @@ class PaymentController extends Controller {
             });
 
             const result = await paymentService.exportPaymentAuditLogs(filters);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in exportPaymentAuditLogs controller:', error);
             return res.status(500).json({
@@ -1571,7 +1572,7 @@ class PaymentController extends Controller {
                 }
             }
             
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in reconcilePayment controller:', error);
             return res.status(500).json({

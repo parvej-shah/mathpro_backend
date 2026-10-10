@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const CouponService = require("../../service/managerial/coupon");
 
 const couponService = new CouponService();
@@ -235,7 +236,7 @@ class UserCouponController extends Controller {
         }
       }
 
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in coupon application controller:", error);
       return res.status(500).json({
@@ -261,7 +262,7 @@ class UserCouponController extends Controller {
       }
 
       const result = await couponService.getActiveCouponsForCourse(courseId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get active coupons controller:", error);
       return res.status(500).json({

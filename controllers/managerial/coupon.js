@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const CouponService = require("../../service/managerial/coupon");
 
 const couponService = new CouponService();
@@ -77,7 +78,7 @@ class CouponController extends Controller {
       }
 
       const result = await couponService.updateCoupon(couponId, req.body);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in coupon update controller:", error);
       return res.status(500).json({
@@ -112,7 +113,7 @@ class CouponController extends Controller {
       }
 
       const result = await couponService.deleteCoupon(couponId, deletedBy);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in coupon delete controller:", error);
       return res.status(500).json({
@@ -151,7 +152,7 @@ class CouponController extends Controller {
       };
 
       const result = await couponService.listCoupons(filters, pagination);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in coupon list controller:", error);
       return res.status(500).json({
@@ -188,7 +189,7 @@ class CouponController extends Controller {
         couponId,
         courseIds
       );
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in add courses to coupon controller:", error);
       return res.status(500).json({
@@ -225,7 +226,7 @@ class CouponController extends Controller {
         couponId,
         courseIds
       );
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in remove courses from coupon controller:", error);
       return res.status(500).json({
@@ -270,7 +271,7 @@ class CouponController extends Controller {
       const couponId = req.query.couponId ? parseInt(req.query.couponId) : null;
 
       const result = await couponService.getAvailableCourses(couponId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get available courses controller:", error);
       return res.status(500).json({
@@ -307,7 +308,7 @@ class CouponController extends Controller {
         couponId,
         bundleIds
       );
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in add bundles to coupon controller:", error);
       return res.status(500).json({
@@ -344,7 +345,7 @@ class CouponController extends Controller {
         couponId,
         bundleIds
       );
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in remove bundles from coupon controller:", error);
       return res.status(500).json({
@@ -389,7 +390,7 @@ class CouponController extends Controller {
       const couponId = req.query.couponId ? parseInt(req.query.couponId) : null;
 
       const result = await couponService.getAvailableBundles(couponId);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get available bundles controller:", error);
       return res.status(500).json({
@@ -417,7 +418,7 @@ class CouponController extends Controller {
       };
 
       const result = await couponService.getCouponUsageStatistics(filters);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get coupon statistics controller:", error);
       return res.status(500).json({
@@ -442,7 +443,7 @@ class CouponController extends Controller {
       };
 
       const result = await couponService.getRevenueImpactAnalytics(filters);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get revenue impact analytics controller:", error);
       return res.status(500).json({
@@ -469,7 +470,7 @@ class CouponController extends Controller {
       };
 
       const result = await couponService.getTopPerformingCoupons(options);
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get top performing coupons controller:", error);
       return res.status(500).json({
@@ -502,7 +503,7 @@ class CouponController extends Controller {
         couponId,
         filters
       );
-      return res.status(result.success ? 200 : 400).json(result);
+      return respond(res, result);
     } catch (error) {
       console.error("Error in get coupon usage report controller:", error);
       return res.status(500).json({

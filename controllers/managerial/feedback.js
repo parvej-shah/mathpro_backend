@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const FeedbackService = require("../../service/feedback").FeedbackService;
 const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
 
@@ -75,7 +76,7 @@ class FeedbackController extends Controller {
             };
 
             const result = await feedbackService.getAllFeedbacks(filters);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getAllFeedbacks:', error);
             return res.status(500).json({
@@ -113,7 +114,7 @@ class FeedbackController extends Controller {
             }
             
             const result = await feedbackService.getFeedbackStats(courseId, access);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getFeedbackStats:', error);
             return res.status(500).json({
@@ -136,7 +137,7 @@ class FeedbackController extends Controller {
             if (!result.success && result.error === 'NO_COURSE_ACCESS') {
                 return res.status(403).json(result);
             }
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in deleteFeedback (admin):', error);
             return res.status(500).json({

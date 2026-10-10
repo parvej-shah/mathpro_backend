@@ -1,4 +1,5 @@
 const Controller = require('../base').Controller;
+const { respond } = require('../base');
 const FeaturedItemService = require('../../service/managerial/featuredItem').FeaturedItemService;
 const ErrorHandler = require('../../util/errorHandler');
 
@@ -11,12 +12,12 @@ class FeaturedItemController extends Controller {
 
     list = async (req, res) => {
         const result = await featuredItemService.listAdmin();
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     create = async (req, res) => {
         const result = await featuredItemService.create(req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     update = async (req, res) => {
@@ -29,13 +30,13 @@ class FeaturedItemController extends Controller {
         }
 
         const result = await featuredItemService.update(itemType, parsedItemId, req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     reorder = async (req, res) => {
         const { items } = req.body;
         const result = await featuredItemService.reorder(items);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     deleteEntry = async (req, res) => {
@@ -48,7 +49,7 @@ class FeaturedItemController extends Controller {
         }
 
         const result = await featuredItemService.deleteEntry(itemType, parsedItemId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 }
 

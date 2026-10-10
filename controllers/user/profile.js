@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const ProfileService = require("../../service/user/profile").ProfileService;
 
 const profileService = new ProfileService();
@@ -134,7 +135,7 @@ class ProfileController extends Controller {
             }
 
             const result = await profileService.changePassword(userId, currentPassword, newPassword);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in changePassword controller:', error);
             return res.status(500).json({
@@ -165,7 +166,7 @@ class ProfileController extends Controller {
             }
 
             const result = await profileService.changePhone(userId, newPhone, otp);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in changePhone controller:', error);
             return res.status(500).json({ success: false, error: 'Internal server error' });

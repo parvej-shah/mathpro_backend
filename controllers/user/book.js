@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const BookService = require("../../service/managerial/book").BookService;
 
 const bookService = new BookService();
@@ -10,12 +11,12 @@ class BookController extends Controller {
 
     list = async (req, res) => {
         var result = await bookService.listActive();
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     getEntry = async (req, res) => {
         var result = await bookService.getActive(parseInt(req.params.id));
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 }
 

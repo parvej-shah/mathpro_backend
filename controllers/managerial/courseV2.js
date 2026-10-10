@@ -3,6 +3,7 @@
  */
 
 const Controller = require('../base').Controller;
+const { respond } = require('../base');
 const CourseServiceV2 = require('../../service/managerial/courseV2').CourseServiceV2;
 const CourseImportExportService = require('../../service/managerial/courseImportExport').CourseImportExportService;
 const ErrorHandler = require('../../util/errorHandler');
@@ -21,12 +22,12 @@ class CourseControllerV2 extends Controller {
         const { getAccessibleCourseIds } = require('../../util/courseAccessHelpers');
         const access = userId ? await getAccessibleCourseIds(userId, 'course', 'manage') : null;
         const result = await courseServiceV2.list(req, access);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     create = async (req, res) => {
         const result = await courseServiceV2.create(req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     update = async (req, res) => {
@@ -40,7 +41,7 @@ class CourseControllerV2 extends Controller {
         // instructor_list is now managed via the instructor junction table — ignore it on save
         const { instructor_list: _ignored, ...body } = req.body;
         const result = await courseServiceV2.update(courseId, body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     updateFull = async (req, res) => {
@@ -52,7 +53,7 @@ class CourseControllerV2 extends Controller {
         }
 
         const result = await courseServiceV2.updateFull(courseId, req.body);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     getEntry = async (req, res) => {
@@ -74,7 +75,7 @@ class CourseControllerV2 extends Controller {
         }
 
         const result = await courseServiceV2.get(courseId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     getFull = async (req, res) => {
@@ -96,7 +97,7 @@ class CourseControllerV2 extends Controller {
         }
 
         const result = await courseServiceV2.getFull(courseId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     deleteEntry = async (req, res) => {
@@ -108,7 +109,7 @@ class CourseControllerV2 extends Controller {
         }
 
         const result = await courseServiceV2.deleteEntry(courseId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     getUserProgress = async (req, res) => {
@@ -133,7 +134,7 @@ class CourseControllerV2 extends Controller {
         }
 
         const result = await courseServiceV2.getUserProgress(userId, courseId);
-        return res.status(result.success ? 200 : 400).json(result);
+        return respond(res, result);
     };
 
     /**

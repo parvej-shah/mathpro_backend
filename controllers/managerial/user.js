@@ -1,4 +1,5 @@
 const Controller = require('../base').Controller;
+const { respond } = require('../base');
 const UserService = require('../../service/managerial/user').UserService;
 const { managerialAccountTypes } = require('../../util/constants');
 
@@ -34,7 +35,7 @@ class UserController extends Controller {
             };
 
             const result = await userService.listUsers(filters, pagination);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in user list controller:', error);
             return res.status(500).json({
@@ -165,7 +166,7 @@ class UserController extends Controller {
             const adminId = req.body.user_id;
 
             const result = await userService.updateUser(id, { name, email, phone, profile }, adminId);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in user update controller:', error);
             return res.status(500).json({
@@ -204,7 +205,7 @@ class UserController extends Controller {
             const adminId = req.body.user_id;
 
             const result = await userService.deleteUser(id, adminId, permanent);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in user delete controller:', error);
             return res.status(500).json({
@@ -232,7 +233,7 @@ class UserController extends Controller {
 
             const adminId = req.body.user_id;
             const result = await userService.resetUserPassword(id, adminId);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in reset password controller:', error);
             return res.status(500).json({
@@ -271,7 +272,7 @@ class UserController extends Controller {
                     error: 'INVALID_TYPE'
                 });
             }
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getUserCourseAccess controller:', error);
             return res.status(500).json({
@@ -437,7 +438,7 @@ class UserController extends Controller {
                 });
             }
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in revokeUserCourseAccess controller:', error);
             return res.status(500).json({

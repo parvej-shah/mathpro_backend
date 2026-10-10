@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const NotificationService=require("../../service/user/notification").NotificationService
 
 const notificationService=new NotificationService()
@@ -15,7 +16,7 @@ class NotificationController extends Controller {
       parseInt(req.query.limit),
       parseInt(req.query.offset)
     );
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   markAllAsRead = async (req, res) => {
@@ -23,7 +24,7 @@ class NotificationController extends Controller {
       req.body.user_id,
       parseInt(req.query.courseId)
     );
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   markAsRead = async (req, res) => {
     var result = await notificationService.markAsRead(
@@ -31,7 +32,7 @@ class NotificationController extends Controller {
       req.body.user_id,
       parseInt(req.query.courseId)
     );
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   getNotificationBellIcounUnclickedCount = async (req, res) => {
@@ -40,7 +41,7 @@ class NotificationController extends Controller {
         req.body.user_id,
         parseInt(req.query.courseId)
       );
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 }
 

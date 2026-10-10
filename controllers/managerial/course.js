@@ -1,5 +1,6 @@
 require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
+const { respond } = require('../base');
 const CourseService =
   require("../../service/managerial/course.js").CourseService;
 const RevenueService =
@@ -16,21 +17,21 @@ class CourseController extends Controller {
     const userId = req.user ? req.user.id : null;
     const access = userId ? await getAccessibleCourseIds(userId, 'course', 'manage') : null;
     var result = await courseService.list(req, access);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   create = async (req, res) => {
     var result = await courseService.create(req.body);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   update = async (req, res) => {
     // instructor_list is now managed via the instructor junction table — ignore it on save
     const { instructor_list: _ignored, ...body } = req.body;
     var result = await courseService.update(req.params.id, body);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   updateFull = async (req, res) => {
     var result = await courseService.updateFull(req.params.id, req.body);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   getEntry = async (req, res) => {
     const access = await checkCourseAccess(req.user.id, 'course', 'manage', req.params.id);
@@ -38,7 +39,7 @@ class CourseController extends Controller {
       return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
     }
     var result = await courseService.get(req.params.id);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   getFull = async (req, res) => {
     const access = await checkCourseAccess(req.user.id, 'course', 'manage', req.params.id);
@@ -46,11 +47,11 @@ class CourseController extends Controller {
       return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
     }
     var result = await courseService.getFull(req.params.id);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   deleteEntry = async (req, res) => {
     var result = await courseService.deleteEntry(req.params.id);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   getRevenue = async (req, res) => {
@@ -62,7 +63,7 @@ class CourseController extends Controller {
     const userId = req.user ? req.user.id : null;
     const access = userId ? await getAccessibleCourseIds(userId, 'course', 'manage') : null;
     var result = await revenueService.getAllRevenue(access);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   getUserProgress = async (req, res) => {
@@ -74,7 +75,7 @@ class CourseController extends Controller {
       req.params.user_id,
       req.params.id
     );
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
   getAllCoursePerchases = async (req, res) => {
     // Fixed: Use phone and email columns instead of login and profile->>'email'
@@ -187,7 +188,7 @@ class CourseController extends Controller {
     //   `[DEBUG] getAllCoursePerchasesApi - Query returned ${result.rowCount || 0} rows for course_id: ${courseId}`
     // );
 
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   getAllPrebookingsApi = async (req, res) => {
@@ -207,7 +208,7 @@ class CourseController extends Controller {
 
     var params = [courseId];
     var result = await courseService.query(query, params);
-    return res.status(result.success ? 200 : 400).json(result);
+    return respond(res, result);
   };
 
   // Update UTM field for a course prebooking

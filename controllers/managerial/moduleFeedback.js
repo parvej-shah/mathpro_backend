@@ -1,4 +1,5 @@
 const Controller = require('../base').Controller;
+const { respond } = require('../base');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 const { getAccessibleCourseIds, checkCourseAccess, resolveCourseId } = require('../../util/courseAccessHelpers');
 
@@ -44,7 +45,7 @@ class ModuleFeedbackController extends Controller {
             }
 
             const result = await moduleFeedbackService.getModuleStats(parseInt(moduleId));
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getModuleStats:', error);
             return res.status(500).json({
@@ -81,7 +82,7 @@ class ModuleFeedbackController extends Controller {
             }
 
             const result = await moduleFeedbackService.getCourseReport(parseInt(courseId));
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getCourseReport:', error);
             return res.status(500).json({
@@ -132,7 +133,7 @@ class ModuleFeedbackController extends Controller {
                 access  // Pass access info to service
             });
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getAllFeedback:', error);
             return res.status(500).json({
@@ -235,7 +236,7 @@ class ModuleFeedbackController extends Controller {
         try {
             const { activeOnly } = req.query;
             const result = await moduleFeedbackService.getAllReasons(activeOnly === 'true');
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in getAllReasons:', error);
             return res.status(500).json({
@@ -329,7 +330,7 @@ class ModuleFeedbackController extends Controller {
                 is_active
             });
 
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in updateReason:', error);
             return res.status(500).json({
@@ -355,7 +356,7 @@ class ModuleFeedbackController extends Controller {
             }
 
             const result = await moduleFeedbackService.deleteReason(parseInt(id));
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in deleteReason:', error);
             return res.status(500).json({
@@ -382,7 +383,7 @@ class ModuleFeedbackController extends Controller {
             }
 
             const result = await moduleFeedbackService.updateReasonOrders(orders);
-            return res.status(result.success ? 200 : 400).json(result);
+            return respond(res, result);
         } catch (error) {
             console.error('Error in updateReasonOrders:', error);
             return res.status(500).json({
