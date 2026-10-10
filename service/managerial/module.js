@@ -167,28 +167,23 @@ class ModuleService extends Service {
     }
 
     deleteEntry = async id => {
-        const client = await this.getClient();
         try {
-            await client.query('BEGIN');
-            await client.query("delete from progress where module_id=$1", [id]);
-            await client.query("delete from module_feedback where module_id=$1", [id]);
-            await client.query("delete from user_module_views where module_id=$1", [id]);
-            const query = `delete from ${this.table} where ${this.pk}=$1 returning *`;
-            const result = await client.query(query, [id]);
-            await client.query('COMMIT');
-            return {
-                success: true,
-                data: result.rows,
-            };
+            return await this.withTransaction(async (client) => {
+                await client.query("delete from progress where module_id=$1", [id]);
+                await client.query("delete from module_feedback where module_id=$1", [id]);
+                await client.query("delete from user_module_views where module_id=$1", [id]);
+                const query = `delete from ${this.table} where ${this.pk}=$1 returning *`;
+                const result = await client.query(query, [id]);
+                return {
+                    success: true,
+                    data: result.rows,
+                };
+            });
         } catch (error) {
-            await client.query('ROLLBACK');
-            console.error("Error in moduleService.deleteEntry:", error);
             return {
                 success: false,
-                error: error.message,
+                error: safeMessage(error),
             };
-        } finally {
-            client.release();
         }
     }
 

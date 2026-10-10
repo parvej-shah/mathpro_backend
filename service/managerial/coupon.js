@@ -1153,8 +1153,6 @@ class CouponService extends Service {
     transactionId = null,
     bookId = null
   ) => {
-    let client = null;
-
     try {
       // Validate input parameters
       // Exactly one of courseId / bundleId / bookId must be provided
@@ -1175,14 +1173,11 @@ class CouponService extends Service {
         };
       }
 
-      // Get dedicated database client for transaction
-      client = await this.getClient();
       const currentTime = Math.floor(Date.now() / 1000);
+      // Set only when a new usage row is committed; the follow-up work below needs it.
+      let committedUsageId = null;
 
-      // Start transaction with proper isolation level
-      await client.query("BEGIN ISOLATION LEVEL READ COMMITTED");
-
-      try {
+      const result = await this.withTransaction(async (client) => {
         // Lock the coupon row to prevent race conditions (requirement 9.2)
         const couponCheck = await client.query(
           `
@@ -1195,7 +1190,6 @@ class CouponService extends Service {
         );
 
         if (couponCheck.rows.length === 0) {
-          await client.query("ROLLBACK");
           return {
             success: false,
             error: "Coupon not found",
@@ -1208,7 +1202,6 @@ class CouponService extends Service {
         // NOTE: In IPN context, we're more lenient because payment already succeeded with discount
         // But we still check to prevent obvious errors (deleted coupons, etc.)
         if (coupon.status === "deleted") {
-          await client.query("ROLLBACK");
           return {
             success: false,
             error: "Coupon has been deleted",
@@ -1259,7 +1252,6 @@ class CouponService extends Service {
                 // Continue with recording - don't return error
               } else {
                 // Coupon expired too long ago - reject
-                await client.query("ROLLBACK");
                 return {
                   success: false,
                   error: "Coupon has expired",
@@ -1267,7 +1259,6 @@ class CouponService extends Service {
               }
             } else if (currentTime < coupon.start_time) {
               // Coupon not started yet - NO grace period (business rule: coupons only usable after start time)
-              await client.query("ROLLBACK");
               return {
                 success: false,
                 error: "Coupon is not yet active",
@@ -1275,7 +1266,6 @@ class CouponService extends Service {
             }
           } else {
             // For other statuses (failed), reject expired/not-started coupons
-            await client.query("ROLLBACK");
             return {
               success: false,
               error: "Coupon is not valid at this time",
@@ -1312,7 +1302,6 @@ class CouponService extends Service {
               // Continue with recording - don't return error
             } else {
               // Way over limit - reject for safety
-              await client.query("ROLLBACK");
 
               // Log usage limit exceeded attempt
               CouponAuditLogger.logCouponUsage(
@@ -1332,7 +1321,6 @@ class CouponService extends Service {
             }
           } else {
             // For other statuses (failed), reject if limit reached
-            await client.query("ROLLBACK");
 
             // Log usage limit exceeded attempt
             CouponAuditLogger.logCouponUsage(
@@ -1380,7 +1368,6 @@ class CouponService extends Service {
             [couponId, userId, bookId]
           );
         } else {
-          await client.query("ROLLBACK");
           return {
             success: false,
             error: "Either courseId, bundleId or bookId must be provided",
@@ -1391,7 +1378,6 @@ class CouponService extends Service {
           // Check if there's a completed usage (definite duplicate)
           const completedUsage = existingUsage.rows.find(row => row.payment_status === 'completed');
           if (completedUsage) {
-            await client.query("ROLLBACK");
             return {
               success: false,
               error: courseId
@@ -1415,7 +1401,6 @@ class CouponService extends Service {
             if (existingTransactionCheck.rows.length > 0) {
               const existingTransactionId = existingTransactionCheck.rows[0].transaction_id;
               if (existingTransactionId !== transactionId) {
-                await client.query("ROLLBACK");
                 return {
                   success: false,
                   error: courseId
@@ -1435,7 +1420,6 @@ class CouponService extends Service {
                   `UPDATE coupon_usage SET payment_status = $1 WHERE id = $2 RETURNING id`,
                   ['completed', pendingUsage.id]
                 );
-                await client.query("COMMIT");
                 return {
                   success: true,
                   data: {
@@ -1451,7 +1435,6 @@ class CouponService extends Service {
               }
               
               // Same transaction_id and same status - return existing record (idempotency)
-              await client.query("COMMIT");
               return {
                 success: true,
                 data: {
@@ -1492,7 +1475,6 @@ class CouponService extends Service {
               // Continue with recording - don't return error
             } else {
               // For pending payments, we can still reject if not eligible
-              await client.query("ROLLBACK");
               return {
                 success: false,
                 error: "Coupon not applicable for this course",
@@ -1520,7 +1502,6 @@ class CouponService extends Service {
               // Continue with recording - don't return error
             } else {
               // For pending payments, we can still reject if not eligible
-              await client.query("ROLLBACK");
               return {
                 success: false,
                 error: "Coupon not applicable for this bundle",
@@ -1548,7 +1529,6 @@ class CouponService extends Service {
               // Continue with recording - don't return error
             } else {
               // For pending payments, we can still reject if not eligible
-              await client.query("ROLLBACK");
               return {
                 success: false,
                 error: "Coupon not applicable for this book",
@@ -1592,7 +1572,6 @@ class CouponService extends Service {
                   `UPDATE coupon_usage SET payment_status = $1 WHERE id = $2 RETURNING id`,
                   ['completed', existing.id]
                 );
-                await client.query("COMMIT");
                 return {
                   success: true,
                   data: {
@@ -1608,7 +1587,6 @@ class CouponService extends Service {
               }
               
               // Otherwise, return existing record
-              await client.query("COMMIT");
               return {
                 success: true,
                 data: {
@@ -1623,7 +1601,6 @@ class CouponService extends Service {
               };
             } else {
               // Different coupon/user/item - data integrity issue
-              await client.query("ROLLBACK");
               return {
                 success: false,
                 error: "Transaction ID already exists with different coupon/user/item combination",
@@ -1669,9 +1646,21 @@ class CouponService extends Service {
           [currentTime, couponId]
         );
 
-        // Commit transaction
-        await client.query("COMMIT");
+        committedUsageId = usageResult.rows[0].id;
+        return {
+          success: true,
+          data: {
+            usageId: usageResult.rows[0].id,
+            couponId,
+            newUsageCount: updateResult.rows[0].usage_count,
+            usageLimit: updateResult.rows[0].usage_limit,
+            recordedAt: currentTime
+          },
+          message: "Coupon usage recorded successfully",
+        };
+      }, { begin: "BEGIN ISOLATION LEVEL READ COMMITTED" });
 
+      if (committedUsageId !== null) {
         // Log successful coupon usage
         CouponAuditLogger.logCouponUsage(
           couponId,
@@ -1685,7 +1674,7 @@ class CouponService extends Service {
         // Link click tracking to purchase completion when payment succeeds
         if (paymentStatus === 'completed' && transactionId) {
           try {
-            const couponUsageId = usageResult.rows[0].id;
+            const couponUsageId = committedUsageId;
             const linkResult = await this.linkClickToPurchase(
               couponId,
               userId,
@@ -1695,7 +1684,7 @@ class CouponService extends Service {
               transactionId,
               bookId
             );
-            
+          
             if (linkResult.success && linkResult.data.linked) {
               console.log('recordUsage: Click linked to purchase', {
                 clickId: linkResult.data.clickId,
@@ -1708,24 +1697,9 @@ class CouponService extends Service {
             console.error('recordUsage: Failed to link click to purchase (non-critical):', linkError);
           }
         }
-
-        return {
-          success: true,
-          data: {
-            usageId: usageResult.rows[0].id,
-            couponId,
-            newUsageCount: updateResult.rows[0].usage_count,
-            usageLimit: updateResult.rows[0].usage_limit,
-            recordedAt: currentTime
-          },
-          message: "Coupon usage recorded successfully",
-        };
-      } catch (transactionError) {
-        // Rollback transaction on any error (requirement 9.4)
-        await client.query("ROLLBACK");
-        console.error("Transaction error in recordUsage:", transactionError);
-        throw transactionError;
       }
+
+      return result;
     } catch (error) {
       console.error("Error recording coupon usage:", error);
 
@@ -1744,11 +1718,6 @@ class CouponService extends Service {
         success: false,
         error: "Failed to record coupon usage due to system error",
       };
-    } finally {
-      // Always release the client connection (requirement 9.4)
-      if (client) {
-        client.release();
-      }
     }
   };
 

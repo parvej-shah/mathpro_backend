@@ -1,4 +1,5 @@
 const Service = require("../base").Service;
+const { safeMessage } = require("../../errors/dbErrors");
 
 class BundleService extends Service {
   constructor() {
@@ -136,29 +137,21 @@ class BundleService extends Service {
 
   delete = async (id) => {
     try {
-      // Start transaction
-      await this.query("BEGIN");
+      return await this.withTransaction(async (client) => {
+        // First remove all course associations
+        await client.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [id]);
 
-      // First remove all course associations
-      await this.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [id]);
+        // Remove any prebookings for this bundle
+        await client.query(`DELETE FROM prebooking_bundle WHERE bundle_id = $1`, [
+          id,
+        ]);
 
-      // Remove any prebookings for this bundle
-      await this.query(`DELETE FROM prebooking_bundle WHERE bundle_id = $1`, [
-        id,
-      ]);
-
-      // Then remove the bundle
-      const query = `DELETE FROM bundle WHERE id = $1 RETURNING *`;
-      const result = await this.query(query, [id]);
-
-      // Commit transaction
-      await this.query("COMMIT");
-
-      return result;
+        // Then remove the bundle
+        const result = await client.query(`DELETE FROM bundle WHERE id = $1 RETURNING *`, [id]);
+        return { success: true, data: result.rows, rowCount: result.rowCount };
+      });
     } catch (error) {
-      await this.query("ROLLBACK");
-      console.error("Bundle delete error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: safeMessage(error) };
     }
   };
 
@@ -361,108 +354,71 @@ class BundleService extends Service {
   // Add courses to bundle
   addCoursesToBundle = async (bundleId, courseIds) => {
     try {
-      // Start transaction
-      await this.query("BEGIN");
+      return await this.withTransaction(async (client) => {
+        // First remove existing courses
+        await client.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [
+          bundleId,
+        ]);
 
-      // First remove existing courses
-      await this.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [
-        bundleId,
-      ]);
-
-      // Add new courses
-      if (courseIds && courseIds.length > 0) {
-        const promises = courseIds.map((courseId) =>
-          this.query(
+        // Add new courses (one client runs them in order)
+        for (const courseId of courseIds || []) {
+          await client.query(
             `INSERT INTO bundle_course (bundle_id, course_id) VALUES ($1, $2)`,
             [bundleId, courseId]
-          )
-        );
+          );
+        }
 
-        await Promise.all(promises);
-      }
-
-      // Commit transaction
-      await this.query("COMMIT");
-
-      return { success: true, data: { bundleId, courseIds } };
+        return { success: true, data: { bundleId, courseIds } };
+      });
     } catch (error) {
-      await this.query("ROLLBACK");
-      console.error("Add courses to bundle error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: safeMessage(error) };
     }
   };
 
   // Purchase bundle and enroll in all courses
   purchaseBundle = async (userId, bundleId, amount, transactionId) => {
-    // Get a client from the pool for transaction
-    const client = await this.getClient();
-
     try {
-      // Start transaction on the same client
-      await client.query("BEGIN");
+      return await this.withTransaction(async (client) => {
+        const timestamp = parseInt(Date.now() / 1000);
 
-      // 1. Record bundle purchase
-      const bundlePurchaseQuery = `
-                INSERT INTO bundle_purchase (user_id, bundle_id, amount, transaction_id, timestamp)
-                VALUES ($1, $2, $3, $4, $5)
-                ON CONFLICT (user_id, bundle_id) DO UPDATE SET
-                    amount = EXCLUDED.amount,
-                    transaction_id = EXCLUDED.transaction_id,
-                    timestamp = EXCLUDED.timestamp
-                RETURNING *
-            `;
-      const bundlePurchaseResult = await client.query(bundlePurchaseQuery, [
-        userId,
-        bundleId,
-        amount,
-        transactionId,
-        parseInt(Date.now() / 1000),
-      ]);
-
-      // 2. Get all courses in the bundle
-      const coursesQuery = `
-                SELECT course_id FROM bundle_course WHERE bundle_id = $1
-            `;
-      const coursesResult = await client.query(coursesQuery, [bundleId]);
-
-      // 3. Enroll user in all courses (only if not already enrolled)
-      if (coursesResult.rows && coursesResult.rows.length > 0) {
-        const enrollmentPromises = coursesResult.rows.map((course) =>
-          client.query(
-            `INSERT INTO takes (user_id, course_id, amount, transaction_id, timestamp)
-                         VALUES ($1, $2, $3, $4, $5)
-                         ON CONFLICT (user_id, course_id) DO NOTHING`,
-            [
-              userId,
-              course.course_id,
-              0,
-              transactionId,
-              parseInt(Date.now() / 1000),
-            ]
-          )
+        // 1. Record bundle purchase
+        const bundlePurchaseResult = await client.query(
+          `INSERT INTO bundle_purchase (user_id, bundle_id, amount, transaction_id, timestamp)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (user_id, bundle_id) DO UPDATE SET
+               amount = EXCLUDED.amount,
+               transaction_id = EXCLUDED.transaction_id,
+               timestamp = EXCLUDED.timestamp
+           RETURNING *`,
+          [userId, bundleId, amount, transactionId, timestamp]
         );
 
-        await Promise.all(enrollmentPromises);
-      }
+        // 2. Get all courses in the bundle
+        const coursesResult = await client.query(
+          `SELECT course_id FROM bundle_course WHERE bundle_id = $1`,
+          [bundleId]
+        );
 
-      // Commit transaction
-      await client.query("COMMIT");
+        // 3. Enroll user in all courses (only if not already enrolled)
+        for (const course of coursesResult.rows) {
+          await client.query(
+            `INSERT INTO takes (user_id, course_id, amount, transaction_id, timestamp)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (user_id, course_id) DO NOTHING`,
+            [userId, course.course_id, 0, transactionId, timestamp]
+          );
+        }
 
-      return {
-        success: true,
-        data: {
-          bundlePurchase: bundlePurchaseResult.rows[0],
-          coursesEnrolled: coursesResult.rows ? coursesResult.rows.length : 0,
-        },
-      };
+        return {
+          success: true,
+          data: {
+            bundlePurchase: bundlePurchaseResult.rows[0],
+            coursesEnrolled: coursesResult.rows.length,
+          },
+        };
+      });
     } catch (error) {
-      // Rollback transaction on error
-      await client.query("ROLLBACK");
-      console.error("Bundle purchase error:", error);
-      return { success: false, error: error.message };
-    } finally {
-      // Always release the client back to the pool
-      client.release();
+      return { success: false, error: safeMessage(error) };
     }
   };
 

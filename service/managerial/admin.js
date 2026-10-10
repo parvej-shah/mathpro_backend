@@ -789,115 +789,105 @@ class AdminService extends Service {
      * @returns {Promise<{success: boolean, error?: string}>}
      */
     delete = async (id) => {
-        const client = await this.getClient();
         try {
-            await client.query('BEGIN');
+            return await this.withTransaction(async (client) => {
+                // First verify the admin exists and lock the row
+                const getQuery = `
+                    SELECT id, name, email 
+                    FROM managerial_auth 
+                    WHERE id = $1 
+                    FOR UPDATE
+                `;
+                const getResult = await client.query(getQuery, [id]);
 
-            // First verify the admin exists and lock the row
-            const getQuery = `
-                SELECT id, name, email 
-                FROM managerial_auth 
-                WHERE id = $1 
-                FOR UPDATE
-            `;
-            const getResult = await client.query(getQuery, [id]);
-
-            if (getResult.rows.length === 0) {
-                await client.query('ROLLBACK');
-                return {
-                    success: false,
-                    error: 'Admin not found'
-                };
-            }
-
-            // Prevent deleting the last super admin (role-based: applies to any admin or moderator with super_admin role)
-            const superAdminRoleResult = await client.query(
-                'SELECT id FROM roles WHERE name = $1',
-                [SUPER_ADMIN_ROLE_NAME]
-            );
-            if (superAdminRoleResult.rows.length > 0) {
-                const superAdminRoleId = superAdminRoleResult.rows[0].id;
-                // Lock user_roles rows for this role so count is stable (prevents TOCTOU with role removal)
-                await client.query(
-                    'SELECT user_id, role_id FROM user_roles WHERE role_id = $1 FOR UPDATE',
-                    [superAdminRoleId]
-                );
-                const countResult = await client.query(
-                    'SELECT COUNT(*)::int AS count FROM user_roles WHERE role_id = $1',
-                    [superAdminRoleId]
-                );
-                const superAdminCount = parseInt(countResult.rows[0].count, 10);
-                const thisUserHasSuperAdmin = await client.query(
-                    'SELECT 1 FROM user_roles WHERE user_id = $1 AND role_id = $2',
-                    [id, superAdminRoleId]
-                );
-                if (superAdminCount <= 1 && thisUserHasSuperAdmin.rows.length > 0) {
-                    await client.query('ROLLBACK');
+                if (getResult.rows.length === 0) {
                     return {
                         success: false,
-                        error: 'Cannot delete the last super admin. At least one user must have the super admin role.'
+                        error: 'Admin not found'
                     };
                 }
-            }
 
-            // Atomic check: Lock all admin/moderator rows to prevent concurrent deletions (type-based fallback)
-            await client.query(`
-                SELECT id FROM managerial_auth 
-                WHERE type IN ($1, $2) 
-                FOR UPDATE
-            `, [
-                managerialAccountTypes.admin,
-                managerialAccountTypes.moderator
-            ]);
-            const countResult = await client.query(`
-                SELECT COUNT(*)::integer as count 
-                FROM managerial_auth 
-                WHERE type IN ($1, $2)
-            `, [
-                managerialAccountTypes.admin,
-                managerialAccountTypes.moderator
-            ]);
+                // Prevent deleting the last super admin (role-based: applies to any admin or moderator with super_admin role)
+                const superAdminRoleResult = await client.query(
+                    'SELECT id FROM roles WHERE name = $1',
+                    [SUPER_ADMIN_ROLE_NAME]
+                );
+                if (superAdminRoleResult.rows.length > 0) {
+                    const superAdminRoleId = superAdminRoleResult.rows[0].id;
+                    // Lock user_roles rows for this role so count is stable (prevents TOCTOU with role removal)
+                    await client.query(
+                        'SELECT user_id, role_id FROM user_roles WHERE role_id = $1 FOR UPDATE',
+                        [superAdminRoleId]
+                    );
+                    const countResult = await client.query(
+                        'SELECT COUNT(*)::int AS count FROM user_roles WHERE role_id = $1',
+                        [superAdminRoleId]
+                    );
+                    const superAdminCount = parseInt(countResult.rows[0].count, 10);
+                    const thisUserHasSuperAdmin = await client.query(
+                        'SELECT 1 FROM user_roles WHERE user_id = $1 AND role_id = $2',
+                        [id, superAdminRoleId]
+                    );
+                    if (superAdminCount <= 1 && thisUserHasSuperAdmin.rows.length > 0) {
+                        return {
+                            success: false,
+                            error: 'Cannot delete the last super admin. At least one user must have the super admin role.'
+                        };
+                    }
+                }
 
-            const adminCount = parseInt(countResult.rows[0].count);
-            if (adminCount <= 1) {
-                await client.query('ROLLBACK');
+                // Atomic check: Lock all admin/moderator rows to prevent concurrent deletions (type-based fallback)
+                await client.query(`
+                    SELECT id FROM managerial_auth 
+                    WHERE type IN ($1, $2) 
+                    FOR UPDATE
+                `, [
+                    managerialAccountTypes.admin,
+                    managerialAccountTypes.moderator
+                ]);
+                const countResult = await client.query(`
+                    SELECT COUNT(*)::integer as count 
+                    FROM managerial_auth 
+                    WHERE type IN ($1, $2)
+                `, [
+                    managerialAccountTypes.admin,
+                    managerialAccountTypes.moderator
+                ]);
+
+                const adminCount = parseInt(countResult.rows[0].count);
+                if (adminCount <= 1) {
+                    return {
+                        success: false,
+                        error: 'Cannot delete the last admin or moderator'
+                    };
+                }
+
+                // Delete admin (we know it exists and count > 1)
+                const deleteQuery = `
+                    DELETE FROM managerial_auth 
+                    WHERE id = $1
+                    RETURNING id, name, email
+                `;
+                const deleteResult = await client.query(deleteQuery, [id]);
+
+                if (deleteResult.rows.length === 0) {
+                    // This shouldn't happen since we verified existence above
+                    return {
+                        success: false,
+                        error: 'Admin deletion failed'
+                    };
+                }
+
                 return {
-                    success: false,
-                    error: 'Cannot delete the last admin or moderator'
+                    success: true,
+                    message: 'Admin deleted successfully'
                 };
-            }
-
-            // Delete admin (we know it exists and count > 1)
-            const deleteQuery = `
-                DELETE FROM managerial_auth 
-                WHERE id = $1
-                RETURNING id, name, email
-            `;
-            const deleteResult = await client.query(deleteQuery, [id]);
-
-            await client.query('COMMIT');
-
-            if (deleteResult.rows.length === 0) {
-                // This shouldn't happen since we verified existence above
-                return {
-                    success: false,
-                    error: 'Admin deletion failed'
-                };
-            }
-
-            return {
-                success: true,
-                message: 'Admin deleted successfully'
-            };
+            });
         } catch (error) {
-            await client.query('ROLLBACK').catch(() => { });
-            console.error('Error in admin delete:', error);
             return {
                 success: false,
                 error: 'An error occurred while deleting admin'
             };
-        } finally {
-            client.release();
         }
     }
 }

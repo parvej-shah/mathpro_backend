@@ -783,9 +783,7 @@ class ModuleFeedbackService extends Service {
             }
 
             // Use transaction for bulk update
-            const client = await this.getClient();
-            try {
-                await client.query('BEGIN');
+            return await this.withTransaction(async (client) => {
                 for (const item of orderData) {
                     await client.query(
                         'UPDATE module_feedback_reasons SET display_order = $1 WHERE id = $2',
@@ -793,17 +791,11 @@ class ModuleFeedbackService extends Service {
                     );
                 }
 
-                await client.query('COMMIT');
                 return {
                     success: true,
                     message: 'Reason orders updated successfully'
                 };
-            } catch (err) {
-                await client.query('ROLLBACK').catch(() => {});
-                throw err;
-            } finally {
-                client.release();
-            }
+            });
         } catch (error) {
             console.error('Error in updateReasonOrders:', error);
             return {

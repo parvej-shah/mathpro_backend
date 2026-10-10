@@ -104,16 +104,18 @@ class Service {
         }
     }
 
-    // Runs fn(client) inside BEGIN/COMMIT on one pooled client. Any throw rolls back and
-    // is rethrown; the client is always released. Resolves to fn's return value.
-    withTransaction = async function (fn) {
+    // Runs fn(client) inside BEGIN/COMMIT on one pooled client and resolves to fn's return
+    // value. Rolls back instead when fn throws (rethrown) or returns a failed service result
+    // ({ success: false, ... }), so early `return { success: false }` exits never commit.
+    // The client is always released. `begin` overrides the BEGIN statement (isolation level).
+    withTransaction = async function (fn, { begin = 'BEGIN' } = {}) {
         const client = await this.getClient();
         // Passing an error to release() destroys the connection instead of pooling it.
         let releaseWith;
         try {
-            await client.query('BEGIN');
+            await client.query(begin);
             const result = await fn(client);
-            await client.query('COMMIT');
+            await client.query(result && result.success === false ? 'ROLLBACK' : 'COMMIT');
             return result;
         } catch (error) {
             if (!(error instanceof AppError)) logger.error('db_error', error, { source: 'Service.withTransaction' });

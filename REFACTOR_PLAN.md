@@ -229,7 +229,7 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
 - [x] **2.3 `respond(res, result)` helper** *(Done in `controllers/base.js`: 185 sites in 30 controllers; the 5 non-standard ones (text reply, 403 mapping in testimonial) left as they are. Snapshot unchanged.)* (*Duplicate Code → Extract Method*), equivalent to
   `res.status(result.success ? 200 : 400).json(result)` but strips any non-plain `error`
   object. Mechanically replace the 168 sites. *M,* done per router, one PR per feature. ✅ 0.3 green.
-- [~] **2.4 `withTransaction(fn)` on `Service`** *(helper + tests done; migrated `module.completeModule`, `quizAttempt.submitAttempt`, `featuredItem.reorder`; the remaining hand-rolled transactions are open)* (*Duplicate Code → Extract Method*):
+- [x] **2.4 `withTransaction(fn)` on `Service`** *(Done: every hand-rolled transaction migrated: bundle ×3, chapter, module ×2, admin delete, courseV2 ×2, teacherV2, courseImportExport, moduleViews, moduleFeedback, streak, quizAttempt, featuredItem, coupon.recordUsage. Rolls back on throw **or** a `{success:false}` result; `begin` option keeps coupon's READ COMMITTED. Bugs fixed on the way: bundle delete/addCourses ran BEGIN/COMMIT through the pool (no real transaction, could strand an open transaction on a pooled connection); `bulkUpdateStreaks` held a useless second connection. coupon.recordUsage pinned by tests run against old and new code.)*
   `BEGIN` → `fn(client)` → `COMMIT`, `ROLLBACK` on throw, always `release()`. Migrate the 13
   services one at a time. *M.* ✅ a test asserts rollback on a thrown error and that no client leaks
   (`pool.totalCount` stays stable).

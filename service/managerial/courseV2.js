@@ -4,6 +4,7 @@
  */
 
 const Service = require('../base').Service;
+const { safeMessage } = require('../../errors/dbErrors');
 const ModuleService = require('./module').ModuleService;
 const ChapterService = require('./chapter').ChapterService;
 const { v4: uuidv4 } = require('uuid');
@@ -254,53 +255,48 @@ class CourseServiceV2 extends Service {
     }
 
     async deleteEntry(id) {
-        const client = await this.getClient();
         try {
-            await client.query('BEGIN');
-            // 1. Remove from public_featured_item
-            await client.query("delete from public_featured_item where item_type='course' and item_id=$1", [id]);
-            // 2. Remove from bundle_course
-            await client.query("delete from bundle_course where course_id=$1", [id]);
-            // 3. Delete chapters and modules with child dependencies
-            const chaptersRes = await client.query("select id from chapter where course_id=$1", [id]);
-            const chapterIds = chaptersRes.rows.map(r => r.id);
-            if (chapterIds.length > 0) {
-                const modulesRes = await client.query("select id from module where chapter_id = ANY($1::int[])", [chapterIds]);
-                const moduleIds = modulesRes.rows.map(r => r.id);
-                if (moduleIds.length > 0) {
-                    await client.query("delete from progress where module_id = ANY($1::int[])", [moduleIds]);
-                    await client.query("delete from module_feedback where module_id = ANY($1::int[])", [moduleIds]);
-                    await client.query("delete from user_module_views where module_id = ANY($1::int[])", [moduleIds]);
-                    await client.query("delete from module where id = ANY($1::int[])", [moduleIds]);
+            return await this.withTransaction(async (client) => {
+                // 1. Remove from public_featured_item
+                await client.query("delete from public_featured_item where item_type='course' and item_id=$1", [id]);
+                // 2. Remove from bundle_course
+                await client.query("delete from bundle_course where course_id=$1", [id]);
+                // 3. Delete chapters and modules with child dependencies
+                const chaptersRes = await client.query("select id from chapter where course_id=$1", [id]);
+                const chapterIds = chaptersRes.rows.map(r => r.id);
+                if (chapterIds.length > 0) {
+                    const modulesRes = await client.query("select id from module where chapter_id = ANY($1::int[])", [chapterIds]);
+                    const moduleIds = modulesRes.rows.map(r => r.id);
+                    if (moduleIds.length > 0) {
+                        await client.query("delete from progress where module_id = ANY($1::int[])", [moduleIds]);
+                        await client.query("delete from module_feedback where module_id = ANY($1::int[])", [moduleIds]);
+                        await client.query("delete from user_module_views where module_id = ANY($1::int[])", [moduleIds]);
+                        await client.query("delete from module where id = ANY($1::int[])", [moduleIds]);
+                    }
+                    await client.query("delete from chapter where id = ANY($1::int[])", [chapterIds]);
                 }
-                await client.query("delete from chapter where id = ANY($1::int[])", [chapterIds]);
-            }
-            // 4. Remove other course relationships
-            await client.query("delete from instructor where course_id=$1", [id]);
-            await client.query("delete from user_module_views where course_id=$1", [id]);
-            await client.query("delete from takes where course_id=$1", [id]);
-            await client.query("delete from course_routine where course_id=$1", [id]);
-            await client.query("delete from coupon_courses where course_id=$1", [id]);
-            await client.query("delete from prebooking where course_id=$1", [id]);
-            await client.query("delete from notification where course_id=$1", [id]);
-            await client.query("delete from user_course_streaks where course_id=$1", [id]);
-            await client.query("delete from feedbacks where course_id=$1::varchar", [String(id)]);
-            // 5. Delete course
-            const result = await client.query(`delete from ${this.table} where ${this.pk}=$1 returning *`, [id]);
-            await client.query('COMMIT');
-            return {
-                success: true,
-                data: result.rows,
-            };
+                // 4. Remove other course relationships
+                await client.query("delete from instructor where course_id=$1", [id]);
+                await client.query("delete from user_module_views where course_id=$1", [id]);
+                await client.query("delete from takes where course_id=$1", [id]);
+                await client.query("delete from course_routine where course_id=$1", [id]);
+                await client.query("delete from coupon_courses where course_id=$1", [id]);
+                await client.query("delete from prebooking where course_id=$1", [id]);
+                await client.query("delete from notification where course_id=$1", [id]);
+                await client.query("delete from user_course_streaks where course_id=$1", [id]);
+                await client.query("delete from feedbacks where course_id=$1::varchar", [String(id)]);
+                // 5. Delete course
+                const result = await client.query(`delete from ${this.table} where ${this.pk}=$1 returning *`, [id]);
+                return {
+                    success: true,
+                    data: result.rows,
+                };
+            });
         } catch (error) {
-            await client.query('ROLLBACK');
-            console.error("Error in CourseServiceV2.deleteEntry:", error);
             return {
                 success: false,
-                error: error.message,
+                error: safeMessage(error),
             };
-        } finally {
-            client.release();
         }
     }
 
@@ -491,10 +487,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
             }
 
             // Perform updates in transaction
-            const client = await this.getClient();
-            try {
-                await client.query('BEGIN');
-
+            return await this.withTransaction(async (client) => {
                 for (const order of moduleOrders) {
                     const { module_id, chapter_id, serial } = order;
                     
@@ -513,8 +506,6 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
                     await client.query(updateQuery, [serial, chapter_id, module_id]);
                 }
 
-                await client.query('COMMIT');
-
                 return {
                     success: true,
                     data: {
@@ -522,12 +513,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
                         message: 'Module order updated successfully'
                     }
                 };
-            } catch (error) {
-                await client.query('ROLLBACK');
-                throw error;
-            } finally {
-                client.release();
-            }
+            });
         } catch (error) {
             console.error('Error reordering modules:', error);
             return {

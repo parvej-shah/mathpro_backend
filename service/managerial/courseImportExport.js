@@ -465,11 +465,9 @@ class CourseImportExportService extends CourseServiceV2 {
             }
 
             // Actually import the course
-            const client = await this.getClient();
             let courseId = null;
 
-            try {
-                await client.query('BEGIN');
+            const outcome = await this.withTransaction(async (client) => {
 
                 // Handle import modes
                 if (importMode === 'create') {
@@ -478,12 +476,7 @@ class CourseImportExportService extends CourseServiceV2 {
                     const existingResult = await client.query(existingCourseQuery, [courseData.course.title]);
                     
                     if (existingResult.rows.length > 0) {
-                        await client.query('ROLLBACK');
-                        await this.updateImportTracking(importId, {
-                            status: 'failed',
-                            errors: [{ error: `Course with title "${courseData.course.title}" already exists` }]
-                        });
-                        return;
+                        return { success: false, error: `Course with title "${courseData.course.title}" already exists` };
                     }
 
                     // Create course
@@ -508,12 +501,7 @@ class CourseImportExportService extends CourseServiceV2 {
                         courseData.course.is_live !== undefined ? courseData.course.is_live : true
                     ]);
                     if (!courseResult.rows || courseResult.rows.length === 0) {
-                        await client.query('ROLLBACK');
-                        await this.updateImportTracking(importId, {
-                            status: 'failed',
-                            errors: [{ error: 'Failed to create course' }]
-                        });
-                        return;
+                        return { success: false, error: 'Failed to create course' };
                     }
                     courseId = courseResult.rows[0].id;
 
@@ -527,12 +515,7 @@ class CourseImportExportService extends CourseServiceV2 {
                     ]);
 
                     if (findResult.rows.length === 0) {
-                        await client.query('ROLLBACK');
-                        await this.updateImportTracking(importId, {
-                            status: 'failed',
-                            errors: [{ error: 'Course not found for update' }]
-                        });
-                        return;
+                        return { success: false, error: 'Course not found for update' };
                     }
 
                     courseId = findResult.rows[0].id;
@@ -783,26 +766,28 @@ class CourseImportExportService extends CourseServiceV2 {
                     }
                 }
 
-                await client.query('COMMIT');
+                return { success: true, chaptersCreated, modulesCreated };
+            });
 
-                // Update import tracking with success
+            if (!outcome.success) {
                 await this.updateImportTracking(importId, {
-                    status: 'completed',
-                    course_id: courseId,
-                    summary: {
-                        course_created: importMode === 'create' || (importMode === 'upsert' && !courseId),
-                        course_updated: importMode === 'update' || (importMode === 'upsert' && courseId),
-                        chapters_created: chaptersCreated,
-                        modules_created: modulesCreated
-                    }
+                    status: 'failed',
+                    errors: [{ error: outcome.error }]
                 });
-
-            } catch (error) {
-                await client.query('ROLLBACK');
-                throw error;
-            } finally {
-                client.release();
+                return;
             }
+
+            // Update import tracking with success
+            await this.updateImportTracking(importId, {
+                status: 'completed',
+                course_id: courseId,
+                summary: {
+                    course_created: importMode === 'create' || (importMode === 'upsert' && !courseId),
+                    course_updated: importMode === 'update' || (importMode === 'upsert' && courseId),
+                    chapters_created: outcome.chaptersCreated,
+                    modules_created: outcome.modulesCreated
+                }
+            });
         } catch (error) {
             console.error('Error processing import:', error);
             await this.updateImportTracking(importId, {

@@ -41,7 +41,7 @@ test('Service.queryOrThrow maps pg error codes to AppError statuses', async () =
     await service.query('DROP TABLE uniq_probe', []);
 });
 
-test('withTransaction commits on success and rolls back on throw, without leaking clients', async () => {
+test('withTransaction commits on success, rolls back on throw or a success:false result, without leaking clients', async () => {
     await service.query('CREATE TABLE IF NOT EXISTS tx_probe (v int)', []);
     await service.query('TRUNCATE tx_probe', []);
 
@@ -60,6 +60,12 @@ test('withTransaction commits on success and rolls back on throw, without leakin
         await client.query('INSERT INTO tx_probe VALUES (3)');
         await client.query('SELECT $1::int', ['bad']);
     }), (err) => err.code === '22P02');
+
+    const failed = await service.withTransaction(async (client) => {
+        await client.query('INSERT INTO tx_probe VALUES (4)');
+        return { success: false, error: 'Quiz already submitted' };
+    });
+    assert.deepStrictEqual(failed, { success: false, error: 'Quiz already submitted' });
 
     const rows = await service.query('SELECT v FROM tx_probe ORDER BY v', []);
     assert.deepStrictEqual(rows.data, [{ v: 1 }]);

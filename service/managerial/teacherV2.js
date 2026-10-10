@@ -1193,9 +1193,7 @@ class TeacherServiceV2 extends TeacherService {
                 return { success: false, error: 'Course not found', code: 'COURSE_NOT_FOUND' };
             }
 
-            const client = await this.getClient();
-            try {
-                await client.query('BEGIN');
+            await this.withTransaction(async (client) => {
                 await client.query('DELETE FROM instructor WHERE course_id = $1', [courseId]);
                 for (const teacherId of (teacherIds || [])) {
                     await client.query(
@@ -1203,13 +1201,7 @@ class TeacherServiceV2 extends TeacherService {
                         [teacherId, courseId]
                     );
                 }
-                await client.query('COMMIT');
-            } catch (err) {
-                await client.query('ROLLBACK');
-                throw err;
-            } finally {
-                client.release();
-            }
+            });
 
             return { success: true, data: { course_id: courseId, teacher_ids: teacherIds || [] } };
         } catch (error) {

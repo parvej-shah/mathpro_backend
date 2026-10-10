@@ -99,10 +99,7 @@ class ModuleViewsService extends Service {
                 };
             }
 
-            const client = await this.getClient();
-            try {
-                await client.query('BEGIN');
-
+            return await this.withTransaction(async (client) => {
                 const timestamp = Math.floor(Date.now() / 1000);
 
                 // Check if record exists
@@ -124,9 +121,7 @@ class ModuleViewsService extends Service {
                         RETURNING *
                     `;
                     await client.query(updateQuery, [timestamp, chapterId, userId, courseId, moduleId]);
-                    
-                    await client.query('COMMIT');
-                    
+
                     return {
                         success: true,
                         data: {
@@ -158,8 +153,6 @@ class ModuleViewsService extends Service {
                           )
                     `, [userId, courseId]);
 
-                    await client.query('COMMIT');
-                    
                     return {
                         success: true,
                         data: {
@@ -170,12 +163,7 @@ class ModuleViewsService extends Service {
                         }
                     };
                 }
-            } catch (error) {
-                await client.query('ROLLBACK');
-                throw error;
-            } finally {
-                client.release();
-            }
+            });
         } catch (error) {
             console.error('Error recording module view:', error);
             return {
