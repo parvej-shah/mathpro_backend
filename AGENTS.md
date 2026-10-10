@@ -16,8 +16,11 @@ auth/JWT, DB schema, payments (SSLCommerz), file storage (AWS S3), PDFs/certific
   `sslcommerz-lts`, `nodemailer`, `pdf-lib`, Swagger (`swagger-jsdoc` + `swagger-ui-express`).
 - **Run:** `npm run dev` (nodemon → `dev.js`) or `npm start` (`index.js`). Port `8000`
   (`PORT`, default 8000).
-- **Verify:** `npm run lint` — this is a **syntax check only** (`node -c app.js && node -c
-  index.js`), not a full linter. There is no TypeScript here; it's plain Node/CommonJS.
+- **Verify:** `npm run lint` (syntax check + ESLint for undefined names / dead code) and
+  `npm test` (`node:test` + `supertest` against a throwaway local Postgres on port 54329,
+  data in `.testdb/`, never the prod DB). `test/contract/routes.test.js` snapshots every
+  endpoint's status + response shape; an intentional contract change is regenerated with
+  `npm run test:update` and the snapshot diff reviewed. Plain Node/CommonJS, no TypeScript.
 
 ## Database access — via SSH tunnel
 
@@ -133,7 +136,7 @@ If a feature rule conflicts with an invariant, the invariant wins and you stop a
    one, else the relevant `docs/*.md` / `swagger/user.yaml`.
 3. State which client(s) consume the route(s) you're touching (invariants § API Contract).
 4. Make the minimal change. Stay in scope.
-5. `npm run lint` (syntax check) clean.
+5. `npm run lint` clean (no ESLint errors) and `npm test` green.
 6. Append a one-line entry to `.claude/memory.md` (what changed, why, scope, clients affected).
 
 ## Behavioral guidelines

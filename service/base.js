@@ -119,3 +119,5 @@ class Service {
     }
 }
 exports.Service = Service;
+
+exports.pool = pool;

@@ -1,0 +1,6957 @@
+{
+ "GET /admin/admins [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/admins [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/admins [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/admins/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/admins/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/admins/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/admins/search-users [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/admins/search-users [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/admins/search-users [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/bundles/:bundleId/detailed [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/bundles/:bundleId/detailed [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/bundles/:bundleId/detailed [admin]": {
+  "status": 500,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/bundles/overview [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/bundles/overview [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/bundles/overview [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/coupons/overview [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/coupons/overview [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/coupons/overview [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/coupons/performance [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/coupons/performance [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/coupons/performance [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/courses/:courseId/detailed [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/:courseId/detailed [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/:courseId/detailed [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/completion [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/completion [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/completion [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/courses/overview [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/overview [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/courses/overview [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/dashboard/breakdown [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/dashboard/breakdown [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/dashboard/breakdown [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,meta,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/dashboard/overview [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/dashboard/overview [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/dashboard/overview [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,meta,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/dashboard/timeseries [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/dashboard/timeseries [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/dashboard/timeseries [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,meta,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/filters/options [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/filters/options [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/filters/options [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/learning/progress [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/learning/progress [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/learning/progress [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/learning/streaks [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/learning/streaks [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/learning/streaks [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/metadata [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/metadata/:category [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata/:category [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata/:category [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata/:category/:key [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata/:category/:key [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/metadata/:category/:key [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/payments/overview [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/payments/overview [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/payments/overview [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/revenue/by-bundle [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/by-bundle [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/by-bundle [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/revenue/by-course [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/by-course [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/by-course [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/revenue/predictions [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/predictions [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/predictions [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/revenue/summary [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/summary [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/summary [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/revenue/trends [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/trends [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/revenue/trends [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/engagement [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/engagement [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/engagement [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/analytics/users/growth [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/growth [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/growth [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/overview [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/overview [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/analytics/users/overview [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/announcement/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/get/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/get/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/list [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/list [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "GET /admin/announcement/list/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/list/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/announcement/list/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/auth/getProfile [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/auth/getProfile [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/auth/getProfile [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/auth/sessions [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/auth/sessions [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/auth/sessions [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/book [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/book/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/book/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book/course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/book/orders [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book/orders [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/book/orders [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/:id/purchases [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id/purchases [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id/purchases [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/:id/purchases/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id/purchases/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id/purchases/export [admin]": {
+  "status": 200,
+  "kind": "text/csv"
+ },
+ "GET /admin/bundle/:id/stats [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id/stats [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/:id/stats [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/prebookings [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/prebookings [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/prebookings [admin]": {
+  "status": 200,
+  "kind": "text/csv"
+ },
+ "GET /admin/bundle/prebookings/api [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/prebookings/api [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/prebookings/api [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/purchases [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/purchases [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/purchases [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/purchases/api [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/purchases/api [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/purchases/api [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/bundle/purchases/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/purchases/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/purchases/export [admin]": {
+  "status": 200,
+  "kind": "text/csv"
+ },
+ "GET /admin/bundle/slug/:slug [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/slug/:slug [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/bundle/slug/:slug [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/chapter/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/chapter/get/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/chapter/get/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/chapter/list/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/chapter/list/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/chapter/list/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/coupon [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,pagination,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/coupon/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/bundles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/bundles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/bundles [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/click-stats [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/click-stats [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/click-stats [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/:id/clicks [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/clicks [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/clicks [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/:id/courses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/courses [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/:id/courses [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/dashboard [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/dashboard [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/dashboard [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/analytics/revenue-impact [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/revenue-impact [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/revenue-impact [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/analytics/statistics [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/statistics [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/statistics [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/analytics/top-performing [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/top-performing [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/top-performing [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/analytics/usage-report [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/usage-report [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/analytics/usage-report [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/coupon/available-bundles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/available-bundles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/available-bundles [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success,totalBundles",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/coupon/available-courses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/available-courses [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/available-courses [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success,totalCourses",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/coupon/coupon-clicks [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/coupon-clicks [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/coupon/coupon-clicks [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/course/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/get/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/get/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllCoursePerchases [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllCoursePerchases [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllCoursePerchases [admin]": {
+  "status": 500,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllCoursePerchasesApi [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllCoursePerchasesApi [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllCoursePerchasesApi [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllPrebookings [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllPrebookings [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllPrebookings [admin]": {
+  "status": 500,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllPrebookingsApi [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllPrebookingsApi [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllPrebookingsApi [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllRevenue [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllRevenue [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getAllRevenue [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/course/getfull/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getfull/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getfull/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getRevenue/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getRevenue/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getRevenue/:id [admin]": {
+  "status": 200,
+  "kind": "text/html"
+ },
+ "GET /admin/course/getUserProgress/:id/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getUserProgress/:id/:user_id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/getUserProgress/:id/:user_id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/list [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/course/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/faq/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/faq/get/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/faq/get/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/faq/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/faq/list [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/faq/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/feedback [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/feedback [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/feedback [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "feedbacks,limit,page,success,total,totalPages",
+  "success": true
+ },
+ "GET /admin/feedback/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/feedback/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/feedback/export [admin]": {
+  "status": 200,
+  "kind": "text/csv"
+ },
+ "GET /admin/feedback/stats [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/feedback/stats [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/feedback/stats [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/module-feedback [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,pagination,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/module-feedback/course/:courseId/report [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/course/:courseId/report [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/course/:courseId/report [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/export [admin]": {
+  "status": 200,
+  "kind": "text/html"
+ },
+ "GET /admin/module-feedback/reasons [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/reasons [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/reasons [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/module-feedback/reasons/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/reasons/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/reasons/:id [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/stats/:moduleId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/stats/:moduleId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module-feedback/stats/:moduleId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module/get/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module/get/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/module/list/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module/list/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/module/list/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/payment/audit-logs [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/payment/audit-logs [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/payment/audit-logs [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/payment/audit-logs/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/payment/audit-logs/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/payment/audit-logs/export [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/revenue/detailed [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/detailed [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/detailed [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/revenue/detailed/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/detailed/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/detailed/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/timeframe [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/timeframe [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/timeframe [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/revenue/top [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/top [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/revenue/top [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/roles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/roles/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/roles/permissions [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/permissions [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/permissions [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/roles/users/:userId/permissions [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/users/:userId/permissions [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/users/:userId/permissions [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/roles/users/:userId/roles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/users/:userId/roles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/roles/users/:userId/roles [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/routine/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/course/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/get/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/get/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/list [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/routine/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/streak/analytics [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/analytics [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/analytics [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/streak/leaderboard/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/leaderboard/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/leaderboard/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/streak/trends [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/trends [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/trends [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/streak/user/:userId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/user/:userId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/streak/user/:userId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/teacher/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/teacher/list [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/teacher/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/teacher/profile/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/teacher/profile/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/teacher/profile/:id [admin]": {
+  "status": 500,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/testimonial/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/testimonial/list [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/testimonial/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/users [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /admin/users/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id/access [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id/access [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id/access [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /admin/users/:id/history [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id/history [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /admin/users/:id/history [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /health [anon]": {
+  "status": 200,
+  "kind": "text/html"
+ },
+ "GET /health [student]": {
+  "status": 200,
+  "kind": "text/html"
+ },
+ "GET /health [admin]": {
+  "status": 200,
+  "kind": "text/html"
+ },
+ "GET /ping [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "message"
+ },
+ "GET /ping [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "message"
+ },
+ "GET /ping [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "message"
+ },
+ "GET /user/book [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/book [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/book [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/book/:id [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/book/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/book/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/:id [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/:id/check-duplicates/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/:id/check-duplicates/:user_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/bundle/:id/check-duplicates/:user_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/bundle/:id/check-prebook/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/:id/check-prebook/:user_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/bundle/:id/check-prebook/:user_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/bundle/:id/check-purchase/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/:id/check-purchase/:user_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/bundle/:id/check-purchase/:user_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/bundle/:id/course-access [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/:id/course-access [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/:id/course-access [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/all-courses [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/all-courses [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/all-courses [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/all-courses/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/all-courses/:user_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/all-courses/:user_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/bundle-courses [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/bundle-courses [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/bundle-courses [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/bundle-courses/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/bundle-courses/:user_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/bundle-courses/:user_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/my-bundles [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/my-bundles [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/my-bundles [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/my-bundles/:user_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/bundle/my-bundles/:user_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/my-bundles/:user_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/slug/:slug [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/slug/:slug [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/bundle/slug/:slug [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/coupon/check-applicability [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/coupon/check-applicability [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/coupon/check-applicability [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/coupon/course/:course_id [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success,totalCoupons",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/coupon/course/:course_id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success,totalCoupons",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/coupon/course/:course_id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success,totalCoupons",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/:courseId/announcements [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/:courseId/announcements [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/:courseId/announcements [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/:courseId/routine [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,message,success",
+  "success": true,
+  "data": "null"
+ },
+ "GET /user/course/:courseId/routine [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,message,success",
+  "success": true,
+  "data": "null"
+ },
+ "GET /user/course/:courseId/routine [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,message,success",
+  "success": true,
+  "data": "null"
+ },
+ "GET /user/course/dashboard/:id [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/dashboard/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/dashboard/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/directory [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/directory [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/directory [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/featured [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/featured [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/featured [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/getAnalytics [anon]": {
+  "status": 401,
+  "kind": "text/plain"
+ },
+ "GET /user/course/getAnalytics [student]": {
+  "status": 403,
+  "kind": "text/plain"
+ },
+ "GET /user/course/getAnalytics [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/getEnrolledCoursesByUserId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/getEnrolledCoursesByUserId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/getEnrolledCoursesByUserId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/getfull/:id [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "active_coupons,attached_books,books_total,chapters,chips,course_outline,description,enrolled,faq_list,feedback_list,id,instructor_list,intro_video,isActive,isTaken,isWishList,is_free,is_live,language,maxModuleSerialProgress,prebooking,price,serial,short_description,slug,success,tags,title,total_seats,url,x_price,you_get",
+  "success": true
+ },
+ "GET /user/course/getfull/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "active_coupons,attached_books,books_total,chapters,chips,course_outline,description,enrolled,faq_list,feedback_list,id,instructor_list,intro_video,isActive,isTaken,isWishList,is_free,is_live,language,maxModuleSerialProgress,prebooking,price,serial,short_description,slug,success,tags,title,total_seats,url,x_price,you_get",
+  "success": true
+ },
+ "GET /user/course/getfull/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "active_coupons,attached_books,books_total,chapters,chips,course_outline,description,enrolled,faq_list,feedback_list,id,instructor_list,intro_video,isActive,isTaken,isWishList,is_free,is_live,language,maxModuleSerialProgress,prebooking,price,serial,short_description,slug,success,tags,title,total_seats,url,x_price,you_get",
+  "success": true
+ },
+ "GET /user/course/getfull/slug/:slug [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "data,success",
+  "success": false,
+  "data": "null"
+ },
+ "GET /user/course/getfull/slug/:slug [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "data,success",
+  "success": false,
+  "data": "null"
+ },
+ "GET /user/course/getfull/slug/:slug [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "data,success",
+  "success": false,
+  "data": "null"
+ },
+ "GET /user/course/getMyCourses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/getMyCourses [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/getMyCourses [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/getMyCoursesPage [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/getMyCoursesPage [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/getMyCoursesPage [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/getRanking/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/getRanking/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "data,error,success",
+  "success": false,
+  "error": "object",
+  "data": "object"
+ },
+ "GET /user/course/getRanking/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "data,error,success",
+  "success": false,
+  "error": "object",
+  "data": "object"
+ },
+ "GET /user/course/getScore/:id [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/getScore/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/getScore/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/getWishList [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/getWishList [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/getWishList [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/list [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/list [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/course/my-dashboard [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/course/my-dashboard [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/course/my-dashboard [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/faq/list [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/faq/list [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/faq/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/feedback/check/:userId/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/feedback/check/:userId/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/feedback/check/:userId/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "feedback,hasSubmitted,success",
+  "success": true
+ },
+ "GET /user/feedback/course/:courseId [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "courseId,feedbacks,limit,page,success,total,totalPages",
+  "success": true
+ },
+ "GET /user/feedback/course/:courseId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "courseId,feedbacks,limit,page,success,total,totalPages",
+  "success": true
+ },
+ "GET /user/feedback/course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "courseId,feedbacks,limit,page,success,total,totalPages",
+  "success": true
+ },
+ "GET /user/feedback/course/:courseId/average [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "averageRating,courseId,ratingDistribution,success,totalFeedbacks",
+  "success": true
+ },
+ "GET /user/feedback/course/:courseId/average [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "averageRating,courseId,ratingDistribution,success,totalFeedbacks",
+  "success": true
+ },
+ "GET /user/feedback/course/:courseId/average [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "averageRating,courseId,ratingDistribution,success,totalFeedbacks",
+  "success": true
+ },
+ "GET /user/instructor/list [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/instructor/list [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/instructor/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module-feedback/:moduleId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module-feedback/:moduleId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "null"
+ },
+ "GET /user/module-feedback/:moduleId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "null"
+ },
+ "GET /user/module-feedback/:moduleId/stats [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module-feedback/:moduleId/stats [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/module-feedback/:moduleId/stats [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/module-feedback/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module-feedback/course/:courseId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module-feedback/course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module-feedback/reasons [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module-feedback/reasons [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module-feedback/reasons [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/get/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/get/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/get/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/live [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/live [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/live [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/live/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/live/:courseId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/live/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/module/mostRecent/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/mostRecent/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/mostRecent/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/quiz/:id/attempt [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/quiz/:id/attempt [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/module/quiz/:id/attempt [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/module/recentViews/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/recentViews/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/module/recentViews/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/notification/count [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/notification/count [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "GET /user/notification/count [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "GET /user/notification/list [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/notification/list [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "GET /user/notification/list [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "GET /user/payment/audit-logs [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/payment/audit-logs [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/payment/audit-logs [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/payment/history [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/payment/history [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/payment/history [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/profile [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/profile [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/profile [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/streak/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/streak/course/:courseId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/streak/course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/streak/dashboard [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/streak/dashboard [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/streak/dashboard [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /user/streak/leaderboard/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /user/streak/leaderboard/:courseId [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/streak/leaderboard/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/testimonial/list [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/testimonial/list [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /user/testimonial/list [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/course [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/export [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/full [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/full [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/full [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/getFull-enhanced [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/getFull-enhanced [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/getFull-enhanced [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/user-progress/:userId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/user-progress/:userId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/:courseId/user-progress/:userId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/import/:importId/status [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/import/:importId/status [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/import/:importId/status [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "code,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/import/template [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/import/template [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/course/import/template [admin]": {
+  "status": 200,
+  "kind": "text/csv"
+ },
+ "GET /v2/admin/featured [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/featured [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/featured [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/module/:moduleId/quiz/export [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/module/:moduleId/quiz/export [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/module/:moduleId/quiz/export [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "code,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/courses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/courses [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/courses [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/teacher/:teacherId/full [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/full [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/full [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /v2/admin/teacher/:teacherId/stats [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/stats [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/:teacherId/stats [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "GET /v2/admin/teacher/by-course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/by-course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/by-course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/teacher/list-full [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/list-full [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/list-full [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/teacher/list-names [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/list-names [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/list-names [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "GET /v2/admin/teacher/search [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/search [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "GET /v2/admin/teacher/search [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "count,data,success",
+  "success": true,
+  "data": "array"
+ },
+ "POST /admin/admins [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins/:id/promote [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins/:id/promote [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins/:id/promote [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins/:id/set-password [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins/:id/set-password [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/admins/:id/set-password [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/announcement/create/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/announcement/create/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/announcement/create/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/announcement/send/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/announcement/send/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/announcement/send/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/connect-google [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/connect-google [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/connect-google [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/forgot-password [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/forgot-password [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/forgot-password [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/google [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/google [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/google [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/link-phone [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/link-phone [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/link-phone [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/login [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/login [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/login [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/logout [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/logout [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/logout [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/register [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/register [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/register [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/request-otp [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/request-otp [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/request-otp [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/reset-password [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/reset-password [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/reset-password [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/verify-otp [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/verify-otp [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/auth/verify-otp [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/book [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/book [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/book [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /admin/book/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/book/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/book/course/:courseId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle/:id/courses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle/:id/courses [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle/:id/courses [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle/enhanced [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle/enhanced [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/bundle/enhanced [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/chapter/create/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/chapter/create/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/chapter/create/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon/:id/bundles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon/:id/bundles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon/:id/bundles [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon/:id/courses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon/:id/courses [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/coupon/:id/courses [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/course/create [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/course/create [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/course/create [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /admin/faq/create [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/faq/create [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/faq/create [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/module-feedback/reasons [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/module-feedback/reasons [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/module-feedback/reasons [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/module/create/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/module/create/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/module/create/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/audit-logs [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/audit-logs [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/audit-logs [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "POST /admin/payment/reconcile [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/reconcile [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/reconcile [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/reconcile/:sslcommerz_tran_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/reconcile/:sslcommerz_tran_id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/payment/reconcile/:sslcommerz_tran_id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/roles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/roles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/roles [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/roles/users/:userId/roles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/roles/users/:userId/roles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/roles/users/:userId/roles [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/routine/create/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/routine/create/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/routine/create/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/streak/bulk-update [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/streak/bulk-update [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/streak/bulk-update [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "message,success",
+  "success": false
+ },
+ "POST /admin/streak/manual-update [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/streak/manual-update [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/streak/manual-update [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "message,success",
+  "success": false
+ },
+ "POST /admin/teacher/create [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/teacher/create [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/teacher/create [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /admin/testimonial/create [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/testimonial/create [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/testimonial/create [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/testimonial/manual-review [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/testimonial/manual-review [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/testimonial/manual-review [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users/:id/access [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users/:id/access [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users/:id/access [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users/:id/reset-password [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users/:id/reset-password [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /admin/users/:id/reset-password [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /register [anon]": {
+  "status": 410,
+  "kind": "json",
+  "keys": "code,error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /register [student]": {
+  "status": 410,
+  "kind": "json",
+  "keys": "code,error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /register [admin]": {
+  "status": 410,
+  "kind": "json",
+  "keys": "code,error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/coupon/apply [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/coupon/apply [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/coupon/apply [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/coupon/validate [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/coupon/validate [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/coupon/validate [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/applyCoupon/:course_id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/applyCoupon/:course_id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/applyCoupon/:course_id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/enroll-free/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/enroll-free/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/enroll-free/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/prebook/:id [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/prebook/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/prebook/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/prebookBundle/:id [anon]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/prebookBundle/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/course/prebookBundle/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/feedback [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/feedback [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/feedback [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module-feedback [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module-feedback [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module-feedback [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/addProgress/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/addProgress/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/module/addProgress/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/module/quiz/:id/submit [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/quiz/:id/submit [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/quiz/:id/submit [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/recordView [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/recordView [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/module/recordView [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/notification/bellIconClicked [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/notification/bellIconClicked [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/notification/bellIconClicked [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/notification/markAllAsRead [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/notification/markAllAsRead [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/notification/markAllAsRead [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/notification/markAsRead/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/notification/markAsRead/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/notification/markAsRead/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /user/payment/audit-logs [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/audit-logs [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "POST /user/payment/audit-logs [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "POST /user/payment/cancel [anon]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/cancel"
+ },
+ "POST /user/payment/cancel [student]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/cancel"
+ },
+ "POST /user/payment/cancel [admin]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/cancel"
+ },
+ "POST /user/payment/failure [anon]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/failure"
+ },
+ "POST /user/payment/failure [student]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/failure"
+ },
+ "POST /user/payment/failure [admin]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/failure"
+ },
+ "POST /user/payment/initiate-for-book/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/initiate-for-book/:id [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/initiate-for-book/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/initiate-for-bundle/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/initiate-for-bundle/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "books_included,books_total,coupon_applied,discount_amount,final_price,original_price,success",
+  "success": true
+ },
+ "POST /user/payment/initiate-for-bundle/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "books_included,books_total,coupon_applied,discount_amount,final_price,original_price,success",
+  "success": true
+ },
+ "POST /user/payment/initiate/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/initiate/:id [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "books_included,books_total,coupon_applied,discount_amount,final_price,original_price,success",
+  "success": true
+ },
+ "POST /user/payment/initiate/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "books_included,books_total,coupon_applied,discount_amount,final_price,original_price,success",
+  "success": true
+ },
+ "POST /user/payment/ipn [anon]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/ipn [student]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/ipn [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/payment/redirect/:status [anon]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "undefined/post-payment/1"
+ },
+ "POST /user/payment/redirect/:status [student]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "undefined/post-payment/1"
+ },
+ "POST /user/payment/redirect/:status [admin]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "undefined/post-payment/1"
+ },
+ "POST /user/payment/redirectNew/ [anon]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "undefined"
+ },
+ "POST /user/payment/redirectNew/ [student]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "undefined"
+ },
+ "POST /user/payment/redirectNew/ [admin]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "undefined"
+ },
+ "POST /user/payment/success [anon]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/success"
+ },
+ "POST /user/payment/success [student]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/success"
+ },
+ "POST /user/payment/success [admin]": {
+  "status": 302,
+  "kind": "redirect",
+  "location": "http://frontend.test/post-payment/success"
+ },
+ "POST /user/streak/complete-lesson [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /user/streak/complete-lesson [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "message,success",
+  "success": false
+ },
+ "POST /user/streak/complete-lesson [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "message,success",
+  "success": false
+ },
+ "POST /v2/admin/course [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/course [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/course [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "POST /v2/admin/course/import [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/course/import [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/course/import [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/featured [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/featured [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/featured [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/featured/reorder [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/featured/reorder [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/featured/reorder [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/:moduleId/duplicate [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/:moduleId/duplicate [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/:moduleId/duplicate [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "code,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/:moduleId/quiz/import [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/:moduleId/quiz/import [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/:moduleId/quiz/import [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/batch-update [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/batch-update [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/module/batch-update [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/:teacherId/assign-course [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/:teacherId/assign-course [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/:teacherId/assign-course [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/:teacherId/image [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/:teacherId/image [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/:teacherId/image [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/bulk-assign-course [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/bulk-assign-course [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/bulk-assign-course [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/create-enhanced [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/create-enhanced [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/create-enhanced [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/replace-course-instructors [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/replace-course-instructors [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/teacher/replace-course-instructors [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/upload/delete [anon]": {
+  "status": 401,
+  "kind": "text/plain"
+ },
+ "POST /v2/admin/upload/delete [student]": {
+  "status": 403,
+  "kind": "text/plain"
+ },
+ "POST /v2/admin/upload/delete [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/admin/upload/presigned-url [anon]": {
+  "status": 401,
+  "kind": "text/plain"
+ },
+ "POST /v2/admin/upload/presigned-url [student]": {
+  "status": 403,
+  "kind": "text/plain"
+ },
+ "POST /v2/admin/upload/presigned-url [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/user/upload/presigned-url [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/user/upload/presigned-url [student]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "POST /v2/user/upload/presigned-url [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/admins/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/admins/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/admins/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/announcement/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/announcement/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/announcement/update/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/auth/setProfile [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/auth/setProfile [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "PUT /admin/auth/setProfile [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "PUT /admin/book/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/book/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/book/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "PUT /admin/book/orders/:id/status [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/book/orders/:id/status [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/book/orders/:id/status [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/enhanced/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/enhanced/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/enhanced/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/prebooking/:prebookingId/utm [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/prebooking/:prebookingId/utm [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/bundle/prebooking/:prebookingId/utm [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/chapter/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/chapter/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/chapter/update/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/coupon/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/coupon/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/coupon/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/prebooking/:prebookingId/utm [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/prebooking/:prebookingId/utm [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/prebooking/:prebookingId/utm [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/update/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "object"
+ },
+ "PUT /admin/course/updateFull/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/updateFull/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/course/updateFull/:id [admin]": {
+  "status": 500,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/faq/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/faq/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/faq/update/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "PUT /admin/module-feedback/reasons/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/module-feedback/reasons/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/module-feedback/reasons/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/module/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/module/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/module/update/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/roles/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/roles/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/roles/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/routine/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/routine/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/routine/update/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/teacher/reset-password/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/teacher/reset-password/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/teacher/reset-password/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "PUT /admin/teacher/update/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/teacher/update/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/teacher/update/:id [admin]": {
+  "status": 500,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/testimonial/update/:feedbackId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/testimonial/update/:feedbackId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/testimonial/update/:feedbackId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/users/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/users/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /admin/users/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/feedback/:feedbackId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/feedback/:feedbackId [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/feedback/:feedbackId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile/password [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile/password [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile/password [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile/phone [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile/phone [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /user/profile/phone [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "PUT /v2/admin/course/:courseId/full [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId/full [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId/full [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "PUT /v2/admin/course/:courseId/modules/reorder [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId/modules/reorder [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/course/:courseId/modules/reorder [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/featured/:itemType/:itemId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/featured/:itemType/:itemId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/featured/:itemType/:itemId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/module/:moduleId/update-enhanced [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/module/:moduleId/update-enhanced [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/module/:moduleId/update-enhanced [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/teacher/:teacherId/toggle-active [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/teacher/:teacherId/toggle-active [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/teacher/:teacherId/toggle-active [admin]": {
+  "status": 422,
+  "kind": "json",
+  "keys": "code,details,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/teacher/:teacherId/update-enhanced [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/teacher/:teacherId/update-enhanced [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PUT /v2/admin/teacher/:teacherId/update-enhanced [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "object"
+ },
+ "PATCH /admin/module-feedback/reasons/reorder [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PATCH /admin/module-feedback/reasons/reorder [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PATCH /admin/module-feedback/reasons/reorder [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "PATCH /admin/routine/toggle-active/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "PATCH /admin/routine/toggle-active/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "PATCH /admin/routine/toggle-active/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/admins/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/admins/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/admins/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/announcement/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/announcement/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/announcement/delete/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/book/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/book/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/book/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /admin/book/course/:courseId/:bookId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/book/course/:courseId/:bookId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/book/course/:courseId/:bookId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /admin/bundle/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/bundle/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/bundle/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /admin/bundle/prebooking/:prebookingId/utm [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/bundle/prebooking/:prebookingId/utm [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/bundle/prebooking/:prebookingId/utm [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/chapter/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/chapter/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/chapter/delete/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id/bundles [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id/bundles [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id/bundles [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id/courses [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id/courses [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/coupon/:id/courses [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/course/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/course/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/course/delete/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /admin/course/prebooking/:prebookingId/utm [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/course/prebooking/:prebookingId/utm [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/course/prebooking/:prebookingId/utm [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/faq/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/faq/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/faq/delete/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /admin/feedback/:feedbackId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/feedback/:feedbackId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/feedback/:feedbackId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/module-feedback/reasons/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/module-feedback/reasons/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/module-feedback/reasons/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/module/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/module/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/module/delete/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/roles/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/roles/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/roles/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/roles/users/:userId/roles/:roleId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/roles/users/:userId/roles/:roleId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/roles/users/:userId/roles/:roleId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/routine/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/routine/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/routine/delete/:id [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/teacher/delete/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/teacher/delete/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/teacher/delete/:id [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /admin/testimonial/delete/:feedbackId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/testimonial/delete/:feedbackId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/testimonial/delete/:feedbackId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/users/:id [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/users/:id [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/users/:id [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/users/:id/access [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/users/:id/access [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /admin/users/:id/access [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/feedback/:feedbackId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/feedback/:feedbackId [student]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/feedback/:feedbackId [admin]": {
+  "status": 400,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/module-feedback/:moduleId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/module-feedback/:moduleId [student]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/module-feedback/:moduleId [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/module/recentViews/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/module/recentViews/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /user/module/recentViews/:courseId [admin]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/course/:courseId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /v2/admin/featured/:itemType/:itemId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/featured/:itemType/:itemId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/featured/:itemType/:itemId [admin]": {
+  "status": 200,
+  "kind": "json",
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
+ },
+ "DELETE /v2/admin/teacher/:teacherId/course/:courseId [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/teacher/:teacherId/course/:courseId [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/teacher/:teacherId/course/:courseId [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "code,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/teacher/:teacherId/image [anon]": {
+  "status": 401,
+  "kind": "json",
+  "keys": "error,message,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/teacher/:teacherId/image [student]": {
+  "status": 403,
+  "kind": "json",
+  "keys": "error,message,required,success",
+  "success": false,
+  "error": "string"
+ },
+ "DELETE /v2/admin/teacher/:teacherId/image [admin]": {
+  "status": 404,
+  "kind": "json",
+  "keys": "code,error,success,timestamp",
+  "success": false,
+  "error": "string"
+ }
+}

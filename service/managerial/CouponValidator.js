@@ -347,6 +347,7 @@ class CouponValidator {
       /[<>'"&]/, // XSS patterns - prevent < > ' " &
       /[;\\]/, // SQL injection patterns - prevent ; and \
       /^\s*$/, // Only whitespace
+      // eslint-disable-next-line no-control-regex -- intentionally rejects control characters
       /[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/, // Control characters (except tab, newline, carriage return)
     ];
 

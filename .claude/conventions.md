@@ -107,7 +107,12 @@ swagger/user.yaml           OpenAPI spec — the contract reference
 
 ## Verification
 
-- `npm run lint` — syntax check only (`node -c app.js && node -c index.js`).
+- `npm run lint` — `node -c` syntax check + ESLint (`eslint.config.js`: errors on undefined
+  names/unreachable code; unused vars are warnings, the cleanup backlog).
+- `npm test` — throwaway local Postgres (`test/helpers/testDb.js`, port 54329, `.testdb/`),
+  migrations applied from `database/migrations/`; outbound network is blocked in tests.
+  `test/contract/routes.test.js` snapshots every endpoint (status, envelope keys, `error`
+  type, plus leaked connections / open transactions). `npm run test:update` regenerates it.
 - `npm run dev` (nodemon → `dev.js`) for local dev, port 8000 (`PORT` env, default 8000).
 - `npm start` (`node index.js`) for production-mode run.
 - Keep `swagger/user.yaml` and the relevant `docs/*.md` in sync with route changes.

@@ -112,13 +112,13 @@ class CourseService extends Service {
       var result = await this.query(`select * from ${this.table} order by serial`, []);
       return result;
     } else if (access && !access.hasGlobalAccess) {
-      var result = await this.query(`select * from ${this.table} where id = ANY($1) order by serial`, [access.courseIds]);
+      result = await this.query(`select * from ${this.table} where id = ANY($1) order by serial`, [access.courseIds]);
       return result;
     } else if (req.body.user_type === managerialAccountTypes.admin) {
-      var result = await this.query(`select * from ${this.table} order by serial`, []);
+      result = await this.query(`select * from ${this.table} order by serial`, []);
       return result;
     } else {
-      var result = await this.query(`select t.* from ${this.table} t, instructor i where t.id=i.course_id and i.user_id = $1 order by serial`, [req.body.user_id]);
+      result = await this.query(`select t.* from ${this.table} t, instructor i where t.id=i.course_id and i.user_id = $1 order by serial`, [req.body.user_id]);
       return result;
     }
   };

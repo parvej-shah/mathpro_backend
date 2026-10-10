@@ -67,28 +67,28 @@ class RoutineService extends Service {
             var result = await this.query(query, []);
             return result;
         } else if (access && !access.hasGlobalAccess) {
-            var query = `
+            query = `
                 SELECT r.*, c.title as course_title 
                 FROM ${this.table} r
                 JOIN course c ON r.course_id = c.id
                 WHERE r.course_id = ANY($1)
                 ORDER BY r.course_id ASC, r.week_number ASC
             `;
-            var result = await this.query(query, [access.courseIds]);
+            result = await this.query(query, [access.courseIds]);
             return result;
         } else {
             // Fallback: legacy type-based check
             if (req.body.user_type === managerialAccountTypes.admin) {
-                var query = `
+                query = `
                     SELECT r.*, c.title as course_title 
                     FROM ${this.table} r
                     JOIN course c ON r.course_id = c.id
                     ORDER BY r.course_id ASC, r.week_number ASC
                 `;
-                var result = await this.query(query, []);
+                result = await this.query(query, []);
                 return result;
             } else {
-                var query = `
+                query = `
                     SELECT r.*, c.title as course_title 
                     FROM ${this.table} r
                     JOIN course c ON r.course_id = c.id
@@ -96,7 +96,7 @@ class RoutineService extends Service {
                     WHERE i.user_id = $1
                     ORDER BY r.course_id ASC, r.week_number ASC
                 `;
-                var result = await this.query(query, [req.body.user_id]);
+                result = await this.query(query, [req.body.user_id]);
                 return result;
             }
         }

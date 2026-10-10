@@ -7,8 +7,13 @@
     "start": "node index.js",
     "dev": "nodemon dev.js",
     "dev_stable": "node dev_stable.js",
-    "postinstall": "echo 'Installing canvas is optional - using polyfill if not available'",
-    "lint": "node -c app.js && node -c index.js && echo '✅ Basic syntax check passed'"
+    "lint:syntax": "node -c app.js && node -c index.js && echo '✅ Basic syntax check passed'",
+    "lint:eslint": "eslint .",
+    "lint": "npm run lint:syntax && npm run lint:eslint",
+    "test": "node test/prepare.js && node --test --test-concurrency=1 --require ./test/setup.js \"test/**/*.test.js\"",
+    "test:update": "node test/prepare.js && UPDATE_SNAPSHOTS=1 node --test --test-concurrency=1 --require ./test/setup.js \"test/**/*.test.js\"",
+    "test:db:stop": "node -e \"require('./test/helpers/testDb').stopCluster()\"",
+    "postinstall": "echo 'Installing canvas is optional - using polyfill if not available'"
   },
   "author": "",
   "license": "ISC",
@@ -43,7 +48,11 @@
     "merge-images": "^2.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^7.3.1"
   },
   "engines": {
     "node": ">=16.0.0"

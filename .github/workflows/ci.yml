@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Syntax check + ESLint (ESLint fails only on errors; warnings are the cleanup backlog).
+      - run: npm run lint
+
+      # Ubuntu runners ship PostgreSQL server binaries in /usr/lib/postgresql/<ver>/bin;
+      # test/helpers/testDb.js starts a private throwaway cluster from them on port 54329.
+      - run: npm test
+
+      - name: Duplication report (informational)
+        run: npx --yes jscpd@4 --min-lines 10 --min-tokens 80 --reporters consoleFull --silent routes controllers service util middleware app.js || true

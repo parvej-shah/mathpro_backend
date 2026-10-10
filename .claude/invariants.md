@@ -59,7 +59,6 @@ they want it broken. Otherwise: **stop and flag, do not proceed.**
 
 ## Platform
 
-- Plain CommonJS Node (Express 4), **no TypeScript**. `npm run lint` is a syntax check only
-  (`node -c app.js && node -c index.js`) — it does not catch logic errors. Don't rely on it
-  as a substitute for testing the actual route.
+- Plain CommonJS Node (Express 4), **no TypeScript**. `npm run lint` (syntax + ESLint) does
+  not catch logic errors; `npm test` (contract snapshot over every endpoint) must also pass.
 - Never commit code with a syntax error — `npm run lint` must pass.

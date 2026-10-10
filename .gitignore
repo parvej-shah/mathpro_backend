@@ -6,3 +6,4 @@ dev.js
 .DS_Store
 .codex
 .kiro
+.testdb/
