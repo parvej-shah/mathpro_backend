@@ -135,30 +135,33 @@ class BundleService extends Service {
   };
 
   delete = async (id) => {
+    // All statements must run on one client: BEGIN/COMMIT sent through the pool land on
+    // arbitrary connections, which strands an open transaction (and its row locks) on a
+    // pooled connection that other requests then use.
+    const client = await this.getClient();
     try {
-      // Start transaction
-      await this.query("BEGIN");
+      await client.query("BEGIN");
 
       // First remove all course associations
-      await this.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [id]);
+      await client.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [id]);
 
       // Remove any prebookings for this bundle
-      await this.query(`DELETE FROM prebooking_bundle WHERE bundle_id = $1`, [
+      await client.query(`DELETE FROM prebooking_bundle WHERE bundle_id = $1`, [
         id,
       ]);
 
       // Then remove the bundle
-      const query = `DELETE FROM bundle WHERE id = $1 RETURNING *`;
-      const result = await this.query(query, [id]);
+      const result = await client.query(`DELETE FROM bundle WHERE id = $1 RETURNING *`, [id]);
 
-      // Commit transaction
-      await this.query("COMMIT");
+      await client.query("COMMIT");
 
-      return result;
+      return { success: true, data: result.rows, rowCount: result.rowCount };
     } catch (error) {
-      await this.query("ROLLBACK");
+      await client.query("ROLLBACK");
       console.error("Bundle delete error:", error);
       return { success: false, error: error.message };
+    } finally {
+      client.release();
     }
   };
 
@@ -360,35 +363,33 @@ class BundleService extends Service {
 
   // Add courses to bundle
   addCoursesToBundle = async (bundleId, courseIds) => {
+    // One client for the whole transaction (see delete above).
+    const client = await this.getClient();
     try {
-      // Start transaction
-      await this.query("BEGIN");
+      await client.query("BEGIN");
 
       // First remove existing courses
-      await this.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [
+      await client.query(`DELETE FROM bundle_course WHERE bundle_id = $1`, [
         bundleId,
       ]);
 
       // Add new courses
-      if (courseIds && courseIds.length > 0) {
-        const promises = courseIds.map((courseId) =>
-          this.query(
-            `INSERT INTO bundle_course (bundle_id, course_id) VALUES ($1, $2)`,
-            [bundleId, courseId]
-          )
+      for (const courseId of courseIds || []) {
+        await client.query(
+          `INSERT INTO bundle_course (bundle_id, course_id) VALUES ($1, $2)`,
+          [bundleId, courseId]
         );
-
-        await Promise.all(promises);
       }
 
-      // Commit transaction
-      await this.query("COMMIT");
+      await client.query("COMMIT");
 
       return { success: true, data: { bundleId, courseIds } };
     } catch (error) {
-      await this.query("ROLLBACK");
+      await client.query("ROLLBACK");
       console.error("Add courses to bundle error:", error);
       return { success: false, error: error.message };
+    } finally {
+      client.release();
     }
   };
 

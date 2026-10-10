@@ -166,26 +166,19 @@ class StreakService extends Service {
      * Bulk update streaks (for maintenance/corrections)
      */
     async bulkUpdateStreaks(updates) {
-        const client = await this.getClient();
-        
+        // Each updateStreak() runs its own transaction, so the batch is not atomic: an error
+        // stops the loop and earlier updates stay applied. (It used to also hold an idle
+        // extra connection open for the whole loop, for nothing.)
         try {
-            await client.query('BEGIN');
-            
             const results = [];
             for (const update of updates) {
                 const { userId, courseId, activityDate } = update;
                 const result = await this.updateStreak(userId, courseId, activityDate);
                 results.push(result);
             }
-            
-            await client.query('COMMIT');
             return { success: true, results };
-            
         } catch (error) {
-            await client.query('ROLLBACK');
             return { success: false, error: error.message };
-        } finally {
-            client.release();
         }
     }
 }
