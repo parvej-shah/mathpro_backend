@@ -1,7 +1,9 @@
 const Controller = require("../base").Controller;
 const { respond, catchAs } = require('../base');
 const FeedbackService = require("../../service/feedback").FeedbackService;
-const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
+const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { rejectCourseFilter } = require('../shared/courseAccess');
+const { csvText } = require('../../util/csv');
 
 const feedbackService = new FeedbackService();
 
@@ -86,23 +88,8 @@ class FeedbackController extends Controller {
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'feedback', 'manage');
 
-        if (courseId) {
-            const parsedCourseId = parseInt(courseId);
-            if (isNaN(parsedCourseId)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid course ID'
-                });
-            }
-            const courseAccess = await checkCourseAccess(userId, 'feedback', 'manage', parsedCourseId);
-            if (!courseAccess.hasAccess) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'NO_COURSE_ACCESS',
-                    message: 'No access to this course'
-                });
-            }
-        }
+        const rejected = await rejectCourseFilter(res, userId, courseId, 'feedback', 'manage');
+        if (rejected) return rejected;
         
         const result = await feedbackService.getFeedbackStats(courseId, access);
         return respond(res, result);
@@ -146,23 +133,8 @@ class FeedbackController extends Controller {
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'feedback', 'manage');
 
-        if (courseId) {
-            const parsedCourseId = parseInt(courseId);
-            if (isNaN(parsedCourseId)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid course ID'
-                });
-            }
-            const courseAccess = await checkCourseAccess(userId, 'feedback', 'manage', parsedCourseId);
-            if (!courseAccess.hasAccess) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'NO_COURSE_ACCESS',
-                    message: 'No access to this course'
-                });
-            }
-        }
+        const rejected = await rejectCourseFilter(res, userId, courseId, 'feedback', 'manage');
+        if (rejected) return rejected;
 
         const filters = {
             courseId,
@@ -212,12 +184,12 @@ class FeedbackController extends Controller {
                 const csvRow = [
                     row.id,
                     row.course_id,
-                    `"${(row.course_name || '').replace(/"/g, '""')}"`,
+                    csvText(row.course_name),
                     row.user_id,
-                    `"${(row.user_name || '').replace(/"/g, '""')}"`,
+                    csvText(row.user_name),
                     row.user_email || '',
                     row.rating,
-                    `"${(row.comment || '').replace(/"/g, '""')}"`,
+                    csvText(row.comment),
                     row.category || '',
                     row.created_at,
                     row.updated_at

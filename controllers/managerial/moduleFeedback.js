@@ -2,6 +2,8 @@ const Controller = require('../base').Controller;
 const { respond, catchAs } = require('../base');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 const { getAccessibleCourseIds, checkCourseAccess, resolveCourseId } = require('../../util/courseAccessHelpers');
+const { noCourseAccess, rejectCourseFilter } = require('../shared/courseAccess');
+const { csvText } = require('../../util/csv');
 
 const moduleFeedbackService = new ModuleFeedbackService();
 
@@ -35,13 +37,7 @@ class ModuleFeedbackController extends Controller {
         }
 
         const access = await checkCourseAccess(userId, 'feedback', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res);
 
         const result = await moduleFeedbackService.getModuleStats(parseInt(moduleId));
         return respond(res, result);
@@ -64,13 +60,7 @@ class ModuleFeedbackController extends Controller {
         // Check access to the course
         const userId = req.user.id;
         const access = await checkCourseAccess(userId, 'feedback', 'manage', parseInt(courseId));
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res);
 
         const result = await moduleFeedbackService.getCourseReport(parseInt(courseId));
         return respond(res, result);
@@ -88,23 +78,8 @@ class ModuleFeedbackController extends Controller {
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'feedback', 'manage');
 
-        if (courseId) {
-            const parsedCourseId = parseInt(courseId);
-            if (isNaN(parsedCourseId)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid course ID'
-                });
-            }
-            const courseAccess = await checkCourseAccess(userId, 'feedback', 'manage', parsedCourseId);
-            if (!courseAccess.hasAccess) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'NO_COURSE_ACCESS',
-                    message: 'No access to this course'
-                });
-            }
-        }
+        const rejected = await rejectCourseFilter(res, userId, courseId, 'feedback', 'manage');
+        if (rejected) return rejected;
 
         const result = await moduleFeedbackService.getAllFeedback({
             courseId: courseId ? parseInt(courseId) : null,
@@ -131,23 +106,8 @@ class ModuleFeedbackController extends Controller {
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'feedback', 'manage');
 
-        if (courseId) {
-            const parsedCourseId = parseInt(courseId);
-            if (isNaN(parsedCourseId)) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid course ID'
-                });
-            }
-            const courseAccess = await checkCourseAccess(userId, 'feedback', 'manage', parsedCourseId);
-            if (!courseAccess.hasAccess) {
-                return res.status(403).json({
-                    success: false,
-                    error: 'NO_COURSE_ACCESS',
-                    message: 'No access to this course'
-                });
-            }
-        }
+        const rejected = await rejectCourseFilter(res, userId, courseId, 'feedback', 'manage');
+        if (rejected) return rejected;
 
         const result = await moduleFeedbackService.getAllFeedback({
             courseId: courseId ? parseInt(courseId) : null,
@@ -179,13 +139,13 @@ class ModuleFeedbackController extends Controller {
             headers.join(','),
             ...result.data.map(row => [
                 row.module_id,
-                `"${(row.module_title || '').replace(/"/g, '""')}"`,
-                `"${(row.chapter_title || '').replace(/"/g, '""')}"`,
-                `"${(row.course_title || '').replace(/"/g, '""')}"`,
+                csvText(row.module_title),
+                csvText(row.chapter_title),
+                csvText(row.course_title),
                 row.reaction,
                 row.reason || '',
-                `"${(row.comment || '').replace(/"/g, '""')}"`,
-                `"${(row.user_name || '').replace(/"/g, '""')}"`,
+                csvText(row.comment),
+                csvText(row.user_name),
                 row.created_at
             ].join(','))
         ];
