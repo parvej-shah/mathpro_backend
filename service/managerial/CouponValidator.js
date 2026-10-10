@@ -118,24 +118,7 @@ class CouponValidator {
     }
 
     // Validate usage limit (optional)
-    const usageLimit = normalized.usageLimit !== undefined 
-      ? normalized.usageLimit 
-      : normalized.usage_limit;
-    
-    if (usageLimit !== undefined) {
-      if (usageLimit !== null) {
-        const limit = parseInt(usageLimit);
-        if (isNaN(limit) || limit <= 0) {
-          errors.push("Usage limit must be a positive integer");
-        } else if (limit > 1000000) {
-          errors.push("Usage limit cannot exceed 1,000,000");
-        } else {
-          sanitizedData.usageLimit = limit;
-        }
-      } else {
-        sanitizedData.usageLimit = null; // Unlimited usage
-      }
-    }
+    this.checkUsageLimit(normalized, errors, sanitizedData);
 
     // Validate start and end times (required)
     // Accept both start_time/startTime and end_time/endTime
@@ -159,25 +142,8 @@ class CouponValidator {
       }
     }
 
-    // Validate status (optional)
-    if (normalized.status !== undefined) {
-      const validStatuses = ["active", "inactive", "expired"];
-      if (!validStatuses.includes(normalized.status)) {
-        errors.push("Status must be one of: active, inactive, expired");
-      } else {
-        sanitizedData.status = normalized.status;
-      }
-    }
-
-    // Validate metadata (optional)
-    if (normalized.metadata !== undefined) {
-      const metadataValidation = this.validateMetadata(normalized.metadata);
-      if (!metadataValidation.valid) {
-        errors.push(metadataValidation.error);
-      } else {
-        sanitizedData.metadata = metadataValidation.metadata;
-      }
-    }
+    // Validate status and metadata (optional)
+    this.checkStatusAndMetadata(normalized, errors, sanitizedData);
 
     return {
       valid: errors.length === 0,
@@ -252,6 +218,39 @@ class CouponValidator {
     }
 
     // Validate usage limit (optional)
+    this.checkUsageLimit(normalized, errors, sanitizedData);
+
+    // Validate end time (optional for updates)
+    const endTime = normalized.endTime !== undefined 
+      ? normalized.endTime 
+      : normalized.end_time;
+    
+    if (endTime !== undefined) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      const time = parseInt(endTime);
+
+      if (isNaN(time) || time <= currentTime) {
+        errors.push("End time must be a valid future timestamp");
+      } else {
+        sanitizedData.endTime = time;
+      }
+    }
+
+    // Validate status and metadata (optional)
+    this.checkStatusAndMetadata(normalized, errors, sanitizedData);
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      data: sanitizedData,
+    };
+  }
+
+  /**
+   * Shared by validateCreate/validateUpdate: usage limit (usageLimit or usage_limit).
+   * null means unlimited. Appends to `errors` / fills `sanitizedData` in place.
+   */
+  static checkUsageLimit(normalized, errors, sanitizedData) {
     const usageLimit = normalized.usageLimit !== undefined 
       ? normalized.usageLimit 
       : normalized.usage_limit;
@@ -270,24 +269,13 @@ class CouponValidator {
         sanitizedData.usageLimit = null; // Unlimited usage
       }
     }
+  }
 
-    // Validate end time (optional for updates)
-    const endTime = normalized.endTime !== undefined 
-      ? normalized.endTime 
-      : normalized.end_time;
-    
-    if (endTime !== undefined) {
-      const currentTime = Math.floor(Date.now() / 1000);
-      const time = parseInt(endTime);
-
-      if (isNaN(time) || time <= currentTime) {
-        errors.push("End time must be a valid future timestamp");
-      } else {
-        sanitizedData.endTime = time;
-      }
-    }
-
-    // Validate status (optional)
+  /**
+   * Shared by validateCreate/validateUpdate: optional status and metadata.
+   * Appends to `errors` / fills `sanitizedData` in place.
+   */
+  static checkStatusAndMetadata(normalized, errors, sanitizedData) {
     if (normalized.status !== undefined) {
       const validStatuses = ["active", "inactive", "expired"];
       if (!validStatuses.includes(normalized.status)) {
@@ -297,7 +285,6 @@ class CouponValidator {
       }
     }
 
-    // Validate metadata (optional)
     if (normalized.metadata !== undefined) {
       const metadataValidation = this.validateMetadata(normalized.metadata);
       if (!metadataValidation.valid) {
@@ -306,12 +293,6 @@ class CouponValidator {
         sanitizedData.metadata = metadataValidation.metadata;
       }
     }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      data: sanitizedData,
-    };
   }
 
   /**
