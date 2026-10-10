@@ -4,7 +4,6 @@
  */
 
 const ModuleService = require('./module').ModuleService;
-const ErrorHandler = require('../../util/errorHandler');
 const { validateGoogleDriveLink } = require('../../util/googleDriveValidation');
 
 class ModuleServiceV2 extends ModuleService {

@@ -1,6 +1,6 @@
 const Service = require('../base').Service;
 const bcrypt=require('bcryptjs');
-const { normalizeContact, isValidEmail, isValidPhone } = require('../../util/authHelpers');
+const { normalizeContact, isValidPhone } = require('../../util/authHelpers');
 const AuthService = require('../managerial/auth').AuthService;
 
 const authService = new AuthService();

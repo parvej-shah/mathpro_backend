@@ -1,4 +1,4 @@
-var csv = require("csv-express");
+require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
 const CourseService =
   require("../../service/managerial/course.js").CourseService;

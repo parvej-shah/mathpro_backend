@@ -5,13 +5,9 @@ const {
   calculateGrowthPercentage,
 } = require("../../../util/analyticsV2/dateUtils");
 const {
-  buildDateFilter,
-  buildIdFilter,
-  buildPagination,
   buildOrderBy,
   validateLimit,
   validateOffset,
-  combineConditions,
   buildDateGrouping,
 } = require("../../../util/analyticsV2/queryUtils");
 

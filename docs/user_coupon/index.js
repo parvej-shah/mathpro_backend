@@ -14,8 +14,5 @@ module.exports = {
     "/user/coupon/course/{course_id}": {
       ...couponGetActive,
     },
-    "/user/coupon/check-applicability": {
-      ...couponCheckApplicability,
-    },
   },
 };

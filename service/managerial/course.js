@@ -404,28 +404,6 @@ class CourseService extends Service {
     return await this.takes(user_id, course_id, 0, null, null);
   };
 
-  getScore = async (reqBody, id) => {
-    if (!reqBody.user_id) return { success: true, data: { score: 0 } };
-    else {
-      //SELECT MAX(p.module_id) as mid from progress p,module m,chapter c where p.user_id=6 and p.module_id=m.id and m.chapter_id=c.id and c.course_id=5
-      var query = `
-        SELECT COALESCE(SUM(module_points.point), 0) as s
-        FROM (
-          SELECT p.module_id, MAX(p.point) as point
-          FROM progress p
-          JOIN module m ON p.module_id = m.id
-          JOIN chapter c ON m.chapter_id = c.id
-          WHERE p.user_id = $1 AND c.course_id = $2
-          GROUP BY p.module_id
-        ) module_points
-      `;
-      var params = [reqBody.user_id, id];
-      var result = await this.query(query, params);
-      if (!result.success || result.data[0].s === null)
-        return { success: true, data: { score: 0 } };
-      return { success: true, data: { score: parseInt(result.data[0].s) } };
-    }
-  };
   getUserProgress = async (user_id, course_id) => {
     const query = `SELECT
     chapter.id AS chapter_id,
@@ -1033,63 +1011,6 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
     return result;
   };
 
-  prebookBundle = async (bundle_id, reqObj) => {
-    // console.log(bundle_id, reqObj)
-    const utm = reqObj.utm || null;
-
-    // Build params array first to determine correct parameter indices
-    var params = [
-      bundle_id,
-      reqObj.email,
-      reqObj.name,
-      reqObj.phone,
-      parseInt(Date.now() / 1000),
-    ];
-    if (reqObj.auth) params.push(reqObj.user_id);
-    if (utm) params.push(utm);
-
-    // Build parameter placeholders dynamically based on actual params array
-    let paramPlaceholders = "$1,$2,$3,$4,$5";
-    let paramIndex = 6;
-    if (reqObj.auth) {
-      paramPlaceholders += `,$${paramIndex}`;
-      paramIndex++;
-    }
-    if (utm) {
-      paramPlaceholders += `,$${paramIndex}`;
-    }
-
-    var query = `INSERT INTO prebooking_bundle(bundle_id,email,name,phone,timestamp${reqObj.auth ? ",user_id" : ""
-      }${utm ? ",utm" : ""}) VALUES (${paramPlaceholders})`;
-
-    var result = await this.query(query, params);
-    if (result.success) {
-      var bundleQuery = `SELECT * FROM bundle WHERE id=$1`;
-      var bundleParams = [bundle_id];
-      var bundleResult = await this.query(bundleQuery, bundleParams);
-      if (bundleResult.data.length > 0) {
-        try {
-          await Promise.all([
-            messagingService.sendMessage(
-              reqObj.phone,
-              `Dear ${reqObj.name}, welcome to Math Pro, you have successfully prebooked the "${bundleResult.data[0].title}" bundle, we'll send your coupon when the course gets available.`
-            ),
-            messagingService.sendMail(
-              reqObj.email,
-              "Prebooking Successful !!!",
-              `
-                            <div>
-                                Dear ${reqObj.name}, welcome to Math Pro, you have successfully prebooked the "${bundleResult.data[0].title}" bundle, we'll send your coupon when the course gets available.
-                            </div>
-                        `
-            ),
-          ]);
-        } catch { }
-      }
-    }
-    return result;
-  };
-
   getWishList = async (user_id) => {
     var query = `SELECT c.* from course c,prebooking p where p.user_id = $1 and p.course_id=c.id`;
     var params = [user_id];
@@ -1182,85 +1103,6 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
     var params = [name, data, parseInt(Date.now() / 1000)];
     var result = await this.query(query, params);
     return result;
-  };
-
-  getMyCoursesPage = async (user_id) => {
-    var result = await Promise.all([
-      this.query(
-        `
-                SELECT 
-                    p.user_id AS progress_user_id, 
-                    p.module_id AS progress_module_id, 
-                    p.point AS progress_point, 
-                    p.timestamp AS progress_timestamp,
-                
-                    m.id AS module_id, 
-                    m.chapter_id AS module_chapter_id,
-                    m.title AS module_title, 
-                    m.description AS module_description, 
-                    m.metadata AS module_metadata, 
-                    m.data AS module_data, 
-                    m.is_live AS module_is_live, 
-                    m.is_free AS module_is_free, 
-                    m.serial AS module_serial, 
-                    m.score AS module_score,
-                
-                    ch.id AS chapter_id, 
-                    ch.course_id AS chapter_course_id,
-                    ch.title AS chapter_title, 
-                    ch.serial_string AS chapter_serial_string, 
-                    ch.chips_list AS chapter_chips_list, 
-                    ch.is_free AS chapter_is_free, 
-                    ch.is_live AS chapter_is_live,
-                    ch.serial AS chapter_serial,
-                
-                    co.id AS course_id, 
-                    co.title AS course_title, 
-                    co.x_price AS course_x_price, 
-                    co.price AS course_price, 
-                    co.language AS course_language, 
-                    co.enrolled AS course_enrolled, 
-                    co.you_get AS course_you_get, 
-                    co.chips AS course_chips, 
-                    co.short_description AS course_short_description,
-                    co.instructor_list AS course_instructor_list,
-                    co.faq_list AS course_faq_list, 
-                    co.description AS course_description, 
-                    co.feedback_list AS course_feedback_list, 
-                    co.intro_video AS course_intro_video, 
-                    co.is_live AS course_is_live, 
-                    co.serial AS course_serial, 
-                    co.url AS course_url,
-                    (select count(module.id) from module,chapter where module.chapter_id=chapter.id and chapter.course_id=co.id) AS n_modules
-                
-                FROM 
-                    progress p
-                JOIN 
-                    module m ON p.module_id = m.id
-                JOIN 
-                    chapter ch ON m.chapter_id = ch.id
-                JOIN 
-                    course co ON ch.course_id = co.id
-                WHERE 
-                    p.user_id = $1
-                ORDER BY 
-                    p.timestamp DESC
-                LIMIT 1;
-        
-            `,
-        [user_id]
-      ),
-      this.query(`select * from course where is_live=$1`, [true]),
-      this.getWishList(user_id),
-    ]);
-    return {
-      success: result[0].success && result[1].success && result[2].success,
-      data: {
-        continueWatching: result[0].data.length > 0 ? result[0].data[0] : {},
-        allLiveCourses: result[1].data,
-        wishlist: result[2].data,
-      },
-    };
   };
 
   // Purpose-built dashboard listing: the user's enrolled individual courses and
@@ -1382,18 +1224,6 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
         bundle_purchases,
       },
     };
-  };
-
-  getMyCourses = async (user_id) => {
-    var result = await this.query(
-      `
-                select c.* 
-                from course c, takes t
-                where t.user_id=$1 and t.course_id=c.id
-            `,
-      [user_id]
-    );
-    return result;
   };
 
   getEnrolledCoursesByUserId = async (user_id) => {

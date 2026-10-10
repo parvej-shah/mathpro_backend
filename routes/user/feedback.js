@@ -25,9 +25,6 @@ router.route("/").post(authenticateUser, feedbackWriteLimit, feedbackController.
 // Check user feedback status
 router.route("/check/:userId/:courseId").get(authenticateUser, feedbackWriteLimit, feedbackController.checkFeedbackStatus);
 
-// Get course average rating (public)
-router.route("/course/:courseId/average").get(feedbackReadLimit, feedbackController.getCourseAverage);
-
 // Get course feedbacks (public, paginated)
 router.route("/course/:courseId").get(feedbackReadLimit, feedbackController.getCourseFeedbacks);
 

@@ -9,7 +9,6 @@
 const ChapterService = require('./chapter').ChapterService;
 const ModuleService = require('./module').ModuleService;
 const CourseServiceV2 = require('./courseV2').CourseServiceV2;
-const ErrorHandler = require('../../util/errorHandler');
 const { Readable } = require('stream');
 const presignedUploadService = require('../../util/presignedUploadService');
 

@@ -39,11 +39,6 @@ class CourseController extends Controller {
         return res.status(result.success ? 200 : 400).json(result)
     }
 
-    getScore = async (req, res) => {
-        var result = await courseService.getScore(req.body, parseInt(req.params.id))
-        return res.status(result.success ? 200 : 400).json(result)
-    }
-
     getRanking = async (req, res) => {
         var result = await courseService.getRanking(req.body, parseInt(req.params.id), parseInt(req.query.offset), parseInt(req.query.limit))
         return res.status(result.success ? 200 : 400).json(result)
@@ -69,31 +64,6 @@ class CourseController extends Controller {
         return res.status(result.success ? 200 : 400).json(result)
     }
 
-    prebookBundle = async (req, res) => {
-        // Validate required fields
-        const { email, name, phone } = req.body;
-        const missingFields = [];
-
-        if (!email || email.trim() === '') missingFields.push('email');
-        if (!name || name.trim() === '') missingFields.push('name');
-        if (!phone || phone.trim() === '') missingFields.push('phone');
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                success: false,
-                error: `Missing required fields: ${missingFields.join(', ')}. Name, email, and phone are required for prebooking.`
-            });
-        }
-
-        var result = await courseService.prebookBundle(req.params.id, req.body)
-        return res.status(result.success ? 200 : 400).json(result)
-    }
-
-    getWishList = async (req, res) => {
-        var result = await courseService.getWishList(req.body.user_id)
-        return res.status(result.success ? 200 : 400).json(result)
-    }
-
     applyCoupon = async (req, res) => {
         var result = await courseService.applyCoupon(req.body.user_id, req.params.course_id, req.body.coupon)
         return res.status(result.success ? 200 : 400).json(result)
@@ -104,19 +74,9 @@ class CourseController extends Controller {
         return res.status(result.success ? 200 : 400).json(result)
     }
 
-    getMyCoursesPage = async (req, res) => {
-        var result = await courseService.getMyCoursesPage(req.body.user_id)
-        return res.status(result.success ? 200 : 400).json(result)
-    }
-
     // Dashboard listing: enrolled courses + purchased bundles with thumbnails/slug/progress.
     getMyDashboard = async (req, res) => {
         var result = await courseService.getMyDashboard(req.body.user_id)
-        return res.status(result.success ? 200 : 400).json(result)
-    }
-
-    getMyCourses = async (req, res) => {
-        var result = await courseService.getMyCourses(req.body.user_id)
         return res.status(result.success ? 200 : 400).json(result)
     }
 

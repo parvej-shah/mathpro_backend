@@ -13,9 +13,6 @@ module.exports = {
         '/user/feedback/check/{userId}/{courseId}': {
             ...feedbackCheck
         },
-        '/user/feedback/course/{courseId}/average': {
-            ...feedbackCourseAverage
-        },
         '/user/feedback/course/{courseId}': {
             ...feedbackCourseList
         },

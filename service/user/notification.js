@@ -68,12 +68,6 @@ class NotificationService extends Service {
     var result = await this.query(query, params);
     return result;
   }
-  async bellIconClicked(userId, courseId) {
-    var query = `update notification set is_bell_icon_clicked = $1 where user_id = $2 and course_id = $3`;
-    var params = [true, userId, courseId];
-    var result = await this.query(query, params);
-    return result;
-  }
 
   async getNotificationBellIcounUnclickedCount(userId, courseId) {
     var query = `select count(*) from notification where user_id = $1 and course_id = $2 and is_read = $3`;

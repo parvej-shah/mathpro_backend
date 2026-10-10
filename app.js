@@ -1,6 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const docs = require("./docs");
 const requestMetrics = require("./middleware/requestMetrics");
 
@@ -23,27 +22,16 @@ const userFaqRoutes = require("./routes/user/faq");
 const adminTestimonialRoutes = require("./routes/managerial/testimonial");
 const userTestimonialRoutes = require("./routes/user/testimonial");
 
-const { user } = require("pg/lib/defaults");
-
 const app = express();
 
 // Trust proxy for accurate IP addresses (important for Cloudflare and rate limiting)
 app.set('trust proxy', true);
 
 app.use(requestMetrics);
-app.use(cors());
-app.use(bodyParser.urlencoded({ limit: "15mb", extended: true }));
-app.use(bodyParser.json({ limit: "15mb" }));
+app.use(cors({ origin: "*", credentials: true }));
+app.use(express.urlencoded({ limit: "15mb", extended: true }));
+app.use(express.json({ limit: "15mb" }));
 
-app.use(
-  cors({
-    // origin: "http://localhost:5174", // Your frontend URL
-    origin: "*",
-    credentials: true,
-  })
-);
-
-const port = process.env.PORT || 8000;
 let swaggerUiAssets = null;
 let swaggerDocsHandler = null;
 

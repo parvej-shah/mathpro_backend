@@ -1,6 +1,6 @@
 const { Controller } = require('../base');
 const { RoleService } = require('../../service/managerial/roleService');
-const { PERMISSIONS, getAssignablePermissions, getAssignablePermissionsByResource } = require('../../util/permissions');
+const { getAssignablePermissions, getAssignablePermissionsByResource } = require('../../util/permissions');
 
 const roleService = new RoleService();
 

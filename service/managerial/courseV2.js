@@ -6,7 +6,6 @@
 const Service = require('../base').Service;
 const ModuleService = require('./module').ModuleService;
 const ChapterService = require('./chapter').ChapterService;
-const ErrorHandler = require('../../util/errorHandler');
 const { v4: uuidv4 } = require('uuid');
 
 class CourseServiceV2 extends Service {

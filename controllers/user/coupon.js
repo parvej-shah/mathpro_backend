@@ -271,45 +271,6 @@ class UserCouponController extends Controller {
     }
   };
 
-  /**
-   * Check if a coupon is applicable to a specific course
-   * GET /user/coupon/check-applicability
-   * Query: coupon_id, course_id
-   */
-  checkCouponApplicability = async (req, res) => {
-    try {
-      const { coupon_id, course_id } = req.query;
-
-      if (!coupon_id || !course_id) {
-        return res.status(400).json({
-          success: false,
-          error: "Coupon ID and course ID are required",
-        });
-      }
-
-      const couponId = parseInt(coupon_id);
-      const courseId = parseInt(course_id);
-
-      if (isNaN(couponId) || isNaN(courseId)) {
-        return res.status(400).json({
-          success: false,
-          error: "Valid coupon ID and course ID are required",
-        });
-      }
-
-      const result = await couponService.isCouponApplicableToCourse(
-        couponId,
-        courseId
-      );
-      return res.status(result.success ? 200 : 400).json(result);
-    } catch (error) {
-      console.error("Error in check coupon applicability controller:", error);
-      return res.status(500).json({
-        success: false,
-        error: "Internal server error",
-      });
-    }
-  };
 }
 
 module.exports = { UserCouponController };

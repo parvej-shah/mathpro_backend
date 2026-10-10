@@ -2674,27 +2674,6 @@
   "success": true,
   "data": "array"
  },
- "GET /user/coupon/check-applicability [anon]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/coupon/check-applicability [student]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/coupon/check-applicability [admin]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
  "GET /user/coupon/course/:course_id [anon]": {
   "status": 200,
   "kind": "json",
@@ -2896,48 +2875,6 @@
   "success": false,
   "data": "null"
  },
- "GET /user/course/getMyCourses [anon]": {
-  "status": 401,
-  "kind": "json",
-  "keys": "error,message,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/course/getMyCourses [student]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
- },
- "GET /user/course/getMyCourses [admin]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
- },
- "GET /user/course/getMyCoursesPage [anon]": {
-  "status": 401,
-  "kind": "json",
-  "keys": "error,message,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/course/getMyCoursesPage [student]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
- },
- "GET /user/course/getMyCoursesPage [admin]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
- },
  "GET /user/course/getRanking/:id [anon]": {
   "status": 401,
   "kind": "json",
@@ -2960,48 +2897,6 @@
   "success": false,
   "error": "object",
   "data": "object"
- },
- "GET /user/course/getScore/:id [anon]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
- },
- "GET /user/course/getScore/:id [student]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
- },
- "GET /user/course/getScore/:id [admin]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,success",
-  "success": true,
-  "data": "object"
- },
- "GET /user/course/getWishList [anon]": {
-  "status": 401,
-  "kind": "json",
-  "keys": "error,message,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/course/getWishList [student]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
- },
- "GET /user/course/getWishList [admin]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "data,rowCount,success",
-  "success": true,
-  "data": "array"
  },
  "GET /user/course/list [anon]": {
   "status": 200,
@@ -3102,24 +2997,6 @@
   "status": 200,
   "kind": "json",
   "keys": "courseId,feedbacks,limit,page,success,total,totalPages",
-  "success": true
- },
- "GET /user/feedback/course/:courseId/average [anon]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "averageRating,courseId,ratingDistribution,success,totalFeedbacks",
-  "success": true
- },
- "GET /user/feedback/course/:courseId/average [student]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "averageRating,courseId,ratingDistribution,success,totalFeedbacks",
-  "success": true
- },
- "GET /user/feedback/course/:courseId/average [admin]": {
-  "status": 200,
-  "kind": "json",
-  "keys": "averageRating,courseId,ratingDistribution,success,totalFeedbacks",
   "success": true
  },
  "GET /user/instructor/list [anon]": {
@@ -3331,27 +3208,6 @@
   "keys": "data,success",
   "success": true,
   "data": "object"
- },
- "GET /user/module/recentViews/:courseId [anon]": {
-  "status": 401,
-  "kind": "json",
-  "keys": "error,message,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/module/recentViews/:courseId [student]": {
-  "status": 403,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "GET /user/module/recentViews/:courseId [admin]": {
-  "status": 403,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
  },
  "GET /user/notification/count [anon]": {
   "status": 401,
@@ -4902,27 +4758,6 @@
   "success": false,
   "error": "string"
  },
- "POST /user/course/prebookBundle/:id [anon]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "POST /user/course/prebookBundle/:id [student]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "POST /user/course/prebookBundle/:id [admin]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
  "POST /user/feedback [anon]": {
   "status": 401,
   "kind": "json",
@@ -5027,27 +4862,6 @@
   "keys": "error,success",
   "success": false,
   "error": "string"
- },
- "POST /user/notification/bellIconClicked [anon]": {
-  "status": 401,
-  "kind": "json",
-  "keys": "error,message,success",
-  "success": false,
-  "error": "string"
- },
- "POST /user/notification/bellIconClicked [student]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "object"
- },
- "POST /user/notification/bellIconClicked [admin]": {
-  "status": 400,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "object"
  },
  "POST /user/notification/markAllAsRead [anon]": {
   "status": 401,
@@ -6844,27 +6658,6 @@
  },
  "DELETE /user/module-feedback/:moduleId [admin]": {
   "status": 404,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "DELETE /user/module/recentViews/:courseId [anon]": {
-  "status": 401,
-  "kind": "json",
-  "keys": "error,message,success",
-  "success": false,
-  "error": "string"
- },
- "DELETE /user/module/recentViews/:courseId [student]": {
-  "status": 403,
-  "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
- },
- "DELETE /user/module/recentViews/:courseId [admin]": {
-  "status": 403,
   "kind": "json",
   "keys": "error,success",
   "success": false,

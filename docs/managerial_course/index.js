@@ -242,44 +242,6 @@ module.exports = {
         },
       },
     },
-    "/user/course/getScore/{id}": {
-      get: {
-        security: [
-          {
-            bearerAuth: [],
-          },
-        ],
-        tags: ["Rewarding System"], // operation's tag
-        description: "Get current score of a user within a course", // short desc
-        operationId: "usergetScoreOfACourse", // unique operation id
-        parameters: [
-          {
-            in: "path",
-            name: "id",
-            required: true,
-          },
-        ], // expected params
-        // requestBody: {
-        //   // expected request body
-        //   content: {
-        //     // content-type
-        //     "application/json": {
-        //       schema: {
-        //         $ref: "#/components/schemas/managerial_", // todo input data model
-        //       },
-        //     },
-        //   },
-        // },
-        responses: {
-          200: {
-            description: "score object",
-          },
-          400: {
-            description: "Failed",
-          },
-        },
-      },
-    },
     "/user/course/getRanking/{id}": {
       get: {
         security: [
@@ -484,30 +446,6 @@ module.exports = {
                 },
               },
             },
-          },
-        },
-      },
-    },
-    "/user/course/getWishList": {
-      get: {
-        security: [
-          {
-            bearerAuth: [],
-          },
-        ],
-        tags: ["Course Management"], // operation's tag
-        description: "Get wishlist of a user", // short desc
-        operationId: "usersGetWishList", // unique operation id
-        parameters: [], // expected params
-        requestBody: {
-          // expected request body
-        },
-        responses: {
-          200: {
-            description: "Wishes",
-          },
-          400: {
-            description: "Failed",
           },
         },
       },

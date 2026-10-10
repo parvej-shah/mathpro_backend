@@ -1,4 +1,4 @@
-const { authenticateAdmin, requirePermission } = require("../../service/authMiddleWares");
+const { requirePermission } = require("../../service/authMiddleWares");
 const { PERMISSIONS } = require("../../util/permissions");
 const router = require("express-promise-router")();
 const { UserController } = require("../../controllers/managerial/user");

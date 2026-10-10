@@ -1,5 +1,5 @@
 const { Service } = require('../base');
-const { PERMISSIONS, isValidPermission, validatePermissions, getAssignablePermissions } = require('../../util/permissions');
+const { isValidPermission, validatePermissions, getAssignablePermissions } = require('../../util/permissions');
 const { SUPER_ADMIN_ROLE_NAME } = require('../../util/constants');
 
 /**

@@ -4,7 +4,6 @@
  */
 
 const TeacherService = require('./teacher').TeacherService;
-const ErrorHandler = require('../../util/errorHandler');
 const bcrypt = require('bcryptjs');
 const { managerialAccountTypes } = require('../../util/constants');
 const MessagingService = require('../../service/messagingService').MessagingService;

@@ -1,5 +1,4 @@
 const Service = require('../base').Service;
-const { default: axios } = require('axios');
 const bcrypt=require('bcryptjs');
 const { managerialAccountTypes } = require('../../util/constants');
 const MessagingService=require('../../service/messagingService').MessagingService

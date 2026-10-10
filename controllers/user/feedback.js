@@ -82,21 +82,6 @@ class FeedbackController extends Controller {
         }
     };
 
-    // Get course average rating
-    getCourseAverage = async (req, res) => {
-        try {
-            const { courseId } = req.params;
-            const result = await feedbackService.getCourseAverage(courseId);
-            return res.status(result.success ? 200 : 400).json(result);
-        } catch (error) {
-            console.error('Error in getCourseAverage:', error);
-            return res.status(500).json({
-                success: false,
-                error: 'Internal server error'
-            });
-        }
-    };
-
     // Get course feedbacks (paginated)
     getCourseFeedbacks = async (req, res) => {
         try {

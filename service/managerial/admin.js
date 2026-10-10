@@ -1,9 +1,7 @@
 const Service = require('../base').Service;
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
 const MessagingService = require('../messagingService').MessagingService;
 const {
-    detectContactType,
     isValidEmail,
     isValidPhone,
     normalizeContact

@@ -1,4 +1,3 @@
-const express = require('express');
 const router = require("express-promise-router")();
 const StreakController = require('../../controllers/user/streakController');
 const { authenticateUser } = require('../../service/authMiddleWares');

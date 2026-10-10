@@ -1,4 +1,4 @@
-const csv = require("csv-express");
+require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
 const { BundleService } = require("../../service/managerial/bundle");
 

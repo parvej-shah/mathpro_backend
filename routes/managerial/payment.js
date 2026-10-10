@@ -1,7 +1,6 @@
 const router = require("express-promise-router")();
 const PaymentController = require("../../controllers/user/payment").PaymentController;
 const { requireScopeAccess } = require("../../service/authMiddleWares");
-const { PERMISSIONS } = require("../../util/permissions");
 const { actorLimiter } = require("../../util/rateLimitPolicies");
 
 const paymentController = new PaymentController();

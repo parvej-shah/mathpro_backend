@@ -99,62 +99,6 @@ class FeedbackService extends Service {
         }
     };
 
-    // Get course average rating
-    getCourseAverage = async (courseId) => {
-        try {
-            const avgResult = await this.query(
-                `SELECT 
-                    AVG(rating)::NUMERIC(3,2) as average_rating,
-                    COUNT(*) as total_feedbacks
-                 FROM feedbacks 
-                 WHERE course_id = $1`,
-                [courseId]
-            );
-
-            const distributionResult = await this.query(
-                `SELECT 
-                    rating,
-                    COUNT(*) as count
-                 FROM feedbacks 
-                 WHERE course_id = $1
-                 GROUP BY rating
-                 ORDER BY rating DESC`,
-                [courseId]
-            );
-
-            if (avgResult.success && distributionResult.success) {
-                const avgData = avgResult.data[0];
-                const distribution = {};
-                
-                // Initialize all ratings to 0
-                for (let i = 1; i <= 5; i++) {
-                    distribution[i] = 0;
-                }
-
-                // Fill in actual counts
-                distributionResult.data.forEach(row => {
-                    distribution[row.rating] = parseInt(row.count);
-                });
-
-                return {
-                    success: true,
-                    courseId,
-                    averageRating: parseFloat(avgData.average_rating) || 0,
-                    totalFeedbacks: parseInt(avgData.total_feedbacks),
-                    ratingDistribution: distribution
-                };
-            }
-
-            return avgResult;
-        } catch (error) {
-            console.error('Error getting course average:', error);
-            return {
-                success: false,
-                error: 'Internal server error'
-            };
-        }
-    };
-
     // Get course feedbacks with pagination
     getCourseFeedbacks = async (courseId, page = 1, limit = 10) => {
         try {

@@ -34,9 +34,4 @@ router
   .route("/course/:course_id")
   .get(couponPublicLimit, userCouponController.getActiveCouponsForCourse);
 
-// Check coupon applicability to course (public endpoint for frontend validation)
-router
-  .route("/check-applicability")
-  .get(couponPublicLimit, userCouponController.checkCouponApplicability);
-
 module.exports = router;

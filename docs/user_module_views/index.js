@@ -8,10 +8,6 @@ module.exports = {
         '/user/module/recordView': {
             ...recordView
         },
-        '/user/module/recentViews/{courseId}': {
-            get: getRecentViews.get,
-            delete: clearRecentViews.delete
-        },
         '/user/module/mostRecent/{courseId}': {
             ...getMostRecent
         }

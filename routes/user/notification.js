@@ -22,7 +22,6 @@ router
     notificationLimit,
     notificationController.getNotificationBellIcounUnclickedCount
   );
-router.route("/bellIconClicked").post(authenticateUser, notificationLimit, notificationController.bellIconClicked);
 router.route("/markAsRead/:id").post(authenticateUser, notificationLimit, notificationController.markAsRead);
 
 module.exports=router

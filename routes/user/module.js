@@ -34,8 +34,6 @@ router.route("/live/:courseId").get(userAuthMiddleWare, moduleReadLimit, moduleC
 
 // Module views routes
 router.route("/recordView").post(userAuthMiddleWare, moduleWriteLimit, moduleViewsController.recordView);
-router.route("/recentViews/:courseId").get(userAuthMiddleWare, moduleReadLimit, moduleViewsController.getRecentViews);
 router.route("/mostRecent/:courseId").get(userAuthMiddleWare, moduleReadLimit, moduleViewsController.getMostRecent);
-router.route("/recentViews/:courseId").delete(userAuthMiddleWare, moduleWriteLimit, moduleViewsController.clearRecentViews);
 
 module.exports=router

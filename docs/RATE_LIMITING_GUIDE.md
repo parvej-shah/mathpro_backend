@@ -63,7 +63,6 @@ It is the reference for future route changes in this repo.
 - `POST /user/coupon/validate` - 10 per 15 min per user or IP
 - `POST /user/coupon/apply` - 10 per 15 min per user or IP
 - `GET /user/coupon/course/:course_id` - 60 per 15 min per IP
-- `GET /user/coupon/check-applicability` - 60 per 15 min per IP
 - Admin coupon CRUD and analytics endpoints use separate read/write caps:
   - read-heavy endpoints: 20 per 15 min per admin user + IP
   - write-heavy endpoints: 10 per 15 min per admin user + IP
@@ -71,8 +70,8 @@ It is the reference for future route changes in this repo.
 ### Public Reads
 
 - `GET /user/course/list`, `/featured`, `/directory` - 60 per 15 min per IP
-- `GET /user/course/getfull/*`, `/dashboard/*`, `/getScore/*`, `/getWishList`,
-  `/getMyCourses*`, `/routine`, `/announcements` - 30 per 15 min per user or IP
+- `GET /user/course/getfull/*`, `/dashboard/*`, `/routine`, `/announcements` - 30 per 15 min
+  per user or IP
 - `GET /user/instructor/list` - 30 per 15 min per IP
 - `GET /user/faq/list` - 30 per 15 min per IP
 - `GET /user/testimonial/list` - 30 per 15 min per IP
@@ -87,7 +86,7 @@ It is the reference for future route changes in this repo.
 - `GET /user/module/quiz/:id/attempt` - 30 per 15 min per user + IP
 - `POST /user/module/quiz/:id/submit` - 10 per 15 min per user + IP
 - `POST /user/module/recordView` - 10 per 15 min per user + IP
-- `GET /user/module/recentViews/*`, `/mostRecent/*` - 30 per 15 min per user + IP
+- `GET /user/module/mostRecent/*` - 30 per 15 min per user + IP
 
 ### Streaks
 

@@ -1,5 +1,4 @@
 const StreakService = require('../../service/streakService');
-const jwt = require('jsonwebtoken');
 
 class StreakController {
     constructor() {
