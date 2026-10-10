@@ -22,14 +22,6 @@ class AuthController extends Controller {
      */
     requestOTP = async (req, res) => {
         const { contact } = req.body;
-
-        if (!contact) {
-            return res.status(400).json({
-                success: false,
-                error: 'Phone number or email is required'
-            });
-        }
-
         const result = await authService.requestOTP(contact, 'registration');
         return respond(res, result);
     }
@@ -41,14 +33,6 @@ class AuthController extends Controller {
      */
     verifyOTP = async (req, res) => {
         const { contact, otp } = req.body;
-
-        if (!contact || !otp) {
-            return res.status(400).json({
-                success: false,
-                error: 'Contact and OTP are required'
-            });
-        }
-
         const result = await authService.verifyOTP(contact, otp, false);
         return respond(res, result);
     }
@@ -59,15 +43,6 @@ class AuthController extends Controller {
      * Body: { login: string, password: string, otp: string, name?: string }
      */
     register = async (req, res) => {
-        const { login, password, otp } = req.body;
-
-        if (!login || !password || !otp) {
-            return res.status(400).json({
-                success: false,
-                error: 'Login, password and OTP are required'
-            });
-        }
-
         const result = await authService.register(req.body, getDeviceInfo(req));
         return res.status(result.success ? 201 : 400).json(result);
     }
@@ -78,15 +53,6 @@ class AuthController extends Controller {
      * Body: { login: string, password: string }
      */
     login = async (req, res) => {
-        const { login, password } = req.body;
-
-        if (!login || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Login and password are required'
-            });
-        }
-
         const result = await authService.login(req.body, getDeviceInfo(req));
         return respond(res, result);
     }
@@ -97,15 +63,6 @@ class AuthController extends Controller {
      * Body: { id_token: string }
      */
     googleLogin = async (req, res) => {
-        const { id_token } = req.body;
-
-        if (!id_token) {
-            return res.status(400).json({
-                success: false,
-                error: 'Google id_token is required'
-            });
-        }
-
         const result = await authService.googleLogin(req.body, getDeviceInfo(req));
         return respond(res, result);
     }
@@ -116,15 +73,6 @@ class AuthController extends Controller {
      * Body: { phone: string, password: string, otp: string }
      */
     linkPhone = async (req, res) => {
-        const { phone, password, otp } = req.body;
-
-        if (!phone || !password || !otp) {
-            return res.status(400).json({
-                success: false,
-                error: 'Phone, password and OTP are required'
-            });
-        }
-
         const result = await authService.linkPhone(req.body.user_id, req.body);
         return respond(res, result);
     }
@@ -135,15 +83,6 @@ class AuthController extends Controller {
      * Body: { id_token: string }
      */
     connectGoogle = async (req, res) => {
-        const { id_token } = req.body;
-
-        if (!id_token) {
-            return res.status(400).json({
-                success: false,
-                error: 'Google id_token is required'
-            });
-        }
-
         const result = await authService.connectGoogle(req.body.user_id, req.body);
         return respond(res, result);
     }
@@ -173,14 +112,6 @@ class AuthController extends Controller {
      */
     requestPasswordResetOTP = async (req, res) => {
         const { contact } = req.body;
-
-        if (!contact) {
-            return res.status(400).json({
-                success: false,
-                error: 'Phone number or email is required'
-            });
-        }
-
         const result = await authService.requestOTP(contact, 'password_reset');
         return respond(res, result);
     }
@@ -192,14 +123,6 @@ class AuthController extends Controller {
      */
     resetPassword = async (req, res) => {
         const { contact, otp, newPassword } = req.body;
-        
-        if (!contact || !otp || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                error: 'Contact, OTP, and new password are required'
-            });
-        }
-        
         const result = await authService.resetPasswordWithOTP(contact, otp, newPassword);
         return respond(res, result);
     }
