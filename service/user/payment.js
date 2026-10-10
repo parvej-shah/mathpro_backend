@@ -183,9 +183,9 @@ class PaymentService extends Service {
         return this.query(query, params);
     }
 
-    // Called from the IPN after a successful course/bundle enrolment: turns the
-    // staged book selection into confirmed course_book_purchase rows (one per
-    // book). Idempotent — a replayed IPN inserts nothing new (unique index on
+    // Called from the IPN after a successful course/bundle enrolment (or for a standalone
+    // book purchase): turns the staged book selection into confirmed course_book_purchase
+    // rows (one per book). Idempotent — a replayed IPN inserts nothing new (unique index on
     // transaction_id+book_id). Safe to call when no selection was staged.
     fulfilBookSelection = async (transactionId) => {
         const staged = await this.query(
@@ -207,43 +207,45 @@ class PaymentService extends Service {
         const BookService = require('../managerial/book').BookService;
         const bookService = new BookService();
         const now = parseInt(Date.now() / 1000);
-        let fulfilled = 0;
 
-        for (const bookId of bookIds) {
-            // Price snapshot + the course this book is attributed to
-            const bookRow = await this.query(`select price from book where id = $1`, [bookId]);
-            const price = bookRow.success && bookRow.data.length > 0
-                ? parseInt(bookRow.data[0].price || 0)
-                : 0;
+        // All books of the order or none: a failed insert rolls back and throws, so the IPN
+        // reports it (a standalone book order is then FAILED, not a silent success).
+        return this.withTransaction(async (client) => {
+            let fulfilled = 0;
+            for (const bookId of bookIds) {
+                // Price snapshot + the course this book is attributed to
+                const bookRow = await client.query(`select price from book where id = $1`, [bookId]);
+                const price = bookRow.rows.length > 0 ? parseInt(bookRow.rows[0].price || 0) : 0;
 
-            let courseId = null;
-            let bundleId = null;
-            if (sel.item_type === 'BUNDLE') {
-                bundleId = sel.item_id;
-                const c = await bookService.courseForBundleBook(sel.item_id, bookId);
-                if (c.success && c.data.length > 0) courseId = c.data[0].course_id;
-            } else if (sel.item_type === 'BOOK') {
-                // standalone purchase — course_id and bundle_id both stay null
-            } else {
-                courseId = sel.item_id; // COURSE
+                let courseId = null;
+                let bundleId = null;
+                if (sel.item_type === 'BUNDLE') {
+                    bundleId = sel.item_id;
+                    const c = await bookService.courseForBundleBook(sel.item_id, bookId);
+                    if (c.success && c.data.length > 0) courseId = c.data[0].course_id;
+                } else if (sel.item_type === 'BOOK') {
+                    // standalone purchase — course_id and bundle_id both stay null
+                } else {
+                    courseId = sel.item_id; // COURSE
+                }
+
+                const ins = await client.query(
+                    `insert into course_book_purchase
+                        (user_id, course_id, bundle_id, book_id, amount_paid, transaction_id,
+                         ship_name, ship_phone, ship_address, ship_city, ship_postcode,
+                         fulfillment_status, timestamp)
+                     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)
+                     on conflict (transaction_id, book_id) do nothing`,
+                    [
+                        sel.user_id, courseId, bundleId, bookId, price, transactionId,
+                        sel.ship_name, sel.ship_phone, sel.ship_address, sel.ship_city, sel.ship_postcode,
+                        now
+                    ]
+                );
+                fulfilled += ins.rowCount;
             }
-
-            const ins = await this.query(
-                `insert into course_book_purchase
-                    (user_id, course_id, bundle_id, book_id, amount_paid, transaction_id,
-                     ship_name, ship_phone, ship_address, ship_city, ship_postcode,
-                     fulfillment_status, timestamp)
-                 values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)
-                 on conflict (transaction_id, book_id) do nothing`,
-                [
-                    sel.user_id, courseId, bundleId, bookId, price, transactionId,
-                    sel.ship_name, sel.ship_phone, sel.ship_address, sel.ship_city, sel.ship_postcode,
-                    now
-                ]
-            );
-            if (ins.success && ins.rowCount > 0) fulfilled += 1;
-        }
-        return { success: true, fulfilled };
+            return { success: true, fulfilled };
+        });
     }
 
     // One checkout flow for every purchasable item; CHECKOUT_ITEMS holds what differs.
