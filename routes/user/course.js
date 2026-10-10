@@ -47,7 +47,6 @@ const courseAnalyticsLimit = actorLimiter(
 router.route("/list").get(publicCourseReadLimit, courseController.list);
 router.route("/featured").get(publicCourseReadLimit, courseController.featured);
 router.route("/directory").get(publicCourseReadLimit, courseController.directory);
-router.route("/takes/:id").post(authenticateUser, courseWriteLimit, courseController.takes);
 router.route("/enroll-free/:id").post(authenticateUser, courseFreeEnrollLimit, courseController.enrollFree);
 router.route("/getfull/slug/:slug").get(optAuthenticateUser, authenticatedCourseReadLimit, courseController.getFullBySlug);
 router.route("/getfull/:id").get(optAuthenticateUser, authenticatedCourseReadLimit, courseController.getFull);

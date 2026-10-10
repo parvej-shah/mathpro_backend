@@ -97,8 +97,15 @@ class Service {
             return client;
         }
 
+        // The wrapper stays on this pooled client after release, so it must keep pg's full
+        // query() contract: pool.query() later calls client.query(text, values, callback) and
+        // waits for the callback. Dropping it hung that request forever and leaked the client.
         const originalQuery = client.query.bind(client);
-        client.query = async (query, params) => {
+        client.query = (query, params, callback) => {
+            if (typeof params === 'function' || typeof callback === 'function'
+                || (query && typeof query.submit === 'function')) {
+                return originalQuery(query, params, callback);
+            }
             return runTimedQuery(
                 originalQuery,
                 query,

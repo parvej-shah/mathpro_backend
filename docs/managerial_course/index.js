@@ -45,36 +45,6 @@ module.exports = {
         },
       },
     },
-    "/user/course/takes/{id}": {
-      post: {
-        security: [
-          {
-            bearerAuth: [],
-          },
-        ],
-        tags: ["Course Management"], // operation's tag
-        description: "Take a course", // short desc
-        operationId: "userCourseTakes", // unique operation id
-        parameters: [
-          {
-            in: "path",
-            name: "id",
-            required: true,
-          },
-        ], // expected params
-        requestBody: {
-          // expected request body
-        },
-        responses: {
-          200: {
-            description: "Course Taken",
-          },
-          400: {
-            description: "Course Take Failed",
-          },
-        },
-      },
-    },
     "/user/course/getfull/{id}": {
       get: {
         security: [
