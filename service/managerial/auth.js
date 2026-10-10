@@ -27,6 +27,26 @@ const OTP_MAX_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_SECONDS = 60;
 const OTP_DAILY_LIMIT = 5;
 
+// Who may request a code for each purpose: the account lookup, whether a match must exist,
+// and the reply when the rule isn't met.
+const OTP_ACCOUNT_RULES = {
+    registration: {
+        sql: `SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`,
+        mustExist: false,
+        refusal: 'An account already exists with this phone'
+    },
+    password_reset: {
+        sql: `SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`,
+        mustExist: true,
+        refusal: 'No account found with this phone'
+    },
+    phone_change: {
+        sql: `SELECT id FROM managerial_auth WHERE phone = $1`,
+        mustExist: false,
+        refusal: 'An account already exists with this phone'
+    }
+};
+
 const messagingService=new MessagingService()
 const roleService = new RoleService()
 
@@ -269,76 +289,15 @@ class AuthService extends Service {
                 };
             }
 
-            const contactColumn = 'phone';
-
-            if (purpose === 'registration') {
-                const existsResult = await this.query(
-                    `SELECT id FROM managerial_auth WHERE login = $1 OR ${contactColumn} = $1`,
-                    [value]
-                );
-                if (existsResult.data.length > 0) {
-                    return {
-                        success: false,
-                        error: `An account already exists with this ${contactType}`
-                    };
-                }
-            }
-
-            if (purpose === 'password_reset') {
-                const existsResult = await this.query(
-                    `SELECT id FROM managerial_auth WHERE login = $1 OR ${contactColumn} = $1`,
-                    [value]
-                );
-                if (existsResult.data.length === 0) {
-                    return {
-                        success: false,
-                        error: `No account found with this ${contactType}`
-                    };
-                }
-            }
-
-            if (purpose === 'phone_change') {
-                const existsResult = await this.query(
-                    `SELECT id FROM managerial_auth WHERE phone = $1`,
-                    [value]
-                );
-                if (existsResult.data.length > 0) {
-                    return {
-                        success: false,
-                        error: 'An account already exists with this phone'
-                    };
-                }
-            }
-
-            // Rate limiting: per-contact resend cooldown + daily cap.
             const nowSeconds = Math.floor(Date.now() / 1000);
-            const recentResult = await this.query(
-                `SELECT timestamp FROM otp
-                 WHERE ${contactColumn} = $1 AND purpose = $2
-                 ORDER BY timestamp DESC`,
-                [value, purpose]
-            );
-            const recent = recentResult.data || [];
-            if (recent.length > 0 && (nowSeconds - recent[0].timestamp) < OTP_RESEND_COOLDOWN_SECONDS) {
-                const wait = OTP_RESEND_COOLDOWN_SECONDS - (nowSeconds - recent[0].timestamp);
-                return {
-                    success: false,
-                    error: `Please wait ${wait}s before requesting another code`
-                };
-            }
-            const dayAgo = nowSeconds - 24 * 60 * 60;
-            const todayCount = recent.filter(r => r.timestamp >= dayAgo).length;
-            if (todayCount >= OTP_DAILY_LIMIT) {
-                return {
-                    success: false,
-                    error: 'Daily OTP limit reached. Please try again later.'
-                };
-            }
+            const refusal = await this.otpAccountRefusal(value, purpose)
+                || await this.otpRateLimitRefusal(value, purpose, nowSeconds);
+            if (refusal) return { success: false, error: refusal };
 
-            // Invalidate any prior unused OTPs for this contact+purpose (single active OTP).
+            // Invalidate any prior unused OTPs for this phone+purpose (single active OTP).
             await this.query(
                 `UPDATE otp SET is_used = true
-                 WHERE ${contactColumn} = $1 AND purpose = $2 AND is_used = false`,
+                 WHERE phone = $1 AND purpose = $2 AND is_used = false`,
                 [value, purpose]
             );
 
@@ -347,15 +306,8 @@ class AuthService extends Service {
 
             const insertResult = await this.query(
                 `INSERT INTO otp (email, phone, purpose, otp, timestamp, expires_at, is_used, attempts)
-                 VALUES ($1, $2, $3, $4, $5, $6, false, 0)`,
-                [
-                    contactType === 'email' ? value : null,
-                    contactType === 'phone' ? value : null,
-                    purpose,
-                    otp,
-                    nowSeconds,
-                    expiresAt
-                ]
+                 VALUES (NULL, $1, $2, $3, $4, $5, false, 0)`,
+                [value, purpose, otp, nowSeconds, expiresAt]
             );
 
             if (!insertResult.success) {
@@ -380,7 +332,7 @@ class AuthService extends Service {
 
             const response = {
                 success: true,
-                message: contactType === 'phone' ? 'OTP sent to your phone' : 'OTP sent to your email'
+                message: 'OTP sent to your phone'
             };
 
             if (process.env.NODE_ENV === 'development') {
@@ -395,6 +347,37 @@ class AuthService extends Service {
                 error: 'An error occurred while processing your request'
             };
         }
+    }
+
+    // Whether this phone may get a code for `purpose` (see OTP_ACCOUNT_RULES); returns the
+    // refusal message or null. Purposes without a rule are not checked.
+    otpAccountRefusal = async (phone, purpose) => {
+        const rule = OTP_ACCOUNT_RULES[purpose];
+        if (!rule) return null;
+        const existsResult = await this.query(rule.sql, [phone]);
+        const exists = existsResult.data.length > 0;
+        return exists === rule.mustExist ? null : rule.refusal;
+    }
+
+    // Per phone+purpose resend cooldown and daily cap; returns the refusal message or null.
+    otpRateLimitRefusal = async (phone, purpose, nowSeconds) => {
+        const recentResult = await this.query(
+            `SELECT timestamp FROM otp
+             WHERE phone = $1 AND purpose = $2
+             ORDER BY timestamp DESC`,
+            [phone, purpose]
+        );
+        const recent = recentResult.data || [];
+        if (recent.length > 0 && (nowSeconds - recent[0].timestamp) < OTP_RESEND_COOLDOWN_SECONDS) {
+            const wait = OTP_RESEND_COOLDOWN_SECONDS - (nowSeconds - recent[0].timestamp);
+            return `Please wait ${wait}s before requesting another code`;
+        }
+        const dayAgo = nowSeconds - 24 * 60 * 60;
+        const todayCount = recent.filter(r => r.timestamp >= dayAgo).length;
+        if (todayCount >= OTP_DAILY_LIMIT) {
+            return 'Daily OTP limit reached. Please try again later.';
+        }
+        return null;
     }
 
     /**
