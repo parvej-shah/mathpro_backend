@@ -43,11 +43,13 @@ const initiate = (user, path, body = {}) => request(app)
     .set('Authorization', `Bearer ${sign(user, [], [])}`)
     .send(body);
 
-// SSLCommerz posts the IPN as a urlencoded form.
-const ipn = (fields) => request(app).post('/user/payment/ipn').type('form').send(fields);
+// SSLCommerz posts the IPN as a urlencoded form; a real one carries the val_id of its
+// transaction (the stub's default for a tran_id).
+const ipn = (fields) => request(app).post('/user/payment/ipn').type('form')
+    .send(fields.tran_id && !('val_id' in fields) ? { ...fields, val_id: `VAL-${fields.tran_id}` } : fields);
 
 const validated = (amount, extra = {}) => ({
-    status: 'VALID', val_id: 'VAL-1', amount: String(amount), store_amount: String(amount),
+    status: 'VALID', amount: String(amount), store_amount: String(amount),
     bank_tran_id: 'BANK-1', risk_level: '0', risk_title: 'Safe', ...extra,
 });
 
@@ -178,7 +180,7 @@ test('course + coupon + books: discount on the course only, books added on top; 
 
     gw.setValidation(tranId, validated('2100.00'));
     const paid = await ipn({
-        tran_id: tranId, val_id: 'VAL-1', status: 'VALID', amount: '2100.00',
+        tran_id: tranId, status: 'VALID', amount: '2100.00',
         value_a: user.id, value_b: COURSE, value_c: '2100.00', value_d: 'COURSE',
     });
 
@@ -206,7 +208,7 @@ test('course + coupon + books: discount on the course only, books added on top; 
     assert.strictEqual((await takes(user.id)).length, 1);
 });
 
-test('course: a replayed IPN while validation still says VALID', async () => {
+test('course: a replayed IPN is acknowledged without enrolling again', async () => {
     const user = await newStudent();
     await initiate(user, `initiate/${COURSE_2}`);
     const tranId = lastInit().tran_id;
@@ -214,13 +216,12 @@ test('course: a replayed IPN while validation still says VALID', async () => {
     const fields = { tran_id: tranId, status: 'VALID', value_a: user.id, value_b: COURSE_2, value_c: '1500.00', value_d: 'COURSE' };
 
     assert.strictEqual((await ipn(fields)).body.success, true);
+    // Checking the val_id marks the transaction VALIDATED at SSLCommerz, so a replay is
+    // recognised as already processed.
     const replay = await ipn(fields);
-
-    // CURRENT BEHAVIOUR: the second `takes` insert hits the (user_id, course_id) key, so the
-    // replay is answered as a failure and logged FAILED, although the student is enrolled.
     assert.strictEqual(replay.status, 200);
-    assert.deepStrictEqual(replay.body, { success: false, error: 'A record with the same value already exists.' });
-    assert.deepStrictEqual((await auditLog(tranId)).map((r) => r.processing_status), ['SUCCESS', 'FAILED']);
+    assert.deepStrictEqual(replay.body, { success: true, message: 'Transaction already processed', already_processed: true });
+    assert.deepStrictEqual((await auditLog(tranId)).map((r) => r.processing_status), ['SUCCESS', 'ALREADY_PROCESSED']);
     assert.deepStrictEqual(await takes(user.id), [{ course_id: COURSE_2, amount: 1500, transaction_id: tranId, coupon: null }]);
 });
 

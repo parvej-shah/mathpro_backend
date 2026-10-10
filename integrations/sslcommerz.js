@@ -8,13 +8,52 @@ const logger = require('../util/logger');
 // SSLCOMMERZ_LIVE=false selects the sandbox; anything else (or unset) is live.
 const isLive = () => process.env.SSLCOMMERZ_LIVE !== 'false';
 
+const baseUrl = () => (isLive() ? 'https://securepay.sslcommerz.com' : 'https://sandbox.sslcommerz.com');
+
 // Opens a checkout session; resolves to the gateway's reply (GatewayPageURL on success).
 // sslcommerz-lts never rejects: a failed request resolves to the error instead.
-// CURRENT BEHAVIOUR (suspected bug, see REFACTOR_PLAN.md §7): sslcommerz-lts's 3rd argument
-// is `live` (true = securepay), but since 2026-07-06 this passes the sandbox flag, so session
-// init goes to the opposite environment from validateTransaction below.
+// Its 3rd constructor argument means `live` (true = securepay).
 const initSession = (data) =>
-    new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, !isLive()).init(data);
+    new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, isLive()).init(data);
+
+// GET a gateway JSON API; resolves { success, body } or { success: false, error }.
+function getJson(url) {
+    return new Promise((resolve) => {
+        const { hostname, pathname, search } = new URL(url);
+        const options = { hostname, path: pathname + search, method: 'GET', timeout: 30000, headers: { 'User-Agent': 'Math Pro Backend/1.0' } };
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+                try {
+                    resolve({ success: true, body: JSON.parse(data) });
+                } catch (parseError) {
+                    resolve({ success: false, error: 'Failed to parse SSLCommerz response' });
+                }
+            });
+        });
+        req.on('error', (error) => {
+            logger.error('Error calling SSLCommerz:', error);
+            resolve({ success: false, error: 'Failed to connect with SSLCommerz' });
+        });
+        req.on('timeout', () => {
+            req.destroy();
+            resolve({ success: false, error: 'SSLCommerz request timeout' });
+        });
+        req.end();
+    });
+}
+
+// Order Validation API (by val_id): the gateway's record of the payment, including the
+// value_a..value_d we sent at checkout (the tran_id query below does not return those).
+// Resolves { success, record } with record.status VALID / VALIDATED / INVALID_TRANSACTION…
+async function validateOrder(valId) {
+    if (!valId) return { success: false, error: 'No val_id' };
+    const url = `${baseUrl()}/validator/api/validationserverAPI.php?val_id=${encodeURIComponent(valId)}`
+        + `&store_id=${encodeURIComponent(process.env.STORE_ID)}&store_passwd=${encodeURIComponent(process.env.STORE_PASSWORD)}&v=1&format=json`;
+    const result = await getJson(url);
+    return result.success ? { success: true, record: result.body } : result;
+}
 
 // Validate transaction with SSLCommerz Order Validation API (REQUIRED by SSLCommerz)
 // Documentation: https://developer.sslcommerz.com/doc/v4/
@@ -23,19 +62,16 @@ async function validateTransaction(tran_id, val_id = null, sessionkey = null) {
         const storeId = process.env.STORE_ID;
         const storePassword = process.env.STORE_PASSWORD;
 
-        // Live: https://securepay.sslcommerz.com, Sandbox: https://sandbox.sslcommerz.com
-        const baseUrl = isLive()
-            ? 'https://securepay.sslcommerz.com'
-            : 'https://sandbox.sslcommerz.com';
+        const gatewayUrl = baseUrl();
 
         // Build validation URL - prefer tran_id, then val_id, then sessionkey
         let validationUrl;
         if (tran_id) {
-            validationUrl = `${baseUrl}/validator/api/merchantTransIDvalidationAPI.php?tran_id=${encodeURIComponent(tran_id)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
+            validationUrl = `${gatewayUrl}/validator/api/merchantTransIDvalidationAPI.php?tran_id=${encodeURIComponent(tran_id)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
         } else if (val_id) {
-            validationUrl = `${baseUrl}/validator/api/merchantTransIDvalidationAPI.php?val_id=${encodeURIComponent(val_id)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
+            validationUrl = `${gatewayUrl}/validator/api/merchantTransIDvalidationAPI.php?val_id=${encodeURIComponent(val_id)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
         } else if (sessionkey) {
-            validationUrl = `${baseUrl}/validator/api/merchantTransIDvalidationAPI.php?sessionkey=${encodeURIComponent(sessionkey)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
+            validationUrl = `${gatewayUrl}/validator/api/merchantTransIDvalidationAPI.php?sessionkey=${encodeURIComponent(sessionkey)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
         } else {
             return {
                 success: false,
@@ -165,4 +201,4 @@ async function validateTransaction(tran_id, val_id = null, sessionkey = null) {
     }
 }
 
-module.exports = { isLive, initSession, validateTransaction };
+module.exports = { isLive, initSession, validateTransaction, validateOrder };

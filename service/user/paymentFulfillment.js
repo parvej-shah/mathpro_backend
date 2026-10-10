@@ -77,7 +77,8 @@ function parseIpn(body) {
     return { sslcommerzTranId, userId, itemId, amount, itemType, transactionId, status: body.status, ipnAmount: body.amount };
 }
 
-// Order Validation API check (required by SSLCommerz to prevent fraud). Returns
+// Gateway checks (required by SSLCommerz to prevent fraud): the tran_id query for status,
+// risk and amount, then the val_id order record for who bought what. Returns
 // { reply } when the IPN must stop here, else { validation } with ipn.amount set to the
 // validated amount.
 async function verifyWithGateway(ipn, body, audit) {
@@ -142,6 +143,21 @@ async function verifyWithGateway(ipn, body, audit) {
             return { reply: { success: false, error: errorMsg, ipn_amount: ipn.amount, validated_amount: validation.amount } };
         }
         ipn.amount = validation.amount;
+    }
+
+    // value_a/value_b/value_d (user, item, item type) come from this POST, which anyone can
+    // send. They must match the gateway's order record for this payment, or a real cheap
+    // payment could be replayed against another item or user.
+    const order = await sslcommerz.validateOrder(body.val_id);
+    const record = order.success ? order.record : {};
+    const matches = ['VALID', 'VALIDATED'].includes(record.status)
+        && record.tran_id === ipn.sslcommerzTranId
+        && ['value_a', 'value_b', 'value_d'].every((f) => String(record[f] ?? '') === String(body[f] ?? ''));
+    if (!matches) {
+        const errorMsg = 'IPN does not match the payment recorded by SSLCommerz';
+        logger.error('IPN: gateway record mismatch', undefined, { tran_id: ipn.sslcommerzTranId, val_id: body.val_id || null });
+        await audit.update({ processing_status: 'ERROR', error_message: errorMsg, processing_result: { validation, order } });
+        return { reply: { success: false, error: errorMsg } };
     }
     return { validation };
 }
@@ -284,6 +300,13 @@ async function handleIpn(body) {
         } else {
             console.warn('IPN: No transaction ID provided, cannot validate with SSLCommerz');
             await audit.update({ processing_status: 'UNVALIDATED', error_message: 'No transaction ID provided for validation' });
+        }
+
+        if (!validation && ipn.status === 'VALID') {
+            // Nothing to check with the gateway, so nothing proves this payment happened.
+            const errorMsg = 'Unverified IPN: no transaction ID to validate';
+            await audit.update({ processing_status: 'ERROR', error_message: errorMsg });
+            return { success: false, error: errorMsg };
         }
 
         if (ipn.status !== 'VALID' && !(validation && validation.isValid)) {

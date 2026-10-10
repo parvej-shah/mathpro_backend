@@ -23,28 +23,21 @@ const hostsFor = async (live) => {
     gw.hosts.length = 0;
     await sslcommerz.initSession({ tran_id: 'T1', total_amount: '10.00' });
     await sslcommerz.validateTransaction('T1');
+    await sslcommerz.validateOrder('V1');
     return [sslcommerz.isLive(), ...gw.hosts];
 };
 
-test('live / sandbox host per SSLCOMMERZ_LIVE', async () => {
-    // CURRENT BEHAVIOUR: session init and validation go to opposite environments
-    // (sslcommerz-lts's 3rd argument means `live`, it is passed the sandbox flag).
+test('every call goes to the live host unless SSLCOMMERZ_LIVE=false', async () => {
+    const paths = ['/gwprocess/v4/api.php', '/validator/api/merchantTransIDvalidationAPI.php', '/validator/api/validationserverAPI.php'];
     for (const live of [undefined, 'true']) {
-        assert.deepStrictEqual(await hostsFor(live), [
-            true,
-            'sandbox.sslcommerz.com/gwprocess/v4/api.php',
-            'securepay.sslcommerz.com/validator/api/merchantTransIDvalidationAPI.php',
-        ], String(live));
+        assert.deepStrictEqual(await hostsFor(live), [true, ...paths.map((p) => `securepay.sslcommerz.com${p}`)], String(live));
     }
-    assert.deepStrictEqual(await hostsFor('false'), [
-        false,
-        'securepay.sslcommerz.com/gwprocess/v4/api.php',
-        'sandbox.sslcommerz.com/validator/api/merchantTransIDvalidationAPI.php',
-    ]);
+    assert.deepStrictEqual(await hostsFor('false'), [false, ...paths.map((p) => `sandbox.sslcommerz.com${p}`)]);
 });
 
-test('validateTransaction needs an id to look up', async () => {
+test('validateTransaction / validateOrder need an id to look up', async () => {
     assert.deepStrictEqual(await sslcommerz.validateTransaction(null), {
         success: false, error: 'Either tran_id, val_id, or sessionkey must be provided',
     });
+    assert.deepStrictEqual(await sslcommerz.validateOrder(undefined), { success: false, error: 'No val_id' });
 });
