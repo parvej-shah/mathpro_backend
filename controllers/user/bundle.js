@@ -4,6 +4,26 @@ const { BundleService } = require("../../service/managerial/bundle");
 
 const bundleService = new BundleService();
 
+// 400 "User ID is required" when `userId` is missing (and returns null); otherwise its integer.
+const parseUserId = (res, userId) => {
+  if (!userId) {
+    res.status(400).json({
+      success: false,
+      error: "User ID is required",
+    });
+    return null;
+  }
+  return parseInt(userId);
+};
+
+// Handler for "everything of one user" lookups: user_id from the URL, else (backward
+// compatibility) the one the auth middleware put in the body.
+const forUser = (serviceCall) => async (req, res) => {
+  const userIdInt = parseUserId(res, req.params.user_id || req.body.user_id);
+  if (userIdInt === null) return;
+  return respond(res, await serviceCall(userIdInt));
+};
+
 class UserBundleController extends Controller {
   constructor() {
     super();
@@ -49,49 +69,13 @@ class UserBundleController extends Controller {
   });
 
   // Get user's purchased bundles
-  getMyBundles = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), async (req, res) => {
-    console.log("=== GET MY BUNDLES API ===");
-    console.log("Request params:", req.params);
-    console.log("Request body:", req.body);
-
-    // Try URL parameter first, then request body (for backward compatibility)
-    const user_id = req.params.user_id || req.body.user_id;
-    console.log(
-      "User ID source:",
-      req.params.user_id ? "URL params" : "Request body"
-    );
-    console.log("Extracted user_id:", user_id, typeof user_id);
-
-    if (!user_id) {
-      console.log("❌ No user_id provided");
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
-    }
-
-    const userIdInt = parseInt(user_id);
-    console.log("Converted to integer:", userIdInt, typeof userIdInt);
-
-    const result = await bundleService.getUserBundles(userIdInt);
-    console.log("Service result:", result.success ? "SUCCESS" : "ERROR");
-    console.log("=== END GET MY BUNDLES API ===");
-
-    return respond(res, result);
-  });
+  getMyBundles = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), forUser((userId) => bundleService.getUserBundles(userId)));
 
   // Check if user has purchased a specific bundle
   checkPurchaseStatus = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const { id, user_id } = req.params;
-
-    if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
-    }
-
-    const userIdInt = parseInt(user_id);
+    const userIdInt = parseUserId(res, user_id);
+    if (userIdInt === null) return;
     const hasPurchased = await bundleService.hasUserPurchasedBundle(
       userIdInt,
       parseInt(id)
@@ -106,15 +90,8 @@ class UserBundleController extends Controller {
   // Check if user has prebooked a specific bundle
   checkPrebookStatus = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const { id, user_id } = req.params;
-
-    if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
-    }
-
-    const userIdInt = parseInt(user_id);
+    const userIdInt = parseUserId(res, user_id);
+    if (userIdInt === null) return;
     const hasPrebooked = await bundleService.hasUserPrebookedBundle(
       userIdInt,
       parseInt(id)
@@ -127,55 +104,13 @@ class UserBundleController extends Controller {
   });
 
   // Get user's bundle courses (courses from purchased bundles)
-  getBundleCourses = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), async (req, res) => {
-    console.log("=== GET BUNDLE COURSES API ===");
-    console.log("Request params:", req.params);
-    console.log("Request body:", req.body);
-    console.log("Request URL:", req.url);
-
-    // Try URL parameter first, then request body (for backward compatibility)
-    const user_id = req.params.user_id || req.body.user_id;
-    console.log(
-      "User ID source:",
-      req.params.user_id ? "URL params" : "Request body"
-    );
-    console.log("Extracted user_id:", user_id, typeof user_id);
-
-    if (!user_id) {
-      console.log("❌ No user_id provided");
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
-    }
-
-    const userIdInt = parseInt(user_id);
-    console.log("Converted to integer:", userIdInt, typeof userIdInt);
-
-    console.log("Calling bundleService.getUserBundleCourses...");
-    const result = await bundleService.getUserBundleCourses(userIdInt);
-    console.log(
-      "Service result:",
-      result.success ? "SUCCESS" : "ERROR",
-      result.error || "No error"
-    );
-    console.log("=== END GET BUNDLE COURSES API ===");
-
-    return respond(res, result);
-  });
+  getBundleCourses = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), forUser((userId) => bundleService.getUserBundleCourses(userId)));
 
   // Check for duplicate courses before bundle purchase
   checkDuplicateCourses = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const { id, user_id } = req.params;
-
-    if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
-    }
-
-    const userIdInt = parseInt(user_id);
+    const userIdInt = parseUserId(res, user_id);
+    if (userIdInt === null) return;
     const result = await bundleService.checkBundleCourseDuplicates(
       userIdInt,
       parseInt(id)
@@ -185,42 +120,7 @@ class UserBundleController extends Controller {
   });
 
   // Get all user courses (both individual and bundle courses)
-  getAllCourses = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), async (req, res) => {
-    console.log("=== GET ALL COURSES API ===");
-    console.log("Request params:", req.params);
-    console.log("Request body:", req.body);
-    console.log("Request URL:", req.url);
-
-    // Try URL parameter first, then request body (for backward compatibility)
-    const user_id = req.params.user_id || req.body.user_id;
-    console.log(
-      "User ID source:",
-      req.params.user_id ? "URL params" : "Request body"
-    );
-    console.log("Extracted user_id:", user_id, typeof user_id);
-
-    if (!user_id) {
-      console.log("❌ No user_id provided");
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
-    }
-
-    const userIdInt = parseInt(user_id);
-    console.log("Converted to integer:", userIdInt, typeof userIdInt);
-
-    console.log("Calling bundleService.getUserAllCourses...");
-    const result = await bundleService.getUserAllCourses(userIdInt);
-    console.log(
-      "Service result:",
-      result.success ? "SUCCESS" : "ERROR",
-      result.error || "No error"
-    );
-    console.log("=== END GET ALL COURSES API ===");
-
-    return respond(res, result);
-  });
+  getAllCourses = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), forUser((userId) => bundleService.getUserAllCourses(userId)));
 
   // Get course access for a specific bundle (NEW API)
   getCourseAccess = catchAs((error) => ({ success: false, error: "Internal server error", details: error.message }), async (req, res) => {
