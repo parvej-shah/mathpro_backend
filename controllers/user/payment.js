@@ -6,12 +6,10 @@ const { respond, catchAs } = require('../base');
 const PaymentService=require("../../service/user/payment.js").PaymentService
 const paymentFulfillment = require('../../service/user/paymentFulfillment');
 
-const MessagingService=require('../../service/messagingService.js').MessagingService
 const logger = require('../../util/logger');
 
 
 const paymentService=new PaymentService()
-const messagingService=new MessagingService()
 
 class PaymentController extends Controller {
     constructor() {
@@ -271,187 +269,9 @@ class PaymentController extends Controller {
             });
         }
 
-        const result = await paymentService.reconcilePayment(sslcommerz_tran_id, reconciled_by, notes);
-        
-        // CRITICAL: Send notifications after successful reconciliation (non-blocking)
-        // Only send if enrollment succeeded
-        if (result.success && result.data && result.data.enrollment_succeeded) {
-            try {
-                // Get payment log to get user and item details
-                // Note: There can be multiple entries for same transaction (multiple IPN callbacks)
-                // Find the VALID entry or use the most recent one
-                const logResult = await paymentService.query(
-                    `SELECT * FROM payment_audit_log WHERE sslcommerz_tran_id = $1 ORDER BY timestamp DESC`,
-                    [sslcommerz_tran_id]
-                );
-                
-                if (logResult.success && logResult.data && logResult.data.length > 0) {
-                    // Find VALID entry if exists, otherwise use most recent
-                    const validLog = logResult.data.find(entry => entry.status === 'VALID');
-                    const log = validLog || logResult.data[0];
-                    const userId = log.user_id;
-                    const itemId = log.item_id;
-                    const itemType = log.item_type;
-                    const transactionId = log.internal_transaction_id || 
-                        paymentService.generateTransactionId(userId, itemId);
-                    
-                    // Get user and item details for notifications
-                    const dbResults = await Promise.all([
-                        paymentService.query(`SELECT * FROM managerial_auth WHERE id = $1`, [userId]),
-                        itemType === 'BUNDLE' 
-                            ? paymentService.query(`SELECT * FROM bundle WHERE id = $1`, [itemId])
-                            : paymentService.query(`SELECT * FROM course WHERE id = $1`, [itemId])
-                    ]);
-                    
-                    if (dbResults[0].success && dbResults[0].data && dbResults[0].data.length > 0 &&
-                        dbResults[1].success && dbResults[1].data && dbResults[1].data.length > 0) {
-                        
-                        const user = dbResults[0].data[0];
-                        const userPhone = user.login || user.phone;
-                        const userEmail = user.profile?.email || user.email;
-                        const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
-                        
-                        if (itemType === 'BUNDLE') {
-                            const bundle = dbResults[1].data[0];
-                            const bundleTitle = bundle.title;
-                            const bundleId = bundle.id;
-                            
-                            // Get bundle with courses for email
-                            const { BundleService } = require('../../service/managerial/bundle');
-                            const bundleService = new BundleService();
-                            const bundleWithCourses = await bundleService.get(bundleId);
-                            const courseCount = bundleWithCourses.success && bundleWithCourses.data && bundleWithCourses.data.length > 0
-                                ? (bundleWithCourses.data[0].courses ? bundleWithCourses.data[0].courses.length : 0)
-                                : 0;
-                            
-                            const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
-                            const dashboardUrl = `${frontendUrl}/dashboard`;
-                            const text = `Dear ${user.name}, you have successfully purchased the "${bundleTitle}" bundle from Math Pro! You are now enrolled in ${courseCount} courses. Your access code is: ${transactionId}. View dashboard: ${dashboardUrl}`;
-                            
-                            const emailText = `<!DOCTYPE html>
-                                <html lang="en">
-                                <head>
-                                  <meta charset="UTF-8">
-                                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                  <title>Bundle Purchase Success</title>
-                                  <style>
-                                    body { font-family: 'Hind Siliguri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
-                                    .container { background-color: #ffffff; width: 100%; max-width: 620px; margin: 40px auto; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; border-top: 3px solid #007bff; }
-                                    .header { background: linear-gradient(to right, #0062E6, #33AEFF); color: #ffffff; padding: 20px; border-radius: 5px 5px 0 0; text-align: center; }
-                                    .content { padding: 20px; line-height: 1.6; }
-                                    .content h3 { color: #0062E6; }
-                                    .center { text-align: center; }
-                                    .info-button { background-color: #007bff; display: inline-block; padding: 12px 25px; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 5px; }
-                                    .button-group { text-align: center; margin: 25px 0; }
-                                    .footer { margin-top: 20px; text-align: center; font-size: 14px; color: #666; }
-                                  </style>
-                                </head>
-                                <body>
-                                  <div class="container">
-                                    <div class="header"><h2>অভিনন্দন! Bundle Purchase Successful!</h2></div>
-                                    <div class="content">
-                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased the <strong>${bundleTitle}</strong> bundle from Math Pro!</p>
-                                      <p class="center">Your access code is: <strong>${transactionId}</strong></p>
-                                      <p class="center">আর তোমাকে সর্বাত্নক হেল্প করতে পাশে আছি <strong>আমরা কোডার ভাই পরিবার!</strong></p>
-                                      <div class="button-group">
-                                        <a href="${successUrl}" class="info-button">📋 View Important Info & Next Steps</a>
-                                      </div>
-                                    </div>
-                                    <div class="footer">
-                                      <p>This is an automated message. Please do not reply directly to this email.</p>
-                                    </div>
-                                  </div>
-                                </body>
-                                </html>`;
-                            
-                            // Send notifications (non-blocking)
-                            if (userPhone || userEmail) {
-                                Promise.all([
-                                    userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
-                                        logger.error('Reconciliation: Bundle SMS send error:', err);
-                                        return { success: false };
-                                    }) : Promise.resolve({ success: false, error: 'No phone' }),
-                                    userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | Math Pro', emailText).catch(err => {
-                                        logger.error('Reconciliation: Bundle Email send error:', err);
-                                        return { success: false };
-                                    }) : Promise.resolve({ success: false, error: 'No email' })
-                                ]).then(() => {
-                                    console.log('Reconciliation: Notifications sent for bundle purchase');
-                                }).catch(err => {
-                                    logger.error('Reconciliation: Notification error:', err);
-                                });
-                            }
-                        } else {
-                            // Course purchase
-                            const course = dbResults[1].data[0];
-                            const courseTitle = course.title;
-                            const courseId = course.id;
-                            
-                            const successUrl = `${frontendUrl}/billing/invoice/${encodeURIComponent(transactionId)}`;
-                            const dashboardUrl = `${frontendUrl}/dashboard/${courseId}`;
-                            const text = `Dear ${user.name}, you have successfully purchased "${courseTitle}" course from Math Pro. Your access code is: ${transactionId}. Start learning: ${dashboardUrl}`;
-                            
-                            const emailText = `<!DOCTYPE html>
-                                <html lang="en">
-                                <head>
-                                  <meta charset="UTF-8">
-                                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                  <title>Course Purchase Success</title>
-                                  <style>
-                                    body { font-family: 'Hind Siliguri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
-                                    .container { background-color: #ffffff; width: 100%; max-width: 620px; margin: 40px auto; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; border-top: 3px solid #007bff; }
-                                    .header { background: linear-gradient(to right, #0062E6, #33AEFF); color: #ffffff; padding: 20px; border-radius: 5px 5px 0 0; text-align: center; }
-                                    .content { padding: 20px; line-height: 1.6; }
-                                    .center { text-align: center; }
-                                    .info-button { background-color: #007bff; display: inline-block; padding: 12px 25px; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 5px; }
-                                    .button-group { text-align: center; margin: 25px 0; }
-                                    .footer { margin-top: 20px; text-align: center; font-size: 14px; color: #666; }
-                                  </style>
-                                </head>
-                                <body>
-                                  <div class="container">
-                                    <div class="header"><h2>অভিনন্দন! Course Purchase Successful!</h2></div>
-                                    <div class="content">
-                                      <p class="center">Dear <strong>${user.name}</strong>, you have successfully purchased <strong>${courseTitle}</strong> course from Math Pro!</p>
-                                      <p class="center">Your access code is: <strong>${transactionId}</strong></p>
-                                      <p class="center">আর তোমাকে সর্বাত্নক হেল্প করতে পাশে আছি <strong>আমরা কোডার ভাই পরিবার!</strong></p>
-                                      <div class="button-group">
-                                        <a href="${successUrl}" class="info-button">📋 View Important Info & Next Steps</a>
-                                      </div>
-                                    </div>
-                                    <div class="footer">
-                                      <p>This is an automated message. Please do not reply directly to this email.</p>
-                                    </div>
-                                  </div>
-                                </body>
-                                </html>`;
-                            
-                            // Send notifications (non-blocking)
-                            if (userPhone || userEmail) {
-                                Promise.all([
-                                    userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
-                                        logger.error('Reconciliation: Course SMS send error:', err);
-                                        return { success: false };
-                                    }) : Promise.resolve({ success: false, error: 'No phone' }),
-                                    userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | Math Pro', emailText).catch(err => {
-                                        logger.error('Reconciliation: Course Email send error:', err);
-                                        return { success: false };
-                                    }) : Promise.resolve({ success: false, error: 'No email' })
-                                ]).then(() => {
-                                    console.log('Reconciliation: Notifications sent for course purchase');
-                                }).catch(err => {
-                                    logger.error('Reconciliation: Notification error:', err);
-                                });
-                            }
-                        }
-                    }
-                }
-            } catch (notificationError) {
-                // CRITICAL: Never fail reconciliation due to notification errors
-                logger.error('Reconciliation: Error sending notifications (non-critical):', notificationError);
-            }
-        }
-        
+        // Enrols from what SSLCommerz confirms (not the audit log) and sends the purchase
+        // confirmation when it enrolled.
+        const result = await paymentFulfillment.reconcile(sslcommerz_tran_id, reconciled_by, notes);
         return respond(res, result);
     })
 }

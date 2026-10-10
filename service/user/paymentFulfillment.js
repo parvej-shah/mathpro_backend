@@ -340,4 +340,172 @@ async function handleIpn(body) {
     }
 }
 
-module.exports = { handleIpn, parseIpn };
+// ---------------------------------------------------------------- admin reconciliation
+
+// What SSLCommerz says was bought: the tran_id query decides whether the payment is valid,
+// the val_id order record says by whom and for what. The audit log only holds what IPNs
+// claimed, so it is never trusted for this.
+async function confirmedPurchase(tranId) {
+    const validation = await sslcommerz.validateTransaction(tranId);
+    if (!validation.success && validation.error !== 'No transaction record found') {
+        return { unreachable: true, error: validation.error };
+    }
+    if (!validation.success || !validation.isValid) return { valid: false, validation };
+    const order = await sslcommerz.validateOrder(validation.val_id);
+    const record = order.success ? order.record : {};
+    if (!['VALID', 'VALIDATED'].includes(record.status) || record.tran_id !== tranId) {
+        return { valid: false, validation, order };
+    }
+    return {
+        valid: true,
+        userId: parseInt(record.value_a) || null,
+        itemId: parseInt(record.value_b) || null,
+        itemType: record.value_d || null,
+        amount: validation.amount
+    };
+}
+
+const markReconciled = (logId, reconciledBy, notes, fields) => query(
+    `UPDATE payment_audit_log
+     SET processing_status = $1, processing_result = COALESCE($2, processing_result),
+         error_message = COALESCE($3, error_message), is_manually_reconciled = true,
+         reconciled_by = $4, reconciled_at = $5, notes = $6, processed_at = COALESCE($7, processed_at)
+     WHERE id = $8`,
+    [fields.processing_status, fields.processing_result === undefined ? null : JSON.stringify(fields.processing_result),
+        fields.error_message || null, reconciledBy, parseInt(Date.now() / 1000), notes,
+        fields.processed ? parseInt(Date.now() / 1000) : null, logId]
+);
+
+// Grants the purchase; an existing enrolment (a reconcile run twice, or an IPN that did get
+// through) counts as success.
+const RECONCILE_ENROL = {
+    COURSE: async ({ userId, itemId, amount, transactionId }) => {
+        const takes = await courseService.takes(userId, itemId, amount, transactionId);
+        if (takes.success) return { success: true, data: takes.data, error: takes.error };
+        const existing = await query(`SELECT * FROM takes WHERE user_id = $1 AND course_id = $2`, [userId, itemId]);
+        return existing.success && existing.data.length > 0
+            ? { success: true, data: existing.data[0], message: 'Already enrolled' }
+            : { success: takes.success, data: takes.data, error: takes.error };
+    },
+    BUNDLE: async ({ userId, itemId, amount, transactionId }) => {
+        const purchase = await bundleService.purchaseBundle(userId, itemId, amount, transactionId);
+        if (purchase.success) return purchase;
+        const existing = await query(`SELECT * FROM bundle_purchase WHERE user_id = $1 AND bundle_id = $2`, [userId, itemId]);
+        return existing.success && existing.data.length > 0
+            ? { success: true, data: existing.data[0], message: 'Already enrolled' }
+            : purchase;
+    },
+    // Standalone book: the staged selection becomes the purchase (idempotent).
+    BOOK: async ({ transactionId }) => paymentService.fulfilBookSelection(transactionId)
+};
+
+const RECONCILE_NOTIFY = {
+    COURSE: (purchase) => notifyCoursePurchase(query, purchase),
+    BUNDLE: (purchase) => notifyBundlePurchase(query, bundleService, purchase)
+};
+
+const reconcileMessage = (attempted, succeeded) => (succeeded
+    ? 'Payment reconciled and user enrolled successfully'
+    : attempted ? 'Payment reconciled but enrollment had issues (check logs)' : 'Payment marked as reconciled');
+
+// Admin reconciliation (POST /admin/payment/reconcile): enrols a paid student whose IPN was
+// lost or failed. The newest audit row for the transaction is marked reconciled.
+async function reconcile(tranId, reconciledBy, notes = null) {
+    try {
+        const logs = await query(`SELECT * FROM payment_audit_log WHERE sslcommerz_tran_id = $1 ORDER BY timestamp DESC`, [tranId]);
+        if (!logs.success || !logs.data || logs.data.length === 0) {
+            return { success: false, error: 'Payment log not found for this transaction ID' };
+        }
+
+        const purchase = await confirmedPurchase(tranId);
+        if (purchase.unreachable) {
+            return { success: false, error: `Could not confirm the payment with SSLCommerz: ${purchase.error}` };
+        }
+        const log = (purchase.valid && logs.data.find((row) =>
+            row.user_id === purchase.userId && row.item_id === purchase.itemId && row.item_type === purchase.itemType))
+            || logs.data.find((row) => row.status === 'VALID')
+            || logs.data[0];
+
+        if (!purchase.valid) {
+            const status = log.processing_status || 'RECONCILED';
+            await markReconciled(log.id, reconciledBy, notes, {
+                processing_status: status,
+                processing_result: { message: 'Reconciled without enrollment attempt' },
+                processed: true
+            });
+            return {
+                success: true,
+                data: {
+                    log_id: log.id, reconciled: true, enrollment_attempted: false, enrollment_succeeded: false,
+                    processing_status: status, processing_result: null, message: reconcileMessage(false, false)
+                }
+            };
+        }
+
+        if (!purchase.userId || !purchase.itemId || !purchase.itemType) {
+            await markReconciled(log.id, reconciledBy, notes || 'Missing required fields', {
+                processing_status: 'ERROR',
+                error_message: 'Missing required fields: userId, itemId, or itemType'
+            });
+            return {
+                success: true,
+                data: {
+                    log_id: log.id, reconciled: true, error: 'Missing required fields',
+                    message: 'Payment marked as reconciled but cannot process enrollment'
+                }
+            };
+        }
+
+        const transactionId = log.internal_transaction_id || paymentService.generateTransactionId(purchase.userId, purchase.itemId);
+        const fulfilment = { ...purchase, transactionId };
+        let result;
+        try {
+            result = await (RECONCILE_ENROL[purchase.itemType] || RECONCILE_ENROL.COURSE)(fulfilment);
+        } catch (enrollmentError) {
+            logger.error('Reconciliation: Enrollment error (non-blocking)', enrollmentError, { tranId, ...purchase });
+            result = { success: false, error: enrollmentError.message, enrollment_attempted: true };
+        }
+        const succeeded = result.success === true;
+        await completeCouponUsage(purchase.itemType.toLowerCase(), transactionId, null);
+
+        const status = succeeded ? 'SUCCESS' : 'PARTIAL';
+        await markReconciled(log.id, reconciledBy, notes, { processing_status: status, processing_result: result, processed: true });
+
+        if (succeeded && RECONCILE_NOTIFY[purchase.itemType]) {
+            try {
+                await RECONCILE_NOTIFY[purchase.itemType](fulfilment);
+            } catch (notificationError) {
+                logger.error('Reconciliation: Error sending notifications (non-critical)', notificationError, { tranId });
+            }
+        }
+
+        return {
+            success: true,
+            data: {
+                log_id: log.id, reconciled: true, enrollment_attempted: true, enrollment_succeeded: succeeded,
+                processing_status: status, processing_result: result, message: reconcileMessage(true, succeeded)
+            }
+        };
+    } catch (error) {
+        // Even top-level errors don't fail reconciliation: mark it and report.
+        logger.error('Reconciliation: Error (attempting to mark as reconciled anyway):', error);
+        try {
+            const row = await query(`SELECT id FROM payment_audit_log WHERE sslcommerz_tran_id = $1`, [tranId]);
+            if (row.success && row.data && row.data.length > 0) {
+                await markReconciled(row.data[0].id, reconciledBy, notes || 'Reconciliation error occurred', {
+                    processing_status: 'ERROR', error_message: error.message
+                });
+            }
+        } catch (markError) {
+            logger.error('Reconciliation: Failed to mark as reconciled after error:', markError);
+        }
+        return {
+            success: true,
+            error: error.message,
+            message: 'Reconciliation attempted but encountered errors (check logs)',
+            reconciled: true
+        };
+    }
+}
+
+module.exports = { handleIpn, parseIpn, reconcile };
