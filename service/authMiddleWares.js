@@ -139,15 +139,22 @@ var authenticateInv=(req, res, next)=>{
 // ========================================
 
 /**
- * Require a single permission
- * @param {string} permission - Permission string (e.g., 'user.read.all')
+ * Shared body of the permission guards. Reads the Bearer token and answers:
+ *   no token                       → 401 NO_TOKEN
+ *   bad/expired token              → 403 INVALID_TOKEN
+ *   token without a permissions [] → 403 NO_PERMISSIONS
+ *   `deny(permissions)` returns    → 403 INSUFFICIENT_PERMISSIONS with that { message, ...fields }
+ * otherwise attaches the user (req.user, req.body.user_id/user_type) and calls next().
+ * Guards don't check the session table; only authenticateUser does.
+ *
+ * @param {(permissions: string[]) => (object|null)} deny - Denial details, or null to allow
  * @returns {Function} Express middleware
  */
-const requirePermission = (permission) => {
+const permissionGuard = (deny) => {
     return (req, res, next) => {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-        
+
         if (!token) {
             return res.status(401).json({
                 success: false,
@@ -155,11 +162,10 @@ const requirePermission = (permission) => {
                 error: 'NO_TOKEN'
             });
         }
-        
+
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-            // Check if permissions array exists in token
+
             if (!decoded.permissions || !Array.isArray(decoded.permissions)) {
                 return res.status(403).json({
                     success: false,
@@ -167,22 +173,22 @@ const requirePermission = (permission) => {
                     error: 'NO_PERMISSIONS'
                 });
             }
-            
-            // Check if user has the required permission
-            if (!decoded.permissions.includes(permission)) {
+
+            const denial = deny(decoded.permissions);
+            if (denial) {
+                const { message, ...fields } = denial;
                 return res.status(403).json({
                     success: false,
-                    message: `Permission denied: ${permission} required`,
+                    message,
                     error: 'INSUFFICIENT_PERMISSIONS',
-                    required: permission
+                    ...fields
                 });
             }
-            
-            // Attach decoded token to request
+
             req.user = decoded;
             req.body['user_id'] = parseInt(decoded.id);
             req.body['user_type'] = decoded.type;
-            
+
             next();
         } catch (err) {
             return res.status(403).json({
@@ -193,176 +199,63 @@ const requirePermission = (permission) => {
         }
     };
 };
+
+/**
+ * Require a single permission
+ * @param {string} permission - Permission string (e.g., 'user.read.all')
+ * @returns {Function} Express middleware
+ */
+const requirePermission = (permission) => permissionGuard((granted) => (
+    granted.includes(permission)
+        ? null
+        : { message: `Permission denied: ${permission} required`, required: permission }
+));
 
 /**
  * Require ANY of the specified permissions
  * @param {string[]} permissions - Array of permission strings
  * @returns {Function} Express middleware
  */
-const requireAnyPermission = (permissions) => {
-    return (req, res, next) => {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication required',
-                error: 'NO_TOKEN'
-            });
-        }
-        
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-            if (!decoded.permissions || !Array.isArray(decoded.permissions)) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No permissions found in token',
-                    error: 'NO_PERMISSIONS'
-                });
-            }
-            
-            // Check if user has ANY of the required permissions
-            const hasPermission = permissions.some(p => decoded.permissions.includes(p));
-            
-            if (!hasPermission) {
-                return res.status(403).json({
-                    success: false,
-                    message: `Permission denied: One of [${permissions.join(', ')}] required`,
-                    error: 'INSUFFICIENT_PERMISSIONS',
-                    required: permissions
-                });
-            }
-            
-            req.user = decoded;
-            req.body['user_id'] = parseInt(decoded.id);
-            req.body['user_type'] = decoded.type;
-            
-            next();
-        } catch (err) {
-            return res.status(403).json({
-                success: false,
-                message: 'Invalid or expired token',
-                error: 'INVALID_TOKEN'
-            });
-        }
-    };
-};
+const requireAnyPermission = (permissions) => permissionGuard((granted) => (
+    permissions.some(p => granted.includes(p))
+        ? null
+        : { message: `Permission denied: One of [${permissions.join(', ')}] required`, required: permissions }
+));
 
 /**
  * Require ALL of the specified permissions
  * @param {string[]} permissions - Array of permission strings
  * @returns {Function} Express middleware
  */
-const requireAllPermissions = (permissions) => {
-    return (req, res, next) => {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication required',
-                error: 'NO_TOKEN'
-            });
-        }
-        
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-            if (!decoded.permissions || !Array.isArray(decoded.permissions)) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No permissions found in token',
-                    error: 'NO_PERMISSIONS'
-                });
-            }
-            
-            // Check if user has ALL required permissions
-            const missingPermissions = permissions.filter(p => !decoded.permissions.includes(p));
-            
-            if (missingPermissions.length > 0) {
-                return res.status(403).json({
-                    success: false,
-                    message: `Permission denied: Missing permissions [${missingPermissions.join(', ')}]`,
-                    error: 'INSUFFICIENT_PERMISSIONS',
-                    required: permissions,
-                    missing: missingPermissions
-                });
-            }
-            
-            req.user = decoded;
-            req.body['user_id'] = parseInt(decoded.id);
-            req.body['user_type'] = decoded.type;
-            
-            next();
-        } catch (err) {
-            return res.status(403).json({
-                success: false,
-                message: 'Invalid or expired token',
-                error: 'INVALID_TOKEN'
-            });
-        }
-    };
+const requireAllPermissions = (permissions) => permissionGuard((granted) => {
+    const missingPermissions = permissions.filter(p => !granted.includes(p));
+    return missingPermissions.length === 0
+        ? null
+        : {
+            message: `Permission denied: Missing permissions [${missingPermissions.join(', ')}]`,
+            required: permissions,
+            missing: missingPermissions
+        };
+});
+
+// `<resource>.<action>.all` is the only grant; the denial lists it as an array.
+const requireGlobalPermission = (resource, action) => {
+    const globalPermission = `${resource}.${action}.all`;
+    return permissionGuard((granted) => (
+        granted.includes(globalPermission)
+            ? null
+            : { message: `Permission denied: ${globalPermission} required`, required: [globalPermission] }
+    ));
 };
 
 /**
  * Require scope-based access
  * @param {string} resource - Resource name (e.g., 'user', 'course')
  * @param {string} action - Action name (e.g., 'read', 'update')
- * @param {Function} getResourceOwnerId - Optional function to extract resource owner ID from request
+ * @param {Function} getResourceOwnerId - Unused; kept for call-site compatibility
  * @returns {Function} Express middleware
  */
-const requireScopeAccess = (resource, action, getResourceOwnerId) => {
-    return (req, res, next) => {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication required',
-                error: 'NO_TOKEN'
-            });
-        }
-        
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-            if (!decoded.permissions || !Array.isArray(decoded.permissions)) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No permissions found in token',
-                    error: 'NO_PERMISSIONS'
-                });
-            }
-            
-            const globalPermission = `${resource}.${action}.all`;
-
-            if (decoded.permissions.includes(globalPermission)) {
-                req.user = decoded;
-                req.body['user_id'] = parseInt(decoded.id);
-                req.body['user_type'] = decoded.type;
-                return next();
-            }
-
-            return res.status(403).json({
-                success: false,
-                message: `Permission denied: ${resource}.${action}.all required`,
-                error: 'INSUFFICIENT_PERMISSIONS',
-                required: [globalPermission]
-            });
-            
-        } catch (err) {
-            return res.status(403).json({
-                success: false,
-                message: 'Invalid or expired token',
-                error: 'INVALID_TOKEN'
-            });
-        }
-    };
-};
+const requireScopeAccess = (resource, action, _getResourceOwnerId) => requireGlobalPermission(resource, action);
 
 /**
  * Basic authentication - just verify token and attach user
@@ -404,55 +297,7 @@ const authenticate = (req, res, next) => {
  * @param {Function} getCourseId - Unused; kept for call-site compatibility
  * @returns {Function} Express middleware
  */
-const requireCourseAccess = (resource, action, getCourseId) => {
-    return async (req, res, next) => {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication required',
-                error: 'NO_TOKEN'
-            });
-        }
-
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            if (!decoded.permissions || !Array.isArray(decoded.permissions)) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No permissions found in token',
-                    error: 'NO_PERMISSIONS'
-                });
-            }
-
-            const globalPermission = `${resource}.${action}.all`;
-
-            if (decoded.permissions.includes(globalPermission)) {
-                req.user = decoded;
-                req.body['user_id'] = parseInt(decoded.id);
-                req.body['user_type'] = decoded.type;
-                return next();
-            }
-
-            return res.status(403).json({
-                success: false,
-                message: `Permission denied: ${resource}.${action}.all required`,
-                error: 'INSUFFICIENT_PERMISSIONS',
-                required: [globalPermission]
-            });
-
-        } catch (err) {
-            return res.status(403).json({
-                success: false,
-                message: 'Invalid or expired token',
-                error: 'INVALID_TOKEN'
-            });
-        }
-    };
-};
+const requireCourseAccess = (resource, action, _getCourseId) => requireGlobalPermission(resource, action);
 
 module.exports={
     // Legacy middleware (type-based)
