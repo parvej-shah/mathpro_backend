@@ -1,6 +1,7 @@
 const Service = require('../base').Service;
 const bcrypt = require('bcryptjs');
 const MessagingService = require('../messagingService').MessagingService;
+const { adminCredentialsEmail } = require('../emailTemplates/credentials');
 const {
     isValidEmail,
     isValidPhone,
@@ -49,117 +50,7 @@ class AdminService extends Service {
      */
     sendAdminCredentialsEmail = async (email, name, login, password) => {
         const emailSubject = 'Your Admin Account Credentials - Math Pro';
-        const emailHTML = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <title>Admin Credentials</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        background-color: #f4f4f4;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    .container {
-                        max-width: 600px;
-                        margin: 20px auto;
-                        padding: 30px;
-                        background-color: #fff;
-                        border-radius: 10px;
-                        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                    }
-                    .header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                    }
-                    .logo {
-                        font-size: 28px;
-                        font-weight: bold;
-                        color: #007bff;
-                    }
-                    .content {
-                        line-height: 1.6;
-                        color: #333;
-                    }
-                    h1 {
-                        color: #333;
-                        font-size: 24px;
-                        margin-bottom: 20px;
-                    }
-                    .credentials-box {
-                        background-color: #f8f9fa;
-                        border: 2px solid #007bff;
-                        border-radius: 8px;
-                        padding: 20px;
-                        margin: 20px 0;
-                    }
-                    .credential-item {
-                        margin: 10px 0;
-                    }
-                    .label {
-                        font-weight: bold;
-                        color: #007bff;
-                    }
-                    .value {
-                        font-family: monospace;
-                        font-size: 16px;
-                        color: #333;
-                        word-break: break-all;
-                    }
-                    .warning {
-                        color: #dc3545;
-                        font-size: 14px;
-                        margin-top: 20px;
-                        padding: 15px;
-                        background-color: #fff3cd;
-                        border-radius: 5px;
-                    }
-                    .footer {
-                        text-align: center;
-                        margin-top: 40px;
-                        padding-top: 20px;
-                        border-top: 1px solid #eee;
-                    }
-                    .footer p {
-                        color: #999;
-                        font-size: 12px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <div class="logo">Math Pro</div>
-                    </div>
-                    <div class="content">
-                        <h1>Your Admin Account Has Been Created</h1>
-                        <p>Hello ${name},</p>
-                        <p>Your admin account has been created. Please use the following credentials to log in:</p>
-                        
-                        <div class="credentials-box">
-                            <div class="credential-item">
-                                <span class="label">Username/Email:</span><br>
-                                <span class="value">${login}</span>
-                            </div>
-                            <div class="credential-item">
-                                <span class="label">Password:</span><br>
-                                <span class="value">${password}</span>
-                            </div>
-                        </div>
-                        
-                        <p>Please log in at: <a href="https://admin.mathpro.com/">Admin Login</a></p>
-                    </div>
-                    <div class="footer">
-                        <p>If you didn't expect this email, please contact the administrator immediately.</p>
-                        <p>© ${new Date().getFullYear()} Math Pro. All rights reserved.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-        `;
+        const emailHTML = adminCredentialsEmail({ name, login, password });
 
         return await messagingService.sendMail(email, emailSubject, emailHTML);
     }
