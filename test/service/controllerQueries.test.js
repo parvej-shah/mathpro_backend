@@ -2,7 +2,7 @@
 // Runs each one against real rows so a broken move shows up here, not only as a status change.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
-const { STUDENT, COURSE_ID, seed, pool } = require('../helpers/fixtures');
+const { COURSE_ID, seed, pool } = require('../helpers/fixtures');
 const { CourseService } = require('../../service/managerial/course');
 const { BundleService } = require('../../service/managerial/bundle');
 const CouponService = require('../../service/managerial/coupon');
@@ -70,7 +70,10 @@ test('course purchases: paid list and coupon-joined list', async () => {
         { coupon_used: row.coupon_used, coupon_code: row.coupon_code, amount_saved: row.amount_saved },
         { coupon_used: true, coupon_code: 'QCOUPON801', amount_saved: '100.00' }
     );
-    assert.strictEqual(withCoupons.data.find((r) => r.user_id === STUDENT.id), undefined);
+    // Enrolments without a completed coupon usage (other test files add some) carry no coupon.
+    for (const other of withCoupons.data.filter((r) => r.user_id !== USER)) {
+        assert.deepStrictEqual([other.coupon_used, other.coupon_code], [false, null]);
+    }
 });
 
 test('course prebookings: list, set and clear the UTM tag', async () => {
