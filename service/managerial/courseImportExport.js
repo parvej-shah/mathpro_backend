@@ -16,6 +16,128 @@ const presignedUploadService = require('../../util/presignedUploadService');
 const csvParser = require('csv-parser');
 const logger = require('../../util/logger');
 
+// ---- Rows written by an import (each runs on the import's transaction client) ----
+
+// Course columns shared by INSERT and UPDATE, in the order both queries use.
+const courseColumns = (course) => [
+    course.title,
+    course.description || null,
+    course.language || 'English',
+    course.price || 0,
+    course.x_price || 0,
+    course.short_description || null,
+    course.intro_video || null,
+    course.url || null,
+];
+const isLive = (row) => (row.is_live !== undefined ? row.is_live : true);
+const isFree = (row) => (row.is_free !== undefined ? row.is_free : false);
+
+// Returns the new course id (null if nothing was inserted).
+async function insertImportedCourse(client, course) {
+    const result = await client.query(`
+        INSERT INTO course (
+            title, description, language, price, x_price, 
+            short_description, intro_video, url, enrolled, is_live, serial
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+            (SELECT COALESCE(MAX(serial), 0) + 1 FROM course)
+        ) RETURNING id
+    `, [...courseColumns(course), course.enrolled || 0, isLive(course)]);
+    return result.rows && result.rows.length > 0 ? result.rows[0].id : null;
+}
+
+// By `id` when the file gives one, else by title. Returns the id or null.
+async function findImportedCourseId(client, course) {
+    const result = await client.query(
+        course.id ? `SELECT id FROM course WHERE id = $1` : `SELECT id FROM course WHERE title = $1`,
+        [course.id || course.title]
+    );
+    return result.rows.length > 0 ? result.rows[0].id : null;
+}
+
+async function updateImportedCourse(client, course, courseId) {
+    await client.query(`
+        UPDATE course SET
+            title = $1, description = $2, language = $3, price = $4, x_price = $5,
+            short_description = $6, intro_video = $7, url = $8, is_live = $9
+        WHERE id = $10
+    `, [...courseColumns(course), isLive(course), courseId]);
+}
+
+async function findChapterId(client, courseId, serial) {
+    const result = await client.query(`
+        SELECT id FROM chapter 
+        WHERE course_id = $1 AND serial = $2
+    `, [courseId, serial]);
+    return result.rows.length > 0 ? result.rows[0].id : null;
+}
+
+async function insertImportedChapter(client, courseId, chapter) {
+    const result = await client.query(`
+        INSERT INTO chapter (course_id, serial, title, is_free, is_live)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+    `, [courseId, chapter.serial, chapter.title, isFree(chapter), isLive(chapter)]);
+    if (!result.rows || result.rows.length === 0) {
+        throw new Error(`Failed to create chapter: ${chapter.title}`);
+    }
+    return result.rows[0].id;
+}
+
+async function updateImportedChapter(client, chapter, chapterId) {
+    await client.query(`
+        UPDATE chapter SET
+            title = $1, is_free = $2, is_live = $3
+        WHERE id = $4
+    `, [chapter.title, isFree(chapter), isLive(chapter), chapterId]);
+}
+
+async function findModuleId(client, chapterId, serial) {
+    const result = await client.query(`
+        SELECT id FROM module 
+        WHERE chapter_id = $1 AND serial = $2
+    `, [chapterId, serial]);
+    return result.rows && result.rows.length > 0 ? result.rows[0].id : null;
+}
+
+// `data` as stored (defaults to just the category) and the PDF link lifted out of it.
+const moduleData = (mod) => (mod.data ? JSON.stringify(mod.data) : JSON.stringify({ category: mod.category || 'TEXT' }));
+const modulePdfLink = (mod) => ((mod.data && mod.data.pdf_drive_link) ? mod.data.pdf_drive_link : null);
+
+async function insertImportedModule(client, chapterId, mod) {
+    const result = await client.query(`
+        INSERT INTO module (
+            chapter_id, serial, title, description, data,
+            is_live, is_free, score,
+            quiz_time_limit, quiz_attempt_limit, pdf_drive_link
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING id
+    `, [
+        chapterId, mod.serial, mod.title, mod.description || null, moduleData(mod),
+        isLive(mod), isFree(mod), mod.score || 0,
+        mod.quiz_time_limit || null, mod.quiz_attempt_limit || null, modulePdfLink(mod),
+    ]);
+    if (!result.rows || result.rows.length === 0) {
+        throw new Error(`Failed to create module: ${mod.title}`);
+    }
+    return result.rows[0].id;
+}
+
+async function updateImportedModule(client, mod, moduleId) {
+    await client.query(`
+        UPDATE module SET
+            title = $1, description = $2, data = $3,
+            is_live = $4, is_free = $5, serial = $6, score = $7,
+            quiz_time_limit = $8, quiz_attempt_limit = $9,
+            pdf_drive_link = $10
+        WHERE id = $11
+    `, [
+        mod.title, mod.description || null, moduleData(mod),
+        isLive(mod), isFree(mod), mod.serial, mod.score || 0,
+        mod.quiz_time_limit || null, mod.quiz_attempt_limit || null, modulePdfLink(mod),
+        moduleId,
+    ]);
+}
+
 class CourseImportExportService extends CourseServiceV2 {
     constructor() {
         super();
@@ -480,287 +602,54 @@ class CourseImportExportService extends CourseServiceV2 {
                         return { success: false, error: `Course with title "${courseData.course.title}" already exists` };
                     }
 
-                    // Create course
-                    const courseInsertQuery = `
-                        INSERT INTO course (
-                            title, description, language, price, x_price, 
-                            short_description, intro_video, url, enrolled, is_live, serial
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-                            (SELECT COALESCE(MAX(serial), 0) + 1 FROM course)
-                        ) RETURNING id
-                    `;
-                    const courseResult = await client.query(courseInsertQuery, [
-                        courseData.course.title,
-                        courseData.course.description || null,
-                        courseData.course.language || 'English',
-                        courseData.course.price || 0,
-                        courseData.course.x_price || 0,
-                        courseData.course.short_description || null,
-                        courseData.course.intro_video || null,
-                        courseData.course.url || null,
-                        courseData.course.enrolled || 0,
-                        courseData.course.is_live !== undefined ? courseData.course.is_live : true
-                    ]);
-                    if (!courseResult.rows || courseResult.rows.length === 0) {
+                    courseId = await insertImportedCourse(client, courseData.course);
+                    if (!courseId) {
                         return { success: false, error: 'Failed to create course' };
                     }
-                    courseId = courseResult.rows[0].id;
 
                 } else if (importMode === 'update') {
-                    // Find course by title or use provided ID
-                    const findCourseQuery = courseData.course.id 
-                        ? `SELECT id FROM course WHERE id = $1`
-                        : `SELECT id FROM course WHERE title = $1`;
-                    const findResult = await client.query(findCourseQuery, [
-                        courseData.course.id || courseData.course.title
-                    ]);
-
-                    if (findResult.rows.length === 0) {
+                    courseId = await findImportedCourseId(client, courseData.course);
+                    if (!courseId) {
                         return { success: false, error: 'Course not found for update' };
                     }
-
-                    courseId = findResult.rows[0].id;
-
-                    // Update course
-                    const courseUpdateQuery = `
-                        UPDATE course SET
-                            title = $1, description = $2, language = $3, price = $4, x_price = $5,
-                            short_description = $6, intro_video = $7, url = $8, is_live = $9
-                        WHERE id = $10
-                    `;
-                    await client.query(courseUpdateQuery, [
-                        courseData.course.title,
-                        courseData.course.description || null,
-                        courseData.course.language || 'English',
-                        courseData.course.price || 0,
-                        courseData.course.x_price || 0,
-                        courseData.course.short_description || null,
-                        courseData.course.intro_video || null,
-                        courseData.course.url || null,
-                        courseData.course.is_live !== undefined ? courseData.course.is_live : true,
-                        courseId
-                    ]);
+                    await updateImportedCourse(client, courseData.course, courseId);
 
                 } else if (importMode === 'upsert') {
-                    // Try to find existing course
-                    const findCourseQuery = courseData.course.id 
-                        ? `SELECT id FROM course WHERE id = $1`
-                        : `SELECT id FROM course WHERE title = $1`;
-                    const findResult = await client.query(findCourseQuery, [
-                        courseData.course.id || courseData.course.title
-                    ]);
-
-                    if (findResult.rows.length > 0) {
-                        // Update existing
-                        courseId = findResult.rows[0].id;
-                        const courseUpdateQuery = `
-                            UPDATE course SET
-                                title = $1, description = $2, language = $3, price = $4, x_price = $5,
-                                short_description = $6, intro_video = $7, url = $8, is_live = $9
-                            WHERE id = $10
-                        `;
-                        await client.query(courseUpdateQuery, [
-                            courseData.course.title,
-                            courseData.course.description || null,
-                            courseData.course.language || 'English',
-                            courseData.course.price || 0,
-                            courseData.course.x_price || 0,
-                            courseData.course.short_description || null,
-                            courseData.course.intro_video || null,
-                            courseData.course.url || null,
-                            courseData.course.is_live !== undefined ? courseData.course.is_live : true,
-                            courseId
-                        ]);
+                    const existingId = await findImportedCourseId(client, courseData.course);
+                    if (existingId) {
+                        courseId = existingId;
+                        await updateImportedCourse(client, courseData.course, courseId);
                     } else {
-                        // Create new
-                        const courseInsertQuery = `
-                            INSERT INTO course (
-                                title, description, language, price, x_price, 
-                                short_description, intro_video, url, enrolled, is_live, serial
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
-                                (SELECT COALESCE(MAX(serial), 0) + 1 FROM course)
-                            ) RETURNING id
-                        `;
-                        const courseResult = await client.query(courseInsertQuery, [
-                            courseData.course.title,
-                            courseData.course.description || null,
-                            courseData.course.language || 'English',
-                            courseData.course.price || 0,
-                            courseData.course.x_price || 0,
-                            courseData.course.short_description || null,
-                            courseData.course.intro_video || null,
-                            courseData.course.url || null,
-                            courseData.course.enrolled || 0,
-                            courseData.course.is_live !== undefined ? courseData.course.is_live : true
-                        ]);
-                        courseId = courseResult.rows[0].id;
+                        courseId = await insertImportedCourse(client, courseData.course);
                     }
                 }
 
-                // Process chapters and modules
+                // Process chapters and modules. update/upsert match existing rows by serial.
+                const matchExisting = importMode === 'update' || importMode === 'upsert';
                 let chaptersCreated = 0;
                 let modulesCreated = 0;
 
                 for (const chapterData of courseData.chapters) {
                     if (!chapterData) continue; // Skip null/undefined chapters
-                    
-                    let chapterId;
 
-                    if (importMode === 'update' || importMode === 'upsert') {
-                        // Try to find existing chapter by serial
-                        const findChapterQuery = `
-                            SELECT id FROM chapter 
-                            WHERE course_id = $1 AND serial = $2
-                        `;
-                        const findChapterResult = await client.query(findChapterQuery, [courseId, chapterData.serial]);
-
-                        if (findChapterResult.rows.length > 0) {
-                            // Update existing chapter
-                            chapterId = findChapterResult.rows[0].id;
-                            const updateChapterQuery = `
-                                UPDATE chapter SET
-                                    title = $1, is_free = $2, is_live = $3
-                                WHERE id = $4
-                            `;
-                            await client.query(updateChapterQuery, [
-                                chapterData.title,
-                                chapterData.is_free !== undefined ? chapterData.is_free : false,
-                                chapterData.is_live !== undefined ? chapterData.is_live : true,
-                                chapterId
-                            ]);
-                        } else {
-                            // Create new chapter
-                            const insertChapterQuery = `
-                                INSERT INTO chapter (course_id, serial, title, is_free, is_live)
-                                VALUES ($1, $2, $3, $4, $5)
-                                RETURNING id
-                            `;
-                            const chapterResult = await client.query(insertChapterQuery, [
-                                courseId,
-                                chapterData.serial,
-                                chapterData.title,
-                                chapterData.is_free !== undefined ? chapterData.is_free : false,
-                                chapterData.is_live !== undefined ? chapterData.is_live : true
-                            ]);
-                            if (!chapterResult.rows || chapterResult.rows.length === 0) {
-                                throw new Error(`Failed to create chapter: ${chapterData.title}`);
-                            }
-                            chapterId = chapterResult.rows[0].id;
-                            chaptersCreated++;
-                        }
+                    let chapterId = matchExisting ? await findChapterId(client, courseId, chapterData.serial) : null;
+                    if (chapterId) {
+                        await updateImportedChapter(client, chapterData, chapterId);
                     } else {
-                        // Create mode - always create new
-                        const insertChapterQuery = `
-                            INSERT INTO chapter (course_id, serial, title, is_free, is_live)
-                            VALUES ($1, $2, $3, $4, $5)
-                            RETURNING id
-                        `;
-                        const chapterResult = await client.query(insertChapterQuery, [
-                            courseId,
-                            chapterData.serial,
-                            chapterData.title,
-                            chapterData.is_free !== undefined ? chapterData.is_free : false,
-                            chapterData.is_live !== undefined ? chapterData.is_live : true
-                        ]);
-                            if (!chapterResult.rows || chapterResult.rows.length === 0) {
-                                throw new Error(`Failed to create chapter: ${chapterData.title}`);
-                            }
-                            chapterId = chapterResult.rows[0].id;
-                            chaptersCreated++;
+                        chapterId = await insertImportedChapter(client, courseId, chapterData);
+                        chaptersCreated++;
                     }
 
                     // Process modules
                     if (chapterData.modules && Array.isArray(chapterData.modules)) {
                         for (const moduleData of chapterData.modules) {
                             if (!moduleData) continue; // Skip null/undefined modules
-                            
-                            let moduleId;
 
-                            if (importMode === 'update' || importMode === 'upsert') {
-                                // Try to find existing module by serial
-                                const findModuleQuery = `
-                                    SELECT id FROM module 
-                                    WHERE chapter_id = $1 AND serial = $2
-                                `;
-                                const findModuleResult = await client.query(findModuleQuery, [chapterId, moduleData.serial]);
-
-                                if (findModuleResult.rows && findModuleResult.rows.length > 0) {
-                                    // Update existing module
-                                    moduleId = findModuleResult.rows[0].id;
-                                    const updateModuleQuery = `
-                                        UPDATE module SET
-                                            title = $1, description = $2, data = $3,
-                                            is_live = $4, is_free = $5, serial = $6, score = $7,
-                                            quiz_time_limit = $8, quiz_attempt_limit = $9,
-                                            pdf_drive_link = $10
-                                        WHERE id = $11
-                                    `;
-                                    await client.query(updateModuleQuery, [
-                                        moduleData.title,
-                                        moduleData.description || null,
-                                        moduleData.data ? JSON.stringify(moduleData.data) : JSON.stringify({ category: moduleData.category || 'TEXT' }),
-                                        moduleData.is_live !== undefined ? moduleData.is_live : true,
-                                        moduleData.is_free !== undefined ? moduleData.is_free : false,
-                                        moduleData.serial,
-                                        moduleData.score || 0,
-                                        moduleData.quiz_time_limit || null,
-                                        moduleData.quiz_attempt_limit || null,
-                                        (moduleData.data && moduleData.data.pdf_drive_link) ? moduleData.data.pdf_drive_link : null,
-                                        moduleId
-                                    ]);
-                                } else {
-                                    // Create new module
-                                    const insertModuleQuery = `
-                                        INSERT INTO module (
-                                            chapter_id, serial, title, description, data,
-                                            is_live, is_free, score,
-                                            quiz_time_limit, quiz_attempt_limit, pdf_drive_link
-                                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                                        RETURNING id
-                                    `;
-                                    const moduleResult = await client.query(insertModuleQuery, [
-                                        chapterId,
-                                        moduleData.serial,
-                                        moduleData.title,
-                                        moduleData.description || null,
-                                        moduleData.data ? JSON.stringify(moduleData.data) : JSON.stringify({ category: moduleData.category || 'TEXT' }),
-                                        moduleData.is_live !== undefined ? moduleData.is_live : true,
-                                        moduleData.is_free !== undefined ? moduleData.is_free : false,
-                                        moduleData.score || 0,
-                                        moduleData.quiz_time_limit || null,
-                                        moduleData.quiz_attempt_limit || null,
-                                        (moduleData.data && moduleData.data.pdf_drive_link) ? moduleData.data.pdf_drive_link : null
-                                    ]);
-                                    if (!moduleResult.rows || moduleResult.rows.length === 0) {
-                                        throw new Error(`Failed to create module: ${moduleData.title}`);
-                                    }
-                                    moduleId = moduleResult.rows[0].id;
-                                    modulesCreated++;
-                                }
+                            const moduleId = matchExisting ? await findModuleId(client, chapterId, moduleData.serial) : null;
+                            if (moduleId) {
+                                await updateImportedModule(client, moduleData, moduleId);
                             } else {
-                                // Create mode - always create new
-                                const insertModuleQuery = `
-                                    INSERT INTO module (
-                                        chapter_id, serial, title, description, data,
-                                        is_live, is_free, score,
-                                        quiz_time_limit, quiz_attempt_limit, pdf_drive_link
-                                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                                    RETURNING id
-                                `;
-                                const moduleResult = await client.query(insertModuleQuery, [
-                                    chapterId,
-                                    moduleData.serial,
-                                    moduleData.title,
-                                    moduleData.description || null,
-                                    moduleData.data ? JSON.stringify(moduleData.data) : JSON.stringify({ category: moduleData.category || 'TEXT' }),
-                                    moduleData.is_live !== undefined ? moduleData.is_live : true,
-                                    moduleData.is_free !== undefined ? moduleData.is_free : false,
-                                    moduleData.score || 0,
-                                    moduleData.quiz_time_limit || null,
-                                    moduleData.quiz_attempt_limit || null,
-                                    (moduleData.data && moduleData.data.pdf_drive_link) ? moduleData.data.pdf_drive_link : null
-                                ]);
-                                moduleId = moduleResult.rows[0].id;
+                                await insertImportedModule(client, chapterId, moduleData);
                                 modulesCreated++;
                             }
                         }
