@@ -1553,6 +1553,26 @@ class PaymentService extends Service {
 
     // Manual reconciliation of a payment
     // This method never fails - payment is always marked as reconciled
+    // What SSLCommerz says was bought: the tran_id query decides whether the payment is
+    // valid, the val_id order record says by whom and for what.
+    confirmedPurchase = async (tranId) => {
+        const validation = await this.validateTransactionWithSSLCommerz(tranId);
+        if (!validation.success && validation.error !== 'No transaction record found') {
+            return { unreachable: true, error: validation.error };
+        }
+        if (!validation.success || !validation.isValid) return { valid: false };
+        const order = await this.validateOrder(validation.val_id);
+        const record = order.success ? order.record : {};
+        if (!['VALID', 'VALIDATED'].includes(record.status) || record.tran_id !== tranId) return { valid: false };
+        return {
+            valid: true,
+            user_id: parseInt(record.value_a) || null,
+            item_id: parseInt(record.value_b) || null,
+            item_type: record.value_d || null,
+            amount: validation.amount
+        };
+    }
+
     reconcilePayment = async (sslcommerz_tran_id, reconciled_by, notes = null) => {
         try {
             // Find all payment logs for this transaction ID (there can be multiple IPN callbacks)
@@ -1571,50 +1591,20 @@ class PaymentService extends Service {
             // CRITICAL: Check all entries to find the VALID one
             // SSLCommerz can send multiple IPN callbacks (PROCESSING, VALID, EXPIRED)
             // We need to find the VALID entry, or re-validate with SSLCommerz
-            let log = null;
-            
-            // First, try to find an entry with status=VALID
-            const validLog = logResult.data.find(entry => entry.status === 'VALID');
-            if (validLog) {
-                log = validLog;
-                console.log('Reconciliation: Found VALID entry in audit log', {
-                    log_id: log.id,
-                    status: log.status,
-                    sslcommerz_tran_id
-                });
-            } else {
-                // No VALID entry found - re-validate with SSLCommerz to get current status
-                console.log('Reconciliation: No VALID entry found, re-validating with SSLCommerz', {
-                    sslcommerz_tran_id,
-                    entries_found: logResult.data.length
-                });
-                
-                const validationResult = await this.validateTransactionWithSSLCommerz(sslcommerz_tran_id);
-                
-                if (validationResult.success && validationResult.isValid) {
-                    // Payment is actually VALID - use the most recent entry but update status
-                    log = logResult.data[0]; // Most recent entry
-                    log.status = 'VALID'; // Override status with validated status
-                    console.log('Reconciliation: Re-validation shows payment is VALID', {
-                        log_id: log.id,
-                        validated_status: 'VALID',
-                        sslcommerz_tran_id
-                    });
-                } else {
-                    // Payment is not VALID - use most recent entry
-                    log = logResult.data[0];
-                    console.log('Reconciliation: Re-validation confirms payment is not VALID', {
-                        log_id: log.id,
-                        status: log.status,
-                        validation_status: validationResult.status,
-                        sslcommerz_tran_id
-                    });
-                }
+            // The audit log holds what IPNs claimed (a forged IPN leaves a row too), so whether
+            // the payment is valid and who bought what come from SSLCommerz.
+            const confirmed = await this.confirmedPurchase(sslcommerz_tran_id);
+            if (confirmed.unreachable) {
+                return { success: false, error: `Could not confirm the payment with SSLCommerz: ${confirmed.error}` };
             }
-            const userId = log.user_id;
-            const itemId = log.item_id;
-            const itemType = log.item_type;
-            const amount = parseFloat(log.amount);
+            const log = (confirmed.valid && logResult.data.find((entry) =>
+                entry.user_id === confirmed.user_id && entry.item_id === confirmed.item_id && entry.item_type === confirmed.item_type))
+                || logResult.data.find((entry) => entry.status === 'VALID')
+                || logResult.data[0];
+            const userId = confirmed.valid ? confirmed.user_id : log.user_id;
+            const itemId = confirmed.valid ? confirmed.item_id : log.item_id;
+            const itemType = confirmed.valid ? confirmed.item_type : log.item_type;
+            const amount = confirmed.valid ? confirmed.amount : parseFloat(log.amount);
 
             // Validate required fields
             if (!userId || !itemId || !itemType) {
@@ -1664,7 +1654,7 @@ class PaymentService extends Service {
             // Always attempt enrollment if payment status is VALID
             // Don't check processing_status - even if it was FAILED/ERROR, we should try again
             // This handles cases where initial processing failed but payment was valid
-            if (log.status === 'VALID') {
+            if (confirmed.valid) {
                 enrollmentAttempted = true;
                 
                 try {
@@ -1692,6 +1682,10 @@ class PaymentService extends Service {
                                 processingResult = { success: true, data: duplicateCheck.data[0], message: 'Already enrolled' };
                             }
                         }
+                    } else if (itemType === 'BOOK') {
+                        // Standalone book: the staged selection becomes the purchase (idempotent).
+                        processingResult = await this.fulfilBookSelection(transactionId);
+                        enrollmentSucceeded = processingResult.success === true;
                     } else {
                         // Course purchase
                         const CourseService = require('../managerial/course').CourseService;

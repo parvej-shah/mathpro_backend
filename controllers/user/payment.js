@@ -1435,12 +1435,12 @@ class PaymentController extends Controller {
                     );
                     
                     if (logResult.success && logResult.data && logResult.data.length > 0) {
-                        // Find VALID entry if exists, otherwise use most recent
-                        const validLog = logResult.data.find(entry => entry.status === 'VALID');
-                        const log = validLog || logResult.data[0];
-                        const userId = log.user_id;
-                        const itemId = log.item_id;
-                        const itemType = log.item_type;
+                        // Notify whoever SSLCommerz says bought it, not the audit log's claim.
+                        const confirmed = await paymentService.confirmedPurchase(sslcommerz_tran_id);
+                        const log = logResult.data.find(entry => entry.id === result.data.log_id) || logResult.data[0];
+                        const userId = confirmed.user_id;
+                        const itemId = confirmed.item_id;
+                        const itemType = confirmed.item_type;
                         const transactionId = log.internal_transaction_id || 
                             paymentService.generateTransactionId(userId, itemId);
                         
@@ -1452,7 +1452,9 @@ class PaymentController extends Controller {
                                 : paymentService.query(`SELECT * FROM course WHERE id = $1`, [itemId])
                         ]);
                         
-                        if (dbResults[0].success && dbResults[0].data && dbResults[0].data.length > 0 &&
+                        // No confirmation SMS/email for a standalone book (the IPN sends none either).
+                        if (confirmed.valid && itemType !== 'BOOK' &&
+                            dbResults[0].success && dbResults[0].data && dbResults[0].data.length > 0 &&
                             dbResults[1].success && dbResults[1].data && dbResults[1].data.length > 0) {
                             
                             const user = dbResults[0].data[0];
