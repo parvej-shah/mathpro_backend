@@ -2,6 +2,7 @@ const { Service } = require("../base");
 const { CouponCrudService } = require("./coupon/crud");
 const { CouponTargetingService } = require("./coupon/targeting");
 const { CouponRedemptionService } = require("./coupon/redemption");
+const { CouponUsageService } = require("./coupon/usage");
 const { CouponClickTrackingService } = require("./coupon/clickTracking");
 const { CouponAnalyticsService } = require("./coupon/analytics");
 
@@ -14,7 +15,8 @@ class CouponService extends Service {
     const parts = [
       new CouponCrudService(),
       new CouponTargetingService(),
-      new CouponRedemptionService(clicks),
+      new CouponRedemptionService(),
+      new CouponUsageService(clicks),
       clicks,
       new CouponAnalyticsService(),
     ];
