@@ -1158,7 +1158,7 @@ class PaymentController extends Controller {
                             });
                         } else {
                             // Course enrollment failed
-                            const errorMsg = takesResult.error?.message || 'Course enrollment failed';
+                            const errorMsg = takesResult.error || 'Course enrollment failed';
                             console.error('Course enrollment failed:', errorMsg);
                             
                             if (auditLogId) {

@@ -1,4 +1,5 @@
 const Service = require('../base').Service;
+const { safeMessage } = require('../../errors/dbErrors');
 const CryptoJS = require('crypto-js');
 
 // Quiz correct-answers are stored AES-encrypted by the admin client (same
@@ -85,83 +86,74 @@ class QuizAttemptService extends Service {
     // module's encrypted answer key, then persist the attempt + a `progress`
     // row in one transaction. One attempt only — rejects if already submitted.
     submitAttempt = async (user_id, module_id, answers) => {
-        const client = await this.getClient();
         const timestamp = parseInt(Date.now() / 1000);
 
         try {
-            await client.query('BEGIN');
-
-            const moduleRes = await client.query(
-                `select data, score from module where id=$1 limit 1`,
-                [module_id]
-            );
-            if (moduleRes.rows.length === 0) {
-                await client.query('ROLLBACK');
-                return { success: false, error: 'Module not found' };
-            }
-
-            const moduleData = moduleRes.rows[0].data || {};
-            const moduleScore = moduleRes.rows[0].score || 0;
-            const quizzes = Array.isArray(moduleData.quiz) ? moduleData.quiz : [];
-            if (quizzes.length === 0) {
-                await client.query('ROLLBACK');
-                return { success: false, error: 'Module has no quiz' };
-            }
-
-            // One attempt only — `progress` is the existing one-row-per-quiz lock.
-            const existingProgress = await client.query(
-                `select 1 from progress where user_id=$1 and module_id=$2 limit 1`,
-                [user_id, module_id]
-            );
-            if (existingProgress.rows.length > 0) {
-                await client.query('ROLLBACK');
-                return { success: false, error: 'Quiz already submitted' };
-            }
-
-            const verdict = [];
-            let acceptedPoints = 0;
-            let totalPoints = 0;
-
-            quizzes.forEach((quiz, index) => {
-                const questionPoints = typeof quiz.points === 'number' && quiz.points > 0
-                    ? quiz.points
-                    : 1;
-                totalPoints += questionPoints;
-
-                const correct = decryptAnswer(quiz.answer || quiz.correct_answer || '');
-                if (correct !== '' && correct === answers[index]) {
-                    verdict.push(true);
-                    acceptedPoints += questionPoints;
-                } else {
-                    verdict.push(false);
+            return await this.withTransaction(async (client) => {
+                const moduleRes = await client.query(
+                    `select data, score from module where id=$1 limit 1`,
+                    [module_id]
+                );
+                if (moduleRes.rows.length === 0) {
+                    return { success: false, error: 'Module not found' };
                 }
+
+                const moduleData = moduleRes.rows[0].data || {};
+                const moduleScore = moduleRes.rows[0].score || 0;
+                const quizzes = Array.isArray(moduleData.quiz) ? moduleData.quiz : [];
+                if (quizzes.length === 0) {
+                    return { success: false, error: 'Module has no quiz' };
+                }
+
+                // One attempt only — `progress` is the existing one-row-per-quiz lock.
+                const existingProgress = await client.query(
+                    `select 1 from progress where user_id=$1 and module_id=$2 limit 1`,
+                    [user_id, module_id]
+                );
+                if (existingProgress.rows.length > 0) {
+                    return { success: false, error: 'Quiz already submitted' };
+                }
+
+                const verdict = [];
+                let acceptedPoints = 0;
+                let totalPoints = 0;
+
+                quizzes.forEach((quiz, index) => {
+                    const questionPoints = typeof quiz.points === 'number' && quiz.points > 0
+                        ? quiz.points
+                        : 1;
+                    totalPoints += questionPoints;
+
+                    const correct = decryptAnswer(quiz.answer || quiz.correct_answer || '');
+                    if (correct !== '' && correct === answers[index]) {
+                        verdict.push(true);
+                        acceptedPoints += questionPoints;
+                    } else {
+                        verdict.push(false);
+                    }
+                });
+
+                const score = totalPoints > 0
+                    ? Math.round((acceptedPoints / totalPoints) * moduleScore)
+                    : 0;
+
+                await client.query(
+                    `insert into quiz_attempt(user_id,module_id,answers,verdict,score,timestamp)
+                     values($1,$2,$3,$4,$5,$6)`,
+                    [user_id, module_id, JSON.stringify(answers), JSON.stringify(verdict), score, timestamp]
+                );
+                await client.query(
+                    `insert into progress(user_id,module_id,point,timestamp) values($1,$2,$3,$4)`,
+                    [user_id, module_id, score, timestamp]
+                );
+
+                return {
+                    success: true,
+                    data: { submitted: true, answers, verdict, score },
+                };
             });
-
-            const score = totalPoints > 0
-                ? Math.round((acceptedPoints / totalPoints) * moduleScore)
-                : 0;
-
-            await client.query(
-                `insert into quiz_attempt(user_id,module_id,answers,verdict,score,timestamp)
-                 values($1,$2,$3,$4,$5,$6)`,
-                [user_id, module_id, JSON.stringify(answers), JSON.stringify(verdict), score, timestamp]
-            );
-            await client.query(
-                `insert into progress(user_id,module_id,point,timestamp) values($1,$2,$3,$4)`,
-                [user_id, module_id, score, timestamp]
-            );
-
-            await client.query('COMMIT');
-
-            return {
-                success: true,
-                data: { submitted: true, answers, verdict, score },
-            };
         } catch (e) {
-            await client.query('ROLLBACK');
-            return { success: false, error: e };
-        } finally {
-            client.release();
+            return { success: false, error: safeMessage(e) };
         }
     }
 }

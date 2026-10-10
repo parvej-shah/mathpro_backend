@@ -1,4 +1,6 @@
 const Service = require("../base").Service;
+const { ValidationError } = require("../../errors/AppError");
+const { safeMessage } = require("../../errors/dbErrors");
 
 class FeaturedItemService extends Service {
   listPublic = async () => {
@@ -132,35 +134,30 @@ class FeaturedItemService extends Service {
       return { success: false, error: "items array is required" };
     }
 
-    const client = await this.getClient();
     try {
-      await client.query("BEGIN");
+      return await this.withTransaction(async (client) => {
+        for (const entry of items) {
+          const itemType = entry.item_type;
+          const itemId = Number.parseInt(String(entry.item_id), 10);
+          const sortOrder = Math.trunc(Number(entry.sort_order) || 0);
 
-      for (const entry of items) {
-        const itemType = entry.item_type;
-        const itemId = Number.parseInt(String(entry.item_id), 10);
-        const sortOrder = Math.trunc(Number(entry.sort_order) || 0);
+          if (itemType !== "course" && itemType !== "bundle" || Number.isNaN(itemId)) {
+            // Thrown, not returned, so the updates already made in this loop roll back.
+            throw new ValidationError("Invalid item in reorder payload");
+          }
 
-        if (itemType !== "course" && itemType !== "bundle" || Number.isNaN(itemId)) {
-          await client.query("ROLLBACK");
-          return { success: false, error: "Invalid item in reorder payload" };
+          await client.query(
+            `UPDATE public_featured_item
+             SET sort_order = $1, updated_at = $2
+             WHERE item_type = $3 AND item_id = $4`,
+            [sortOrder, Math.trunc(Date.now() / 1000), itemType, itemId]
+          );
         }
 
-        await client.query(
-          `UPDATE public_featured_item
-           SET sort_order = $1, updated_at = $2
-           WHERE item_type = $3 AND item_id = $4`,
-          [sortOrder, Math.trunc(Date.now() / 1000), itemType, itemId]
-        );
-      }
-
-      await client.query("COMMIT");
-      return { success: true, data: items };
+        return { success: true, data: items };
+      });
     } catch (error) {
-      await client.query("ROLLBACK");
-      return { success: false, error };
-    } finally {
-      client.release();
+      return { success: false, error: safeMessage(error) };
     }
   };
 

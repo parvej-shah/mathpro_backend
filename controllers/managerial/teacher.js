@@ -22,9 +22,7 @@ class TeacherController extends Controller {
     deleteEntry =async (req,res)=>{
         var result=await teacherService.deleteEntry(req.params.id)
         if (!result.success) {
-            const err = result.error;
-            const message = (err && (err.detail || err.message)) || 'Failed to delete teacher';
-            return res.status(400).json({ success: false, error: message });
+            return res.status(400).json({ success: false, error: result.error || 'Failed to delete teacher' });
         }
         return res.status(200).json(result)
     }

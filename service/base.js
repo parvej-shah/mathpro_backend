@@ -5,6 +5,9 @@ const {
     nowMs,
     shouldLogQuery,
 } = require('../util/observability');
+const logger = require('../util/logger');
+const { AppError } = require('../errors/AppError');
+const { describeDbError, toAppError } = require('../errors/dbErrors');
 
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -80,11 +83,45 @@ class Service {
                 rowCount: data.rowCount
             }
         } catch (error) {
-            console.log(error)
+            // The raw pg error (SQL, constraint names, row values) stays in the server log;
+            // callers and clients get a safe message string.
+            logger.error('db_error', error, { source: 'Service.query', sql: getQueryText(query).slice(0, 500) });
             return {
                 success: false,
-                error
+                error: describeDbError(error).message
             }
+        }
+    }
+
+    // Like query(), but throws an AppError (mapped from the pg error code) instead of
+    // returning success:false. Resolves to the pg result ({ rows, rowCount }).
+    queryOrThrow = async function (query, params) {
+        try {
+            return await runTimedQuery(pool.query.bind(pool), query, params, { source: 'Service.queryOrThrow', pooled: true });
+        } catch (error) {
+            logger.error('db_error', error, { source: 'Service.queryOrThrow', sql: getQueryText(query).slice(0, 500) });
+            throw toAppError(error);
+        }
+    }
+
+    // Runs fn(client) inside BEGIN/COMMIT on one pooled client. Any throw rolls back and
+    // is rethrown; the client is always released. Resolves to fn's return value.
+    withTransaction = async function (fn) {
+        const client = await this.getClient();
+        // Passing an error to release() destroys the connection instead of pooling it.
+        let releaseWith;
+        try {
+            await client.query('BEGIN');
+            const result = await fn(client);
+            await client.query('COMMIT');
+            return result;
+        } catch (error) {
+            if (!(error instanceof AppError)) logger.error('db_error', error, { source: 'Service.withTransaction' });
+            // A failed ROLLBACK means the connection itself is broken.
+            await client.query('ROLLBACK').catch((rollbackError) => { releaseWith = rollbackError; });
+            throw error;
+        } finally {
+            client.release(releaseWith);
         }
     }
 

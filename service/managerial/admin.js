@@ -340,7 +340,7 @@ class AdminService extends Service {
                 return {
                     success: false,
                     error: 'Failed to create admin in database',
-                    message: insertResult.error?.message || 'Database error occurred'
+                    message: insertResult.error || 'Database error occurred'
                 };
             }
 
@@ -641,7 +641,7 @@ class AdminService extends Service {
                 return {
                     success: false,
                     error: 'Failed to update admin in database',
-                    message: updateResult.error?.message || 'Database error occurred'
+                    message: updateResult.error || 'Database error occurred'
                 };
             }
 
@@ -733,7 +733,7 @@ class AdminService extends Service {
                 return {
                     success: false,
                     error: 'Failed to update password in database',
-                    message: updateResult.error?.message || 'Database error occurred'
+                    message: updateResult.error || 'Database error occurred'
                 };
             }
 

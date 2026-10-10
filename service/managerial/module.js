@@ -1,4 +1,5 @@
 const Service = require('../base').Service;
+const { safeMessage } = require('../../errors/dbErrors');
 
 class ModuleService extends Service {
     constructor() {
@@ -192,53 +193,44 @@ class ModuleService extends Service {
     }
 
     completeModule = async (user_id, module_id, points, type) => {
-        const client = await this.getClient();
         const timestamp = parseInt(Date.now() / 1000);
 
         try {
-            await client.query('BEGIN');
+            return await this.withTransaction(async (client) => {
+                const existingProgress = await client.query(
+                    `select 1 from progress where user_id=$1 and module_id=$2 limit 1`,
+                    [user_id, module_id]
+                );
 
-            const existingProgress = await client.query(
-                `select 1 from progress where user_id=$1 and module_id=$2 limit 1`,
-                [user_id, module_id]
-            );
+                if (type === 'QUIZ' && existingProgress.rows.length > 0) {
+                    return {
+                        success: false,
+                        error: 'Quiz already submitted'
+                    };
+                }
 
-            if (type === 'QUIZ' && existingProgress.rows.length > 0) {
-                await client.query('ROLLBACK');
+                if (existingProgress.rows.length > 0) {
+                    // Progress row exists (could be a quiz score). Don't overwrite it.
+                    return { success: true, data: [], rowCount: 0 };
+                }
+
+                const result = await client.query(
+                    `insert into progress(user_id,module_id,point,timestamp) values($1,$2,$3,$4)`,
+                    [user_id, module_id, points, timestamp]
+                );
+
                 return {
-                    success: false,
-                    error: 'Quiz already submitted'
+                    success: true,
+                    data: result.rows,
+                    rowCount: result.rowCount
                 };
-            }
-
-            if (existingProgress.rows.length > 0) {
-                // Progress row exists (could be a quiz score). Don't overwrite it.
-                await client.query('ROLLBACK');
-                return { success: true, data: [], rowCount: 0 };
-            }
-
-            const result = await client.query(
-                `insert into progress(user_id,module_id,point,timestamp) values($1,$2,$3,$4)`,
-                [user_id, module_id, points, timestamp]
-            );
-
-            await client.query('COMMIT');
-
-            return {
-                success: true,
-                data: result.rows,
-                rowCount: result.rowCount
-            };
+            });
         } catch (e) {
-            await client.query('ROLLBACK');
             return {
                 success: false,
-                error: e
+                error: safeMessage(e)
             }
-        } finally {
-            client.release();
         }
-
     }
 
 }

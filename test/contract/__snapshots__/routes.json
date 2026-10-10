@@ -627,7 +627,7 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "GET /admin/announcement/list/:courseId [anon]": {
   "status": 401,
@@ -2887,7 +2887,7 @@
   "kind": "json",
   "keys": "data,error,success",
   "success": false,
-  "error": "object",
+  "error": "string",
   "data": "object"
  },
  "GET /user/course/getRanking/:id [admin]": {
@@ -2895,7 +2895,7 @@
   "kind": "json",
   "keys": "data,error,success",
   "success": false,
-  "error": "object",
+  "error": "string",
   "data": "object"
  },
  "GET /user/course/list [anon]": {
@@ -3221,14 +3221,14 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "GET /user/notification/count [admin]": {
   "status": 400,
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "GET /user/notification/list [anon]": {
   "status": 401,
@@ -3242,14 +3242,14 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "GET /user/notification/list [admin]": {
   "status": 400,
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "GET /user/payment/audit-logs [anon]": {
   "status": 401,
@@ -4086,7 +4086,7 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /admin/book/course/:courseId [anon]": {
   "status": 401,
@@ -4275,7 +4275,7 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /admin/faq/create [anon]": {
   "status": 401,
@@ -4525,7 +4525,7 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /admin/testimonial/create [anon]": {
   "status": 401,
@@ -4812,14 +4812,14 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /user/module/addProgress/:id [admin]": {
   "status": 400,
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /user/module/quiz/:id/submit [anon]": {
   "status": 401,
@@ -4875,14 +4875,14 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /user/notification/markAllAsRead [admin]": {
   "status": 400,
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /user/notification/markAsRead/:id [anon]": {
   "status": 401,
@@ -4896,14 +4896,14 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /user/notification/markAsRead/:id [admin]": {
   "status": 400,
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /user/payment/audit-logs [anon]": {
   "status": 401,
@@ -5119,7 +5119,7 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "POST /v2/admin/course/import [anon]": {
   "status": 401,
@@ -5457,14 +5457,14 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "PUT /admin/auth/setProfile [admin]": {
   "status": 400,
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "PUT /admin/book/:id [anon]": {
   "status": 401,
@@ -5653,7 +5653,7 @@
   "kind": "json",
   "keys": "error,success",
   "success": false,
-  "error": "object"
+  "error": "string"
  },
  "PUT /admin/course/updateFull/:id [anon]": {
   "status": 401,

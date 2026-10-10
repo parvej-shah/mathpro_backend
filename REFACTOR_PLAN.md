@@ -220,39 +220,39 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
 
 ### Phase 2 — Error handling (Replace Error Code with Exception)
 
-- [ ] **2.1 `errors/AppError.js`.** `AppError(message, {status, code, details, expose})` +
+- [x] **2.1 `errors/AppError.js`.** `AppError(message, {status, code, details, expose})` +
   subclasses `ValidationError(400)`, `UnauthorizedError(401)`, `ForbiddenError(403)`,
   `NotFoundError(404)`, `ConflictError(409)`, `GoneError(410)`. *L.*
-- [ ] **2.2 Central error middleware** (`middleware/errorHandler.js`) replaces the inline one in
+- [x] **2.2 Central error middleware** (`middleware/errorHandler.js`) replaces the inline one in
   `app.js`. `AppError` → its status + the **existing envelope**. Unknown errors → 500 with a
   generic message, full log with `x-request-id`. Never serialize raw errors. *M.* ✅ 0.3 green.
 - [ ] **2.3 `respond(res, result)` helper** (*Duplicate Code → Extract Method*), equivalent to
   `res.status(result.success ? 200 : 400).json(result)` but strips any non-plain `error`
   object. Mechanically replace the 168 sites. *M,* done per router, one PR per feature. ✅ 0.3 green.
-- [ ] **2.4 `withTransaction(fn)` on `Service`** (*Duplicate Code → Extract Method*):
+- [~] **2.4 `withTransaction(fn)` on `Service`** *(helper + tests done; migrated `module.completeModule`, `quizAttempt.submitAttempt`, `featuredItem.reorder`; the remaining hand-rolled transactions are open)* (*Duplicate Code → Extract Method*):
   `BEGIN` → `fn(client)` → `COMMIT`, `ROLLBACK` on throw, always `release()`. Migrate the 13
   services one at a time. *M.* ✅ a test asserts rollback on a thrown error and that no client leaks
   (`pool.totalCount` stays stable).
-- [ ] **2.5 `Service.queryOrThrow`** (new, alongside `query`). Throws `AppError` mapping known
+- [x] **2.5 `Service.queryOrThrow`** (new, alongside `query`). Throws `AppError` mapping known
   PG codes (`23505`→409, `23503`→400/409, `22P02`→400). New and refactored service code uses
   it; `query` stays for untouched code (*Strangler*, no big-bang change of 640 sites).
-- [ ] **2.6 CONTRACT (minor, client-safe): stop leaking `pg` errors.** In `Service.query`, return
+- [x] **2.6 CONTRACT (minor, client-safe): stop leaking `pg` errors.** *(Done: `errors/dbErrors.js` maps SQLSTATE → safe message; snapshot diff was exactly 20 entries `error: object → string`, nothing else.)* In `Service.query`, return
   `error: <safe message string>` and log the full error server-side.
   **Client check (done 2026-10-10):** the Frontend reads `response.data.error` /
   `.data.message` as display strings (~45 sites) and the Admin does the same (~4 sites);
   neither reads `.detail`, `.code` or `.constraint` off it. So a string is what both clients
   already expect, and today's serialized object probably renders as `[object Object]`.
   No client change needed. *M,* needs Q2.
-- [ ] **2.6b Status codes the clients branch on must survive the middleware.** Frontend:
+- [x] **2.6b Status codes the clients branch on must survive the middleware.** Frontend:
   401, 403, 404, 429, 500. Admin: 400, 401, 403, 404, **409, 422**, 500. Add these to the 0.3
   snapshot tests before 2.2/2.8 land.
-- [ ] **2.7 Process-level handling** (`index.js`): on `uncaughtException` / `unhandledRejection`,
+- [x] **2.7 Process-level handling** *(Coolify container verified `restart=unless-stopped`. Deviation: `unhandledRejection` is logged but NOT fatal, because fire-and-forget SMS/email promises would otherwise restart the process and drop in-flight requests; `uncaughtException` shuts down gracefully and exits 1.)* (`index.js`): on `uncaughtException` / `unhandledRejection`,
   log, then run the existing graceful `shutdown` and exit non-zero so Coolify restarts a clean
   process. Also close the pg pool in `shutdown`. *M:* verify Coolify restart policy first.
 - [ ] **2.8 Unify V1/V2 error shapes behind the middleware.** `util/errorHandler.js` becomes
   a thin wrapper that throws `AppError`, so the V2 controllers lose their 15-line blocks.
   Output stays byte-identical (`code`, `timestamp`, `details`). *M.*
-- [ ] **2.9 Structured logging helper** (`util/logger.js`, JSON lines like `observability.js`)
+- [~] **2.9 Structured logging helper** *(`util/logger.js` added and used by Service, the error middleware and process handlers; bulk `console.log(error)` replacement open)* (`util/logger.js`, JSON lines like `observability.js`)
   with request id. Replace bare `console.log(error)`. *L.*
 
 ### Phase 3 — Thin controllers & de-duplicated plumbing
