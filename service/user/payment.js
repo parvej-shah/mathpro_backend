@@ -39,6 +39,34 @@ const CHECKOUT_ITEMS = {
     }
 };
 
+const sumPaid = (rows) => rows.reduce((sum, row) => sum + (parseFloat(row.paid_amount) || 0), 0);
+
+const COUPON_COLUMNS = [
+    'coupon_id', 'coupon_id_detail', 'coupon_code', 'coupon_name', 'coupon_discount_type', 'coupon_discount_value',
+    'coupon_discount_amount', 'coupon_original_price', 'coupon_final_price'
+];
+const numberOrNull = (value) => (value ? parseFloat(value) : null);
+
+// A course/bundle history row as it appears in all_transactions: the coupon_* columns
+// folded into one `coupon` object (or null).
+function historyTransaction(row, transactionDate, itemType) {
+    const transaction = { ...row, transaction_date: transactionDate, item_type: itemType };
+    transaction.coupon = row.coupon_id_detail || row.coupon_code
+        ? {
+            id: row.coupon_id_detail,
+            code: row.coupon_code,
+            name: row.coupon_name,
+            discount_type: row.coupon_discount_type,
+            discount_value: row.coupon_discount_value,
+            discount_amount: numberOrNull(row.coupon_discount_amount),
+            original_price: numberOrNull(row.coupon_original_price),
+            final_price: numberOrNull(row.coupon_final_price)
+        }
+        : null;
+    for (const column of COUPON_COLUMNS) delete transaction[column];
+    return transaction;
+}
+
 class PaymentService extends Service {
     constructor() {
         super();
@@ -562,16 +590,9 @@ class PaymentService extends Service {
                 };
             }
 
-            // Calculate summary statistics
-            const totalIndividualSpent = individualCourses.data
-                .reduce((sum, course) => sum + (parseFloat(course.paid_amount) || 0), 0);
-
-            const totalBundleSpent = bundlePurchases.data
-                .reduce((sum, bundle) => sum + (parseFloat(bundle.paid_amount) || 0), 0);
-
-            const totalBookSpent = bookPurchases.data
-                .reduce((sum, book) => sum + (parseFloat(book.paid_amount) || 0), 0);
-
+            const totalIndividualSpent = sumPaid(individualCourses.data);
+            const totalBundleSpent = sumPaid(bundlePurchases.data);
+            const totalBookSpent = sumPaid(bookPurchases.data);
             const totalSpent = totalIndividualSpent + totalBundleSpent + totalBookSpent;
             const totalCourses = individualCourses.data.length;
             const totalBundles = bundlePurchases.data.length;
@@ -579,86 +600,9 @@ class PaymentService extends Service {
 
             // Combine and sort all transactions by date (with formatted coupon info)
             const allTransactions = [
-                ...individualCourses.data.map(course => {
-                    const transaction = {
-                        ...course,
-                        transaction_date: course.enrollment_date,
-                        item_type: 'course'
-                    };
-                    
-                    // Format coupon information if present
-                    if (course.coupon_id_detail || course.coupon_code) {
-                        transaction.coupon = {
-                            id: course.coupon_id_detail,
-                            code: course.coupon_code,
-                            name: course.coupon_name,
-                            discount_type: course.coupon_discount_type,
-                            discount_value: course.coupon_discount_value,
-                            discount_amount: course.coupon_discount_amount ? parseFloat(course.coupon_discount_amount) : null,
-                            original_price: course.coupon_original_price ? parseFloat(course.coupon_original_price) : null,
-                            final_price: course.coupon_final_price ? parseFloat(course.coupon_final_price) : null
-                        };
-                    } else {
-                        transaction.coupon = null;
-                    }
-                    
-                    // Remove raw coupon fields from response
-                    delete transaction.coupon_id;
-                    delete transaction.coupon_id_detail;
-                    delete transaction.coupon_code;
-                    delete transaction.coupon_name;
-                    delete transaction.coupon_discount_type;
-                    delete transaction.coupon_discount_value;
-                    delete transaction.coupon_discount_amount;
-                    delete transaction.coupon_original_price;
-                    delete transaction.coupon_final_price;
-                    
-                    return transaction;
-                }),
-                ...bundlePurchases.data.map(bundle => {
-                    const transaction = {
-                        ...bundle,
-                        transaction_date: bundle.purchase_date,
-                        item_type: 'bundle'
-                    };
-                    
-                    // Format coupon information if present
-                    if (bundle.coupon_id_detail || bundle.coupon_code) {
-                        transaction.coupon = {
-                            id: bundle.coupon_id_detail,
-                            code: bundle.coupon_code,
-                            name: bundle.coupon_name,
-                            discount_type: bundle.coupon_discount_type,
-                            discount_value: bundle.coupon_discount_value,
-                            discount_amount: bundle.coupon_discount_amount ? parseFloat(bundle.coupon_discount_amount) : null,
-                            original_price: bundle.coupon_original_price ? parseFloat(bundle.coupon_original_price) : null,
-                            final_price: bundle.coupon_final_price ? parseFloat(bundle.coupon_final_price) : null
-                        };
-                    } else {
-                        transaction.coupon = null;
-                    }
-                    
-                    // Remove raw coupon fields from response
-                    delete transaction.coupon_id;
-                    delete transaction.coupon_id_detail;
-                    delete transaction.coupon_code;
-                    delete transaction.coupon_name;
-                    delete transaction.coupon_discount_type;
-                    delete transaction.coupon_discount_value;
-                    delete transaction.coupon_discount_amount;
-                    delete transaction.coupon_original_price;
-                    delete transaction.coupon_final_price;
-
-                    return transaction;
-                }),
-                ...bookPurchases.data.map(book => {
-                    return {
-                        ...book,
-                        transaction_date: book.purchase_date,
-                        item_type: 'book',
-                        coupon: null
-                    };
-                })
+                ...individualCourses.data.map((course) => historyTransaction(course, course.enrollment_date, 'course')),
+                ...bundlePurchases.data.map((bundle) => historyTransaction(bundle, bundle.purchase_date, 'bundle')),
+                ...bookPurchases.data.map((book) => ({ ...book, transaction_date: book.purchase_date, item_type: 'book', coupon: null }))
             ].sort((a, b) => b.transaction_date - a.transaction_date);
 
             return {
