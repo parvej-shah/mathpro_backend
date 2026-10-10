@@ -43,4 +43,4 @@ const adminToken = () => sign(ADMIN, [SUPER_ADMIN_ROLE_NAME], ALL_PERMISSIONS);
 // Sid-less student token: allowed through by isSessionActive (legacy-token path).
 const studentToken = () => sign(STUDENT, [], []);
 
-module.exports = { ADMIN, STUDENT, COURSE_ID, seed, adminToken, studentToken, pool };
+module.exports = { ADMIN, STUDENT, COURSE_ID, seed, sign, adminToken, studentToken, pool };

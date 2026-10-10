@@ -187,10 +187,17 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
   one happy-path and one failure-path test that records **status code + envelope keys**
   (not volatile values). Start with the routes this plan touches: auth, payment, coupon,
   course, bundle, upload. *Risk L.* ✅ suite is green on the current `main`.
-- [ ] **0.4 Payment characterization tests.** Replay recorded SSLCommerz IPN / success / fail /
+- [x] **0.4 Payment characterization tests.** Replay recorded SSLCommerz IPN / success / fail /
   cancel payloads for course, bundle and book (with and without coupon). Assert the DB side
   effects (`takes`, `payment`, coupon usage, bundle enrollment, book selection). Stub the
   SSLCommerz validation call. *Risk L, but essential for Phase 4.*
+  Done: `test/payment/payment.test.js` (19 tests). SSLCommerz is faked at `https.request`
+  (`test/helpers/sslcommerzStub.js`), so it covers both `sslcz.init` and the validation API and
+  survives the 4.1 adapter. Mutation-checked (amount tolerance, coupon completion, book pricing).
+  Two current behaviours are pinned as `CURRENT BEHAVIOUR` for Phase 4 to decide on: a replayed
+  IPN while validation still says VALID is answered `success:false` and logged FAILED although
+  the student is enrolled; and an IPN without `value_d`/`value_b` (incl. missing `status`) is
+  never audited, because `payment_audit_log.item_type` is NOT NULL and the insert fails silently.
 - [x] **0.5 CI.** GitHub Action: install → lint → test → jscpd report (non-blocking). *Risk L.*
 
 ### Phase 1 — Dead code & configuration (Dispensables)
