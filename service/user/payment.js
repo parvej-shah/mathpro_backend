@@ -1,6 +1,43 @@
 const Service = require('../base').Service;
 const sslcommerz = require('../../integrations/sslcommerz');
+const CouponService = require('../managerial/coupon');
 const logger = require('../../util/logger');
+
+const couponService = new CouponService();
+
+// What differs between buying a course, a bundle and a standalone book (see initiateCheckout).
+// couponTarget gives recordUsage's [courseId, bundleId, bookId]; label is for log lines.
+const CHECKOUT_ITEMS = {
+    COURSE: {
+        method: 'initiatePayment',
+        label: '',
+        itemQuery: `select * from course where id = $1`,
+        couponValidator: 'validateCoupon',
+        couponTarget: (id) => [id, null, null],
+        productName: 'Math Pro Course',
+        standalone: false
+    },
+    BUNDLE: {
+        method: 'initiatePaymentForBundle',
+        label: 'bundle ',
+        itemQuery: `select * from bundle where id = $1`,
+        couponValidator: 'validateCouponForBundle',
+        couponTarget: (id) => [null, id, null],
+        productName: 'Math Pro Bundle',
+        standalone: false
+    },
+    // A book bought on its own: must exist and be active, needs shipping, and is
+    // itself the shipped item (no course/bundle enrolment).
+    BOOK: {
+        method: 'initiatePaymentForBook',
+        label: 'book ',
+        itemQuery: `select * from book where id = $1 and is_active = true`,
+        couponValidator: 'validateCouponForBook',
+        couponTarget: (id) => [null, null, id],
+        productName: 'Math Pro Book',
+        standalone: true
+    }
+};
 
 class PaymentService extends Service {
     constructor() {
@@ -209,575 +246,167 @@ class PaymentService extends Service {
         return { success: true, fulfilled };
     }
 
-    initiatePayment = async (body, course_id) => {
-        var dbResults = await Promise.all([
-            this.query(
-                `select * from managerial_auth where id = $1`,
-                [body.user_id]
-            ),
-            this.query(
-                `select * from course where id = $1`,
-                [course_id]
-            )
-        ])
+    // One checkout flow for every purchasable item; CHECKOUT_ITEMS holds what differs.
+    // Order matters and is pinned by the payment tests: item check → (book) shipping →
+    // coupon → transaction id → (course/bundle) attached books → coupon usage → gateway.
+    initiateCheckout = async (itemType, body, itemId) => {
+        const item = CHECKOUT_ITEMS[itemType];
+        const [userResult, itemResult] = await Promise.all([
+            this.query(`select * from managerial_auth where id = $1`, [body.user_id]),
+            this.query(item.itemQuery, [itemId])
+        ]);
 
-        // Get original price from the database row — never trust a client-supplied
-        // price. (Previously the client could pass `eventId` to set an arbitrary
-        // price; SSLCommerz only validates that paid == requested, so that let a
-        // user buy at any price they chose.)
-        var originalPrice = parseFloat(dbResults[1].data[0].price);
-        var finalPrice = originalPrice;
-        var couponId = null;
-        var couponData = null;
-
-        // Handle coupon if provided
-        if (body.coupon_code) {
-            try {
-                const CouponService = require('../managerial/coupon');
-                const couponService = new CouponService();
-
-                // Validate coupon
-                const validation = await couponService.validateCoupon(
-                    body.coupon_code,
-                    course_id,
-                    body.user_id
-                );
-
-                if (!validation.valid) {
-                    return {
-                        success: false,
-                        error: validation.error || 'Invalid coupon code'
-                    };
-                }
-
-                // Calculate discount
-                const priceCalc = couponService.calculateDiscount(
-                    validation.coupon,
-                    originalPrice
-                );
-
-                finalPrice = priceCalc.finalPrice;
-                couponId = validation.coupon.id;
-                couponData = validation.coupon;
-            } catch (error) {
-                logger.error('Error processing coupon:', error);
-                return {
-                    success: false,
-                    error: 'Failed to process coupon'
-                };
-            }
-        }
-
-        // Generate transaction ID BEFORE payment initiation (this will be the access code sent to user)
-        const transactionId = this.generateTransactionId(body.user_id, course_id);
-
-        // Optional "include books" selection (physical books added on top of the
-        // course price, after any coupon discount). Resolved + priced server-side.
-        // Validated/staged here (fails fast on bad input) but the price is added
-        // AFTER coupon recording so the recorded discount stays course-only.
-        const bookSelection = await this.resolveBookSelection(body, 'COURSE', course_id);
-        if (bookSelection.error) {
-            return { success: false, error: bookSelection.error };
-        }
-        if (bookSelection.include) {
-            await this.stageBookSelection(transactionId, body.user_id, 'COURSE', course_id, bookSelection);
-        }
-
-        // CRITICAL FIX: Record coupon usage IMMEDIATELY after validation (not waiting for IPN)
-        // This ensures analytics work and payment processing is independent of IPN
-        if (couponId && couponData) {
-            try {
-                const CouponService = require('../managerial/coupon');
-                const couponService = new CouponService();
-                
-                const discountAmount = originalPrice - finalPrice;
-
-                // Record coupon usage IMMEDIATELY with payment_status='pending'
-                // This ensures analytics work even if IPN fails
-                // IPN will update it to 'completed' when payment succeeds
-                const recordResult = await couponService.recordUsage(
-                    couponId,
-                    body.user_id,
-                    course_id,
-                    null, // bundle_id
-                    {
-                        originalPrice: originalPrice,
-                        discountAmount: discountAmount,
-                        finalPrice: finalPrice
-                    },
-                    'pending', // Will be updated to 'completed' in IPN
-                    transactionId
-                );
-                
-                if (!recordResult.success) {
-                    // EDGE CASE: If recordUsage fails, check if it's a duplicate (idempotency)
-                    // If duplicate, that's OK - payment can proceed
-                    const isDuplicateError = recordResult.error && (
-                        recordResult.error.includes('already used') ||
-                        recordResult.error.includes('pending payment')
-                    );
-                    
-                    if (isDuplicateError) {
-                        console.warn('Coupon usage already recorded (idempotency):', {
-                            transactionId,
-                            couponId,
-                            error: recordResult.error
-                        });
-                        // Payment can proceed - usage already recorded
-                    } else {
-                        console.error('Failed to record coupon usage during payment initiation:', {
-                            transactionId,
-                            couponId,
-                            error: recordResult.error
-                        });
-                        // Don't fail payment, but log prominently for reconciliation
-                    }
-                } else {
-                    console.log('Coupon usage recorded immediately (pending payment):', {
-                        transactionId,
-                        couponId,
-                        usageId: recordResult.data?.usageId
-                    });
-                }
-            } catch (error) {
-                console.error('Error processing coupon during payment initiation:', {
-                    error: error.message,
-                    stack: error.stack,
-                    transactionId,
-                    couponId
-                });
-                // Don't fail payment if coupon processing fails, but log it
-            }
-        }
-
-        // Add the optional book total on top of the (possibly discounted) course price
-        if (bookSelection.include) {
-            finalPrice += bookSelection.booksTotal;
-        }
-
-        const paymentCallbackBaseUrl = process.env.BACKEND_URL || process.env.PRODUCTION_URL || 'https://2m06xslkj8.execute-api.ap-southeast-2.amazonaws.com/prod';
-        const gatewayAddressPayload = this.buildGatewayAddressPayload(dbResults[0].data[0], bookSelection);
-
-        var pgwData = {
-            total_amount: finalPrice.toFixed(2),
-            currency: 'BDT',
-            tran_id: transactionId, // Use generated transaction ID (access code) as tran_id
-            success_url: `${paymentCallbackBaseUrl}/user/payment/success`,
-            fail_url: `${paymentCallbackBaseUrl}/user/payment/failure`,
-            cancel_url: `${paymentCallbackBaseUrl}/user/payment/cancel`,
-            ipn_url: process.env.IPN_URL,
-            shipping_method: bookSelection.include ? 'Courier' : 'NO',
-            product_name: 'Math Pro Course',
-            product_category: 'Education',
-            product_profile: bookSelection.include ? 'physical-goods' : 'digital-goods',
-            // multi_card_name: 'mobilebank,othercard,internetbank',
-            value_a: body.user_id,
-            value_b: course_id,
-            value_c: finalPrice.toFixed(2), // Use final price (with discount if applicable)
-            value_d: "COURSE", // Keep value_d as "COURSE" - coupon data stored separately
-            ...gatewayAddressPayload
-        };
-        try {
-            var apiResponse = await sslcommerz.initSession(pgwData)
-            // console.log(apiResponse)
-            // console.log(apiResponse.GatewayPageURL)
-            return {
-                success: true,
-                data: apiResponse.GatewayPageURL,
-                coupon_applied: couponId ? true : false,
-                original_price: originalPrice,
-                final_price: finalPrice,
-                discount_amount: couponId ? (originalPrice - (finalPrice - bookSelection.booksTotal)) : 0,
-                books_included: bookSelection.include,
-                books_total: bookSelection.booksTotal
-            }
-        } catch (e) {
-            logger.error('Error in initiatePayment:', e);
-            return {
-                success: false,
-                data: 'error occurred'
-            }
-        }
-
-    }
-
-    initiatePaymentForBundle = async (body, bundle_id) => {
-        var dbResults = await Promise.all([
-            this.query(
-                `select * from managerial_auth where id = $1`,
-                [body.user_id]
-            ),
-            this.query(
-                `select * from bundle where id = $1`,
-                [bundle_id]
-            )
-        ])
-
-        // Get original price from the database row — never trust a client-supplied
-        // price. (Previously the client could pass `eventId` to set an arbitrary
-        // price; SSLCommerz only validates that paid == requested, so that let a
-        // user buy at any price they chose.)
-        var originalPrice = parseFloat(dbResults[1].data[0].price);
-        var finalPrice = originalPrice;
-        var couponId = null;
-        var couponData = null;
-
-        // Handle coupon if provided
-        if (body.coupon_code) {
-            try {
-                const CouponService = require('../managerial/coupon');
-                const couponService = new CouponService();
-
-                // Validate coupon for bundle
-                const validation = await couponService.validateCouponForBundle(
-                    body.coupon_code,
-                    bundle_id,
-                    body.user_id
-                );
-
-                if (!validation.valid) {
-                    return {
-                        success: false,
-                        error: validation.error || 'Invalid coupon code'
-                    };
-                }
-
-                // Calculate discount
-                const priceCalc = couponService.calculateDiscount(
-                    validation.coupon,
-                    originalPrice
-                );
-
-                finalPrice = priceCalc.finalPrice;
-                couponId = validation.coupon.id;
-                couponData = validation.coupon;
-            } catch (error) {
-                logger.error('Error processing bundle coupon:', error);
-                return {
-                    success: false,
-                    error: 'Failed to process coupon'
-                };
-            }
-        }
-
-        // Generate transaction ID BEFORE payment initiation (this will be the access code sent to user)
-        const transactionId = this.generateTransactionId(body.user_id, bundle_id);
-
-        // Optional "include books" selection — for a bundle this is the union of
-        // books across every course in the bundle. Validated/staged here; the
-        // price is added after coupon recording (kept bundle-only).
-        const bookSelection = await this.resolveBookSelection(body, 'BUNDLE', bundle_id);
-        if (bookSelection.error) {
-            return { success: false, error: bookSelection.error };
-        }
-        if (bookSelection.include) {
-            await this.stageBookSelection(transactionId, body.user_id, 'BUNDLE', bundle_id, bookSelection);
-        }
-
-        // CRITICAL FIX: Record coupon usage IMMEDIATELY after validation (not waiting for IPN)
-        // This ensures analytics work and payment processing is independent of IPN
-        if (couponId && couponData) {
-            try {
-                const CouponService = require('../managerial/coupon');
-                const couponService = new CouponService();
-
-                const discountAmount = originalPrice - finalPrice;
-
-                // Record coupon usage IMMEDIATELY with payment_status='pending'
-                // This ensures analytics work even if IPN fails
-                // IPN will update it to 'completed' when payment succeeds
-                const recordResult = await couponService.recordUsage(
-                    couponId,
-                    body.user_id,
-                    null, // course_id
-                    bundle_id,
-                    {
-                        originalPrice: originalPrice,
-                        discountAmount: discountAmount,
-                        finalPrice: finalPrice
-                    },
-                    'pending', // Will be updated to 'completed' in IPN
-                    transactionId
-                );
-                
-                if (!recordResult.success) {
-                    // EDGE CASE: If recordUsage fails, check if it's a duplicate (idempotency)
-                    // If duplicate, that's OK - payment can proceed
-                    const isDuplicateError = recordResult.error && (
-                        recordResult.error.includes('already used') ||
-                        recordResult.error.includes('pending payment')
-                    );
-                    
-                    if (isDuplicateError) {
-                        console.warn('Bundle coupon usage already recorded (idempotency):', {
-                            transactionId,
-                            couponId,
-                            error: recordResult.error
-                        });
-                        // Payment can proceed - usage already recorded
-                    } else {
-                        console.error('Failed to record bundle coupon usage during payment initiation:', {
-                            transactionId,
-                            couponId,
-                            error: recordResult.error
-                        });
-                        // Don't fail payment, but log prominently for reconciliation
-                    }
-                } else {
-                    console.log('Bundle coupon usage recorded immediately (pending payment):', {
-                        transactionId,
-                        couponId,
-                        usageId: recordResult.data?.usageId
-                    });
-                }
-            } catch (error) {
-                console.error('Error processing bundle coupon during payment initiation:', {
-                    error: error.message,
-                    stack: error.stack,
-                    transactionId,
-                    couponId
-                });
-                // Don't fail payment if coupon processing fails, but log it
-            }
-        }
-
-        // Add the optional book total on top of the (possibly discounted) bundle price
-        if (bookSelection.include) {
-            finalPrice += bookSelection.booksTotal;
-        }
-
-        const paymentCallbackBaseUrl = process.env.BACKEND_URL || process.env.PRODUCTION_URL || 'https://2m06xslkj8.execute-api.ap-southeast-2.amazonaws.com/prod';
-        const gatewayAddressPayload = this.buildGatewayAddressPayload(dbResults[0].data[0], bookSelection);
-
-        var pgwData = {
-            total_amount: finalPrice.toFixed(2),
-            currency: 'BDT',
-            tran_id: transactionId, // Use generated transaction ID (access code) as tran_id
-            success_url: `${paymentCallbackBaseUrl}/user/payment/success`,
-            fail_url: `${paymentCallbackBaseUrl}/user/payment/failure`,
-            cancel_url: `${paymentCallbackBaseUrl}/user/payment/cancel`,
-            ipn_url: process.env.IPN_URL,
-            shipping_method: bookSelection.include ? 'Courier' : 'NO',
-            product_name: 'Math Pro Bundle',
-            product_category: 'Education',
-            product_profile: bookSelection.include ? 'physical-goods' : 'digital-goods',
-            // multi_card_name: 'mobilebank,othercard,internetbank',
-            value_a: body.user_id,
-            value_b: bundle_id,
-            value_c: finalPrice.toFixed(2), // Use final price (with discount if applicable)
-            value_d: "BUNDLE", // Keep value_d as "BUNDLE" - coupon data stored separately
-            ...gatewayAddressPayload
-        };
-        try {
-            var apiResponse = await sslcommerz.initSession(pgwData)
-            // console.log(apiResponse)
-            // console.log(apiResponse.GatewayPageURL)
-            return {
-                success: true,
-                data: apiResponse.GatewayPageURL,
-                coupon_applied: couponId ? true : false,
-                original_price: originalPrice,
-                final_price: finalPrice,
-                discount_amount: couponId ? (originalPrice - (finalPrice - bookSelection.booksTotal)) : 0,
-                books_included: bookSelection.include,
-                books_total: bookSelection.booksTotal
-            }
-        } catch (e) {
-            logger.error('Error in initiatePaymentForBundle:', e);
-            return {
-                success: false,
-                data: 'error occurred'
-            }
-        }
-
-    }
-
-    // Standalone book purchase — no course/bundle enrollment is granted; the
-    // book itself is the purchase. Shipping is mandatory (physical good).
-    // Mirrors initiatePayment/initiatePaymentForBundle structurally, but does
-    // not call resolveBookSelection (that resolves "books attached to a
-    // course/bundle", which doesn't apply when the book is the purchase).
-    initiatePaymentForBook = async (body, book_id) => {
-        var dbResults = await Promise.all([
-            this.query(
-                `select * from managerial_auth where id = $1`,
-                [body.user_id]
-            ),
-            this.query(
-                `select * from book where id = $1 and is_active = true`,
-                [book_id]
-            )
-        ])
-
-        if (!dbResults[1].success || dbResults[1].data.length === 0) {
+        if (item.standalone && (!itemResult.success || itemResult.data.length === 0)) {
             return { success: false, error: 'Book not found or unavailable' };
         }
 
-        // Get original price from the database row — never trust a client-supplied price.
-        var originalPrice = parseFloat(dbResults[1].data[0].price);
-        var finalPrice = originalPrice;
-        var couponId = null;
-        var couponData = null;
+        // Get original price from the database row — never trust a client-supplied
+        // price. (Previously the client could pass `eventId` to set an arbitrary
+        // price; SSLCommerz only validates that paid == requested, so that let a
+        // user buy at any price they chose.)
+        const originalPrice = parseFloat(itemResult.data[0].price);
+        let finalPrice = originalPrice;
+        let couponId = null;
 
         // Shipping is mandatory for a standalone book purchase (unlike the
         // optional include-books shipping on course/bundle checkout).
-        const s = body.shipping || {};
-        if (!s.name || !s.phone || !s.address) {
-            return { success: false, error: 'Shipping name, phone and address are required' };
+        let shipping = null;
+        if (item.standalone) {
+            const s = body.shipping || {};
+            if (!s.name || !s.phone || !s.address) {
+                return { success: false, error: 'Shipping name, phone and address are required' };
+            }
+            shipping = { name: s.name, phone: s.phone, address: s.address, city: s.city || null, postcode: s.postcode || null };
         }
-        const shipping = {
-            name: s.name,
-            phone: s.phone,
-            address: s.address,
-            city: s.city || null,
-            postcode: s.postcode || null
-        };
 
-        // Handle coupon if provided
         if (body.coupon_code) {
             try {
-                const CouponService = require('../managerial/coupon');
-                const couponService = new CouponService();
-
-                const validation = await couponService.validateCouponForBook(
-                    body.coupon_code,
-                    book_id,
-                    body.user_id
-                );
-
+                const validation = await couponService[item.couponValidator](body.coupon_code, itemId, body.user_id);
                 if (!validation.valid) {
-                    return {
-                        success: false,
-                        error: validation.error || 'Invalid coupon code'
-                    };
+                    return { success: false, error: validation.error || 'Invalid coupon code' };
                 }
-
-                const priceCalc = couponService.calculateDiscount(
-                    validation.coupon,
-                    originalPrice
-                );
-
-                finalPrice = priceCalc.finalPrice;
+                finalPrice = couponService.calculateDiscount(validation.coupon, originalPrice).finalPrice;
                 couponId = validation.coupon.id;
-                couponData = validation.coupon;
             } catch (error) {
-                logger.error('Error processing book coupon:', error);
-                return {
-                    success: false,
-                    error: 'Failed to process coupon'
-                };
+                logger.error(`Error processing ${item.label}coupon:`, error);
+                return { success: false, error: 'Failed to process coupon' };
             }
         }
 
         // Generate transaction ID BEFORE payment initiation (this will be the access code sent to user)
-        const transactionId = this.generateTransactionId(body.user_id, book_id);
+        const transactionId = this.generateTransactionId(body.user_id, itemId);
 
-        // Stage the book selection so the IPN can fulfil it after the redirect
-        // round-trip — reuses the existing staging table/shape (item_type='BOOK').
-        await this.stageBookSelection(transactionId, body.user_id, 'BOOK', book_id, {
-            booksTotal: originalPrice,
-            books: [{ id: book_id }],
-            shipping
-        });
-
-        // Record coupon usage immediately (not waiting for IPN), same as course/bundle.
-        if (couponId && couponData) {
-            try {
-                const CouponService = require('../managerial/coupon');
-                const couponService = new CouponService();
-
-                const discountAmount = originalPrice - finalPrice;
-
-                const recordResult = await couponService.recordUsage(
-                    couponId,
-                    body.user_id,
-                    null, // course_id
-                    null, // bundle_id
-                    {
-                        originalPrice: originalPrice,
-                        discountAmount: discountAmount,
-                        finalPrice: finalPrice
-                    },
-                    'pending', // Will be updated to 'completed' in IPN
-                    transactionId,
-                    book_id
-                );
-
-                if (!recordResult.success) {
-                    const isDuplicateError = recordResult.error && (
-                        recordResult.error.includes('already used') ||
-                        recordResult.error.includes('pending payment')
-                    );
-
-                    if (isDuplicateError) {
-                        console.warn('Book coupon usage already recorded (idempotency):', {
-                            transactionId,
-                            couponId,
-                            error: recordResult.error
-                        });
-                    } else {
-                        console.error('Failed to record book coupon usage during payment initiation:', {
-                            transactionId,
-                            couponId,
-                            error: recordResult.error
-                        });
-                    }
-                } else {
-                    console.log('Book coupon usage recorded immediately (pending payment):', {
-                        transactionId,
-                        couponId,
-                        usageId: recordResult.data?.usageId
-                    });
-                }
-            } catch (error) {
-                console.error('Error processing book coupon during payment initiation:', {
-                    error: error.message,
-                    stack: error.stack,
-                    transactionId,
-                    couponId
-                });
+        // Books shipped with this order. Course/bundle: the optional "include books"
+        // selection, resolved + priced server-side and added on top of the (possibly
+        // discounted) price AFTER the coupon usage is recorded, so the recorded discount
+        // stays item-only. Book: the book itself, already in the price. Either way it is
+        // staged by transaction_id so the IPN can fulfil it after the redirect round-trip.
+        let bookSelection;
+        if (item.standalone) {
+            await this.stageBookSelection(transactionId, body.user_id, itemType, itemId, {
+                booksTotal: originalPrice,
+                books: [{ id: itemId }],
+                shipping
+            });
+            bookSelection = { include: true, booksTotal: 0, shipping };
+        } else {
+            bookSelection = await this.resolveBookSelection(body, itemType, itemId);
+            if (bookSelection.error) {
+                return { success: false, error: bookSelection.error };
+            }
+            if (bookSelection.include) {
+                await this.stageBookSelection(transactionId, body.user_id, itemType, itemId, bookSelection);
             }
         }
 
-        const paymentCallbackBaseUrl = process.env.BACKEND_URL || process.env.PRODUCTION_URL || 'https://2m06xslkj8.execute-api.ap-southeast-2.amazonaws.com/prod';
-        const gatewayAddressPayload = this.buildGatewayAddressPayload(dbResults[0].data[0], { include: true, shipping });
+        // Record coupon usage IMMEDIATELY with payment_status='pending' (not waiting for
+        // the IPN, which updates it to 'completed'), so analytics work even if the IPN
+        // fails. A failure here never blocks the payment; it is logged for reconciliation.
+        if (couponId) {
+            await this.recordPendingCouponUsage(item, couponId, body.user_id, itemId, transactionId, {
+                originalPrice,
+                discountAmount: originalPrice - finalPrice,
+                finalPrice
+            });
+        }
 
-        var pgwData = {
+        finalPrice += bookSelection.booksTotal;
+
+        const paymentCallbackBaseUrl = process.env.BACKEND_URL || process.env.PRODUCTION_URL || 'https://2m06xslkj8.execute-api.ap-southeast-2.amazonaws.com/prod';
+        const pgwData = {
             total_amount: finalPrice.toFixed(2),
             currency: 'BDT',
-            tran_id: transactionId,
+            tran_id: transactionId, // Use generated transaction ID (access code) as tran_id
             success_url: `${paymentCallbackBaseUrl}/user/payment/success`,
             fail_url: `${paymentCallbackBaseUrl}/user/payment/failure`,
             cancel_url: `${paymentCallbackBaseUrl}/user/payment/cancel`,
             ipn_url: process.env.IPN_URL,
-            shipping_method: 'Courier',
-            product_name: 'Math Pro Book',
+            shipping_method: bookSelection.include ? 'Courier' : 'NO',
+            product_name: item.productName,
             product_category: 'Education',
-            product_profile: 'physical-goods',
+            product_profile: bookSelection.include ? 'physical-goods' : 'digital-goods',
             value_a: body.user_id,
-            value_b: book_id,
-            value_c: finalPrice.toFixed(2),
-            value_d: "BOOK",
-            ...gatewayAddressPayload
+            value_b: itemId,
+            value_c: finalPrice.toFixed(2), // Use final price (with discount if applicable)
+            value_d: itemType, // coupon data is stored separately
+            ...this.buildGatewayAddressPayload(userResult.data[0], bookSelection)
         };
         try {
-            var apiResponse = await sslcommerz.initSession(pgwData)
+            const apiResponse = await sslcommerz.initSession(pgwData);
             return {
                 success: true,
                 data: apiResponse.GatewayPageURL,
                 coupon_applied: couponId ? true : false,
                 original_price: originalPrice,
                 final_price: finalPrice,
-                discount_amount: couponId ? (originalPrice - finalPrice) : 0
-            }
+                discount_amount: couponId ? (originalPrice - (finalPrice - bookSelection.booksTotal)) : 0,
+                ...(!item.standalone && {
+                    books_included: bookSelection.include,
+                    books_total: bookSelection.booksTotal
+                })
+            };
         } catch (e) {
-            logger.error('Error in initiatePaymentForBook:', e);
+            logger.error(`Error in ${item.method}:`, e);
             return {
                 success: false,
                 data: 'error occurred'
-            }
+            };
         }
     }
+
+    recordPendingCouponUsage = async (item, couponId, userId, itemId, transactionId, priceData) => {
+        const context = { transactionId, couponId, itemType: item.label.trim() || 'course' };
+        try {
+            const [courseId, bundleId, bookId] = item.couponTarget(itemId);
+            const recordResult = await couponService.recordUsage(
+                couponId, userId, courseId, bundleId, priceData, 'pending', transactionId, bookId
+            );
+            if (recordResult.success) {
+                console.log('Coupon usage recorded immediately (pending payment):', { ...context, usageId: recordResult.data?.usageId });
+                return;
+            }
+            // A duplicate (idempotent retry) is fine: the usage is already recorded.
+            const isDuplicateError = recordResult.error && (
+                recordResult.error.includes('already used') ||
+                recordResult.error.includes('pending payment')
+            );
+            if (isDuplicateError) {
+                console.warn('Coupon usage already recorded (idempotency):', { ...context, error: recordResult.error });
+            } else {
+                logger.error('Failed to record coupon usage during payment initiation', recordResult.error, context);
+            }
+        } catch (error) {
+            logger.error('Error processing coupon during payment initiation', error, context);
+        }
+    }
+
+    initiatePayment = (body, course_id) => this.initiateCheckout('COURSE', body, course_id)
+
+    initiatePaymentForBundle = (body, bundle_id) => this.initiateCheckout('BUNDLE', body, bundle_id)
+
+    // Standalone book purchase — no course/bundle enrollment is granted; the
+    // book itself is the purchase. Shipping is mandatory (physical good).
+    initiatePaymentForBook = (body, book_id) => this.initiateCheckout('BOOK', body, book_id)
 
     // Get comprehensive payment history and enrollment details for a user
     getPaymentHistoryAndEnrollments = async (user_id) => {
