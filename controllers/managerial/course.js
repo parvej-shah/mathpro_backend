@@ -78,24 +78,7 @@ class CourseController extends Controller {
     return respond(res, result);
   };
   getAllCoursePerchases = async (req, res) => {
-    // Fixed: Use phone and email columns instead of login and profile->>'email'
-    var query = `
-            select 
-                a.name,
-                a.phone,
-                a.email,
-                t.amount,
-                t.timestamp,
-                t.transaction_id
-            from managerial_auth a, takes t
-            where a.id=t.user_id
-                and t.course_id=$1
-                and amount>0
-            order by t.timestamp desc
-        `;
-
-    var params = [parseInt(req.query.identifier / 639)];
-    var result = await courseService.query(query, params);
+    var result = await courseService.listPaidPurchases(parseInt(req.query.identifier / 639));
 
     res.csv([
       ["Name", "Phone", "Email", "Amount", "Date and Time", "Transaction ID"],
@@ -115,15 +98,7 @@ class CourseController extends Controller {
   };
 
   getAllPrebookings = async (req, res) => {
-    var query = `
-            select name,phone,email,timestamp,utm
-            from prebooking
-            where course_id=$1
-            order by timestamp desc
-        `;
-
-    var params = [parseInt(req.query.identifier / 639)];
-    var result = await courseService.query(query, params);
+    var result = await courseService.listPrebookings(parseInt(req.query.identifier / 639));
 
     res.csv([
       ["Name", "Phone", "Email", "UTM", "Date and Time"],
@@ -150,39 +125,7 @@ class CourseController extends Controller {
       return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
     }
 
-    var query = `
-            select 
-                a.id as user_id, 
-                a.name,
-                a.phone,
-                a.email,
-                a.profile,
-                t.amount,
-                t.timestamp,
-                t.transaction_id,
-                -- Coupon information
-                CASE WHEN cu.id IS NOT NULL THEN true ELSE false END as coupon_used,
-                c.code as coupon_code,
-                c.name as coupon_name,
-                c.discount_type,
-                c.discount_value,
-                cu.original_price,
-                cu.discount_amount,
-                cu.final_price,
-                COALESCE(cu.discount_amount, 0) as amount_saved
-            from managerial_auth a
-            inner join takes t on a.id = t.user_id
-            left join coupon_usage cu on cu.transaction_id = t.transaction_id 
-                and cu.course_id = t.course_id 
-                and cu.user_id = t.user_id
-                and cu.payment_status = 'completed'
-            left join coupons c on cu.coupon_id = c.id
-            where t.course_id = $1
-            order by t.timestamp desc
-        `;
-
-    var params = [courseId];
-    var result = await courseService.query(query, params);
+    var result = await courseService.listPurchasesWithCoupons(courseId);
 
     // console.log(
     //   `[DEBUG] getAllCoursePerchasesApi - Query returned ${result.rowCount || 0} rows for course_id: ${courseId}`
@@ -199,15 +142,7 @@ class CourseController extends Controller {
       return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
     }
 
-    var query = `
-            select name,phone,email,timestamp,utm
-            from prebooking
-            where course_id=$1
-            order by timestamp desc
-        `;
-
-    var params = [courseId];
-    var result = await courseService.query(query, params);
+    var result = await courseService.listPrebookings(courseId);
     return respond(res, result);
   };
 
@@ -223,9 +158,7 @@ class CourseController extends Controller {
       });
     }
 
-    const query = `UPDATE prebooking SET utm = $1 WHERE id = $2 RETURNING *`;
-    const params = [utm || null, parseInt(prebookingId)];
-    const result = await courseService.query(query, params);
+    const result = await courseService.setPrebookingUtm(parseInt(prebookingId), utm || null);
 
     if (result.success && result.data.length > 0) {
       return res.status(200).json({
@@ -252,9 +185,7 @@ class CourseController extends Controller {
       });
     }
 
-    const query = `UPDATE prebooking SET utm = NULL WHERE id = $1 RETURNING *`;
-    const params = [parseInt(prebookingId)];
-    const result = await courseService.query(query, params);
+    const result = await courseService.setPrebookingUtm(parseInt(prebookingId), null);
 
     if (result.success && result.data.length > 0) {
       return res.status(200).json({

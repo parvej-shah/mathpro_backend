@@ -399,15 +399,7 @@ class CouponController extends Controller {
       ]);
 
     // Get total coupons count
-    const totalCouponsResult = await couponService.query(
-      `SELECT 
-          COUNT(*) as total_coupons,
-          COUNT(CASE WHEN status = 'active' THEN 1 END) as active_coupons,
-          COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired_coupons,
-          COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_coupons
-        FROM coupons 
-        WHERE status != 'deleted'`
-    );
+    const totalCouponsResult = await couponService.countCouponsByStatus();
 
     // Merge coupon overview with usage statistics for complete dashboard data
     const couponOverview = totalCouponsResult.success

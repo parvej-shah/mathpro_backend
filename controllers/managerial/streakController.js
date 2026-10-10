@@ -184,25 +184,7 @@ class AdminStreakController {
     getStreakTrends = catchAs({ success: false, message: 'Internal server error' }, async (req, res) => {
         const { courseId, days = 30 } = req.query;
 
-        let query = `
-                SELECT 
-                    DATE(updated_at) as date,
-                    COUNT(*) as total_updates,
-                    COUNT(CASE WHEN current_streak > 0 THEN 1 END) as active_streaks,
-                    AVG(current_streak) as avg_streak
-                FROM user_course_streaks 
-                WHERE updated_at >= NOW() - INTERVAL '${parseInt(days)} days'
-            `;
-
-        const params = [];
-        if (courseId) {
-            query += ' AND course_id = $1';
-            params.push(courseId);
-        }
-
-        query += ' GROUP BY DATE(updated_at) ORDER BY date DESC';
-
-        const result = await this.streakService.query(query, params);
+        const result = await this.streakService.getStreakTrends(courseId, days);
 
         if (result.success) {
             res.json({

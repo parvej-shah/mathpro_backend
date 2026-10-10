@@ -425,6 +425,19 @@ class CouponService extends Service {
     }
   };
 
+  // Coupon totals per status (deleted coupons excluded), for the analytics dashboard.
+  countCouponsByStatus = async () => {
+    return this.query(
+      `SELECT 
+          COUNT(*) as total_coupons,
+          COUNT(CASE WHEN status = 'active' THEN 1 END) as active_coupons,
+          COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired_coupons,
+          COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_coupons
+        FROM coupons 
+        WHERE status != 'deleted'`
+    );
+  };
+
   /**
    * List coupons with pagination and filtering
    * @param {Object} filters - Filter options
@@ -2447,6 +2460,14 @@ class CouponService extends Service {
         error: "Failed to retrieve overall stats",
       };
     }
+  };
+
+  // coupon_id of the usage row(s) recorded for a payment transaction at initiation.
+  getUsageCouponIds = async (transactionId) => {
+    return this.query(
+      `SELECT coupon_id FROM coupon_usage WHERE transaction_id = $1`,
+      [transactionId]
+    );
   };
 
   /**

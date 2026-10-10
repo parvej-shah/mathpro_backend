@@ -319,9 +319,7 @@ class BundleController extends Controller {
       });
     }
 
-    const query = `UPDATE prebooking_bundle SET utm = $1 WHERE id = $2 RETURNING *`;
-    const params = [utm || null, parseInt(prebookingId)];
-    const result = await bundleService.query(query, params);
+    const result = await bundleService.setPrebookingUtm(parseInt(prebookingId), utm || null);
 
     if (result.success && result.data.length > 0) {
       return res.status(200).json({
@@ -348,9 +346,7 @@ class BundleController extends Controller {
       });
     }
 
-    const query = `UPDATE prebooking_bundle SET utm = NULL WHERE id = $1 RETURNING *`;
-    const params = [parseInt(prebookingId)];
-    const result = await bundleService.query(query, params);
+    const result = await bundleService.setPrebookingUtm(parseInt(prebookingId), null);
 
     if (result.success && result.data.length > 0) {
       return res.status(200).json({

@@ -172,6 +172,29 @@ class StreakService extends Service {
             return { success: false, error: safeMessage(error) };
         }
     }
+
+    // Daily streak activity over the last `days` days (optionally one course), newest first.
+    async getStreakTrends(courseId, days) {
+        let query = `
+                SELECT 
+                    DATE(updated_at) as date,
+                    COUNT(*) as total_updates,
+                    COUNT(CASE WHEN current_streak > 0 THEN 1 END) as active_streaks,
+                    AVG(current_streak) as avg_streak
+                FROM user_course_streaks 
+                WHERE updated_at >= NOW() - INTERVAL '${parseInt(days)} days'
+            `;
+
+        const params = [];
+        if (courseId) {
+            query += ' AND course_id = $1';
+            params.push(courseId);
+        }
+
+        query += ' GROUP BY DATE(updated_at) ORDER BY date DESC';
+
+        return this.query(query, params);
+    }
 }
 
 module.exports = StreakService;

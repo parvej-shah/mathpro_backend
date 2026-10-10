@@ -1238,6 +1238,75 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
     );
     return result;
   };
+
+  // Paid enrolments of a course (amount > 0), newest first, for the purchases CSV.
+  listPaidPurchases = async (course_id) => {
+    var query = `
+            select 
+                a.name,
+                a.phone,
+                a.email,
+                t.amount,
+                t.timestamp,
+                t.transaction_id
+            from managerial_auth a, takes t
+            where a.id=t.user_id
+                and t.course_id=$1
+                and amount>0
+            order by t.timestamp desc
+        `;
+    return this.query(query, [course_id]);
+  };
+
+  // Every enrolment of a course with the completed coupon usage (if any) behind it.
+  listPurchasesWithCoupons = async (course_id) => {
+    var query = `
+            select 
+                a.id as user_id, 
+                a.name,
+                a.phone,
+                a.email,
+                a.profile,
+                t.amount,
+                t.timestamp,
+                t.transaction_id,
+                -- Coupon information
+                CASE WHEN cu.id IS NOT NULL THEN true ELSE false END as coupon_used,
+                c.code as coupon_code,
+                c.name as coupon_name,
+                c.discount_type,
+                c.discount_value,
+                cu.original_price,
+                cu.discount_amount,
+                cu.final_price,
+                COALESCE(cu.discount_amount, 0) as amount_saved
+            from managerial_auth a
+            inner join takes t on a.id = t.user_id
+            left join coupon_usage cu on cu.transaction_id = t.transaction_id 
+                and cu.course_id = t.course_id 
+                and cu.user_id = t.user_id
+                and cu.payment_status = 'completed'
+            left join coupons c on cu.coupon_id = c.id
+            where t.course_id = $1
+            order by t.timestamp desc
+        `;
+    return this.query(query, [course_id]);
+  };
+
+  listPrebookings = async (course_id) => {
+    var query = `
+            select name,phone,email,timestamp,utm
+            from prebooking
+            where course_id=$1
+            order by timestamp desc
+        `;
+    return this.query(query, [course_id]);
+  };
+
+  // Sets (or clears, with null) the UTM tag on one prebooking; returns the updated row.
+  setPrebookingUtm = async (prebooking_id, utm) => {
+    return this.query(`UPDATE prebooking SET utm = $1 WHERE id = $2 RETURNING *`, [utm, prebooking_id]);
+  };
 }
 
 module.exports = { CourseService };

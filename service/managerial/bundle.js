@@ -768,6 +768,11 @@ class BundleService extends Service {
 
     return await this.query(query, params);
   };
+
+  // Sets (or clears, with null) the UTM tag on one bundle prebooking; returns the updated row.
+  setPrebookingUtm = async (prebookingId, utm) => {
+    return this.query(`UPDATE prebooking_bundle SET utm = $1 WHERE id = $2 RETURNING *`, [utm, prebookingId]);
+  };
 }
 
 module.exports = { BundleService };

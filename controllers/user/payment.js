@@ -386,10 +386,7 @@ class PaymentController extends Controller {
                         const couponService = new CouponService();
 
                         // Get couponId from the usage record created at payment initiation
-                        const usageResult = await couponService.query(
-                            `SELECT coupon_id FROM coupon_usage WHERE transaction_id = $1`,
-                            [transactionId]
-                        );
+                        const usageResult = await couponService.getUsageCouponIds(transactionId);
                         if (usageResult.success && usageResult.data.length > 0) {
                             couponId = usageResult.data[0].coupon_id;
                             console.log('IPN: Found coupon for transaction:', {
