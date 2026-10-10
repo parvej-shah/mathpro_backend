@@ -246,7 +246,8 @@ class AdminService extends Service {
             const newAdmin = insertResult.data[0];
 
             // Send credentials via SMS
-            const smsText = `Math Pro Admin\nName: ${name}\nLogin: ${normalizedPhone}\nPassword: ${plainPassword}\nLogin at: https://admin.mathpro.academy/`;
+            const adminUrl = process.env.ADMIN_URL || 'https://admin.mathprobd.com';
+            const smsText = `Math Pro Admin\nName: ${name}\nLogin: ${normalizedPhone}\nPassword: ${plainPassword}\nLogin at: ${adminUrl}/`;
             const smsResult = await messagingService.sendMessage(normalizedPhone, smsText);
 
             if (!smsResult.success) {
@@ -318,7 +319,8 @@ class AdminService extends Service {
             const typeName = newType === managerialAccountTypes.admin ? 'Admin' : 'Moderator';
 
             if (user.phone) {
-                const smsText = `Math Pro: You have been promoted to ${typeName}. You can now access the admin panel at https://admin.mathpro.academy/`;
+                const adminUrl = process.env.ADMIN_URL || 'https://admin.mathprobd.com';
+                const smsText = `Math Pro: You have been promoted to ${typeName}. You can now access the admin panel at ${adminUrl}/`;
                 const smsResult = await messagingService.sendMessage(user.phone, smsText);
                 if (!smsResult.success) {
                     logger.error('Failed to send promotion SMS:', smsResult.error);
@@ -373,6 +375,57 @@ class AdminService extends Service {
     }
 
     /**
+     * Sensitive changes (new email, new password) need the updater's own current password.
+     * @returns {Promise<{success: false, error: string}|null>} the refusal, or null when allowed
+     */
+    currentPasswordRefusal = async (updaterId, currentPassword) => {
+        if (!currentPassword) {
+            return { success: false, error: 'Current password is required to update email or password' };
+        }
+        const updaterResult = await this.query(`SELECT password FROM managerial_auth WHERE id = $1`, [updaterId]);
+        if (updaterResult.data.length === 0) {
+            return { success: false, error: 'Updater not found' };
+        }
+        if (!await bcrypt.compare(currentPassword, updaterResult.data[0].password)) {
+            return { success: false, error: 'Current password is incorrect' };
+        }
+        return null;
+    }
+
+    /**
+     * Validated column changes for a new email: [[column, value], ...], or a refusal.
+     */
+    emailChange = async (id, email) => {
+        const normalizedEmail = normalizeContact(email);
+        if (!isValidEmail(normalizedEmail)) {
+            return { refusal: { success: false, error: 'Invalid email format' } };
+        }
+        const taken = await this.query(`SELECT id FROM managerial_auth WHERE (login = $1 OR email = $1) AND id != $2`, [normalizedEmail, id]);
+        if (taken.data.length > 0) {
+            return { refusal: { success: false, error: 'Email already exists' } };
+        }
+        return { changes: [['login', normalizedEmail], ['email', normalizedEmail]] };
+    }
+
+    /**
+     * Validated column changes for a new phone (null/'' clears it), or a refusal.
+     */
+    phoneChange = async (id, phone) => {
+        if (phone === null || phone === '') {
+            return { changes: [['phone', null]] };
+        }
+        const normalizedPhone = normalizeContact(phone);
+        if (!isValidPhone(normalizedPhone)) {
+            return { refusal: { success: false, error: 'Invalid phone number. Must be 11 digits starting with 01' } };
+        }
+        const taken = await this.query(`SELECT id FROM managerial_auth WHERE (login = $1 OR phone = $1) AND id != $2`, [normalizedPhone, id]);
+        if (taken.data.length > 0) {
+            return { refusal: { success: false, error: 'Phone number already exists' } };
+        }
+        return { changes: [['phone', normalizedPhone]] };
+    }
+
+    /**
      * UPDATE - Update admin
      * @param {number} id - Admin ID
      * @param {Object} adminData - {name?, type?, email?, phone?, profile?, currentPassword?}
@@ -383,151 +436,62 @@ class AdminService extends Service {
         try {
             const { name, type, email, phone, profile, currentPassword } = adminData;
 
-            // Get current admin
             const getResult = await this.get(id);
             if (!getResult.success) {
                 return getResult;
             }
-            const currentAdmin = getResult.data;
 
-            // If updating email/login or password, require current password
-            // Only require password if email or password is ACTUALLY CHANGING
-            const isUpdatingEmail = email !== undefined && email !== currentAdmin.email;
+            // Only an ACTUAL change of email, or any password, needs the current password
+            const isUpdatingEmail = email !== undefined && email !== getResult.data.email;
             const isUpdatingPassword = adminData.password !== undefined;
-
-            if ((isUpdatingEmail || isUpdatingPassword) && currentPassword) {
-                // Get updater's password to verify
-                const updaterQuery = `SELECT password FROM managerial_auth WHERE id = $1`;
-                const updaterResult = await this.query(updaterQuery, [updaterId]);
-
-                if (updaterResult.data.length === 0) {
-                    return {
-                        success: false,
-                        error: 'Updater not found'
-                    };
-                }
-
-                const isPasswordValid = await bcrypt.compare(
-                    currentPassword,
-                    updaterResult.data[0].password
-                );
-
-                if (!isPasswordValid) {
-                    return {
-                        success: false,
-                        error: 'Current password is incorrect'
-                    };
-                }
-            } else if (isUpdatingEmail || isUpdatingPassword) {
-                return {
-                    success: false,
-                    error: 'Current password is required to update email or password'
-                };
+            if (isUpdatingEmail || isUpdatingPassword) {
+                const refusal = await this.currentPasswordRefusal(updaterId, currentPassword);
+                if (refusal) return refusal;
             }
 
-            // Build update query dynamically
-            const updates = [];
-            const params = [];
-            let paramIndex = 1;
-
+            // Column changes, in the order they are validated: [[column, value], ...]
+            const changes = [];
             if (name !== undefined) {
-                updates.push(`name = $${paramIndex++}`);
-                params.push(name);
+                changes.push(['name', name]);
             }
-
             if (type !== undefined) {
                 if (type !== managerialAccountTypes.admin && type !== managerialAccountTypes.moderator) {
-                    return {
-                        success: false,
-                        error: 'Type must be 1 (Admin) or 2 (Moderator)'
-                    };
+                    return { success: false, error: 'Type must be 1 (Admin) or 2 (Moderator)' };
                 }
-                updates.push(`type = $${paramIndex++}`);
-                params.push(type);
+                changes.push(['type', type]);
             }
-
             if (email !== undefined) {
-                const normalizedEmail = normalizeContact(email);
-                if (!isValidEmail(normalizedEmail)) {
-                    return {
-                        success: false,
-                        error: 'Invalid email format'
-                    };
-                }
-
-                // Check if email already exists (excluding current admin)
-                const emailCheckQuery = `SELECT id FROM managerial_auth WHERE (login = $1 OR email = $1) AND id != $2`;
-                const emailCheckResult = await this.query(emailCheckQuery, [normalizedEmail, id]);
-                if (emailCheckResult.data.length > 0) {
-                    return {
-                        success: false,
-                        error: 'Email already exists'
-                    };
-                }
-
-                updates.push(`login = $${paramIndex++}`);
-                updates.push(`email = $${paramIndex++}`);
-                params.push(normalizedEmail, normalizedEmail);
+                const change = await this.emailChange(id, email);
+                if (change.refusal) return change.refusal;
+                changes.push(...change.changes);
             }
-
             if (phone !== undefined) {
-                if (phone === null || phone === '') {
-                    updates.push(`phone = NULL`);
-                } else {
-                    const normalizedPhone = normalizeContact(phone);
-                    if (!isValidPhone(normalizedPhone)) {
-                        return {
-                            success: false,
-                            error: 'Invalid phone number. Must be 11 digits starting with 01'
-                        };
-                    }
-
-                    // Check if phone already exists (excluding current admin)
-                    const phoneCheckQuery = `SELECT id FROM managerial_auth WHERE (login = $1 OR phone = $1) AND id != $2`;
-                    const phoneCheckResult = await this.query(phoneCheckQuery, [normalizedPhone, id]);
-                    if (phoneCheckResult.data.length > 0) {
-                        return {
-                            success: false,
-                            error: 'Phone number already exists'
-                        };
-                    }
-
-                    updates.push(`phone = $${paramIndex++}`);
-                    params.push(normalizedPhone);
-                }
+                const change = await this.phoneChange(id, phone);
+                if (change.refusal) return change.refusal;
+                changes.push(...change.changes);
             }
-
             if (profile !== undefined) {
-                updates.push(`profile = $${paramIndex++}`);
                 // PostgreSQL JSONB accepts object directly
-                params.push(typeof profile === 'string' ? JSON.parse(profile) : profile);
+                changes.push(['profile', typeof profile === 'string' ? JSON.parse(profile) : profile]);
             }
-
             if (adminData.password !== undefined) {
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash(adminData.password, salt);
-                updates.push(`password = $${paramIndex++}`);
-                params.push(hashedPassword);
+                changes.push(['password', await bcrypt.hash(adminData.password, await bcrypt.genSalt(10))]);
             }
 
-            if (updates.length === 0) {
-                return {
-                    success: false,
-                    error: 'No fields to update'
-                };
+            if (changes.length === 0) {
+                return { success: false, error: 'No fields to update' };
             }
 
-            updates.push(`updated_at = NOW()`);
-            params.push(id);
+            const assignments = changes.map(([column], i) => `${column} = $${i + 1}`);
+            assignments.push(`updated_at = NOW()`);
+            const params = [...changes.map(([, value]) => value), id];
 
-            const updateQuery = `
+            const updateResult = await this.query(`
                 UPDATE managerial_auth 
-                SET ${updates.join(', ')}
-                WHERE id = $${paramIndex}
+                SET ${assignments.join(', ')}
+                WHERE id = $${params.length}
                 RETURNING id, name, type, login, email, phone, profile, created_at, updated_at
-            `;
-
-            const updateResult = await this.query(updateQuery, params);
+            `, params);
 
             if (!updateResult.success) {
                 return {

@@ -8,7 +8,7 @@ const { CourseService } = require('../managerial/course');
 const messagingService = new MessagingService();
 const courseService = new CourseService();
 
-const frontendUrl = () => process.env.FRONTEND_URL || 'https://mathpro.academy';
+const frontendUrl = () => process.env.FRONTEND_URL || 'https://mathprobd.com';
 
 // The HTML bodies are kept byte-for-byte as they were sent before the move.
 const bundleEmail = ({ user, bundleTitle, bundleWithCourses, successUrl, transactionId }) => `<!DOCTYPE html>

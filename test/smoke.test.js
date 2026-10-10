@@ -22,7 +22,7 @@ test('GET /health reaches the test database', async () => {
 test('CORS: preflight is answered for any origin with the Authorization header allowed', async () => {
     const res = await request(app)
         .options('/user/course/list')
-        .set('Origin', 'https://www.mathpro.academy')
+        .set('Origin', 'https://www.mathprobd.com')
         .set('Access-Control-Request-Method', 'GET')
         .set('Access-Control-Request-Headers', 'authorization,content-type');
     assert.strictEqual(res.status, 204);
@@ -31,7 +31,7 @@ test('CORS: preflight is answered for any origin with the Authorization header a
 });
 
 test('CORS: normal responses allow any origin', async () => {
-    const res = await request(app).get('/ping').set('Origin', 'https://admin.mathpro.academy');
+    const res = await request(app).get('/ping').set('Origin', 'https://admin.mathprobd.com');
     assert.strictEqual(res.headers['access-control-allow-origin'], '*');
 });
 
