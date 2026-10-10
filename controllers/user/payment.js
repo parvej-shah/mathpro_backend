@@ -360,6 +360,27 @@ class PaymentController extends Controller {
                     // Use validated amount from SSLCommerz (more reliable)
                     amount = validationResult.amount;
                 }
+
+                // value_a/value_b/value_d (user, item, item type) come from this POST, which
+                // anyone can send. They must match the gateway's order record for this
+                // payment, or a real cheap payment could be replayed against another item/user.
+                const order = await paymentService.validateOrder(req.body.val_id);
+                const record = order.success ? order.record : {};
+                const matches = ['VALID', 'VALIDATED'].includes(record.status)
+                    && record.tran_id === sslcommerzTranId
+                    && ['value_a', 'value_b', 'value_d'].every((f) => String(record[f] ?? '') === String(req.body[f] ?? ''));
+                if (!matches) {
+                    const errorMsg = 'IPN does not match the payment recorded by SSLCommerz';
+                    console.error('IPN: gateway record mismatch', { tran_id: sslcommerzTranId, val_id: req.body.val_id || null });
+                    if (auditLogId) {
+                        await paymentService.updatePaymentLog(auditLogId, {
+                            processing_status: 'ERROR',
+                            error_message: errorMsg,
+                            processing_result: { validation: validationResult, order }
+                        });
+                    }
+                    return res.status(200).json({ success: false, error: errorMsg });
+                }
             } else {
                 console.warn('IPN: No transaction ID provided, cannot validate with SSLCommerz');
                 // Still log but mark as unvalidated
@@ -369,6 +390,15 @@ class PaymentController extends Controller {
                         error_message: 'No transaction ID provided for validation'
                     });
                 }
+            }
+
+            if (!validationResult && status === 'VALID') {
+                // Nothing to check with the gateway, so nothing proves this payment happened.
+                const errorMsg = 'Unverified IPN: no transaction ID to validate';
+                if (auditLogId) {
+                    await paymentService.updatePaymentLog(auditLogId, { processing_status: 'ERROR', error_message: errorMsg });
+                }
+                return res.status(200).json({ success: false, error: errorMsg });
             }
 
             // Only process if status is VALID (or if validation passed)

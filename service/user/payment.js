@@ -3,9 +3,9 @@ const SSLCommerzPayment = require('sslcommerz-lts');
 const https = require('https');
 const http = require('http');
 
-// SSLCommerzPayment constructor's 3rd arg: true = sandbox, false = live.
+// SSLCOMMERZ_LIVE=false selects the sandbox; unset/true is live.
+// SSLCommerzPayment constructor's 3rd arg means `live` (true = securepay).
 const SSLCOMMERZ_IS_LIVE = process.env.SSLCOMMERZ_LIVE === 'false' ? false : true;
-const SSLCOMMERZ_SANDBOX_FLAG = !SSLCOMMERZ_IS_LIVE;
 
 class PaymentService extends Service {
     constructor() {
@@ -221,6 +221,38 @@ class PaymentService extends Service {
                 error: error.message || 'Unknown error during validation'
             };
         }
+    }
+
+    // Order Validation API (by val_id): the gateway's record of the payment, including the
+    // value_a..value_d sent at checkout (the tran_id query above does not return those).
+    // Resolves { success, record } or { success: false, error }.
+    validateOrder = (valId) => {
+        if (!valId) return Promise.resolve({ success: false, error: 'No val_id' });
+        const host = SSLCOMMERZ_IS_LIVE ? 'securepay.sslcommerz.com' : 'sandbox.sslcommerz.com';
+        const path = `/validator/api/validationserverAPI.php?val_id=${encodeURIComponent(valId)}`
+            + `&store_id=${encodeURIComponent(process.env.STORE_ID)}&store_passwd=${encodeURIComponent(process.env.STORE_PASSWORD)}&v=1&format=json`;
+        return new Promise((resolve) => {
+            const req = https.request({ hostname: host, path, method: 'GET', timeout: 30000, headers: { 'User-Agent': 'Math Pro Backend/1.0' } }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => { data += chunk; });
+                res.on('end', () => {
+                    try {
+                        resolve({ success: true, record: JSON.parse(data) });
+                    } catch (parseError) {
+                        resolve({ success: false, error: 'Failed to parse SSLCommerz response' });
+                    }
+                });
+            });
+            req.on('error', (error) => {
+                console.error('Error calling SSLCommerz order validation API:', error);
+                resolve({ success: false, error: 'Failed to connect with SSLCommerz' });
+            });
+            req.on('timeout', () => {
+                req.destroy();
+                resolve({ success: false, error: 'SSLCommerz request timeout' });
+            });
+            req.end();
+        });
     }
 
     // Generate transaction ID (access code) - same format as used in IPN
@@ -539,7 +571,7 @@ class PaymentService extends Service {
             value_d: "COURSE", // Keep value_d as "COURSE" - coupon data stored separately
             ...gatewayAddressPayload
         };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_SANDBOX_FLAG);
+        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_IS_LIVE);
         try {
             var apiResponse = await sslcz.init(pgwData)
             // console.log(apiResponse)
@@ -731,7 +763,7 @@ class PaymentService extends Service {
             value_d: "BUNDLE", // Keep value_d as "BUNDLE" - coupon data stored separately
             ...gatewayAddressPayload
         };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_SANDBOX_FLAG);
+        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_IS_LIVE);
         try {
             var apiResponse = await sslcz.init(pgwData)
             // console.log(apiResponse)
@@ -924,7 +956,7 @@ class PaymentService extends Service {
             value_d: "BOOK",
             ...gatewayAddressPayload
         };
-        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_SANDBOX_FLAG);
+        const sslcz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, SSLCOMMERZ_IS_LIVE);
         try {
             var apiResponse = await sslcz.init(pgwData)
             return {
