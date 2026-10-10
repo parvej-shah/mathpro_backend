@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const ProfileService = require("../../service/user/profile").ProfileService;
+const logger = require('../../util/logger');
 
 const profileService = new ProfileService();
 
@@ -33,7 +34,7 @@ class ProfileController extends Controller {
             
             return res.status(200).json(result);
         } catch (error) {
-            console.error('Error in getProfile controller:', error);
+            logger.error('Error in getProfile controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -101,7 +102,7 @@ class ProfileController extends Controller {
             
             return res.status(200).json(result);
         } catch (error) {
-            console.error('Error in updateProfile controller:', error);
+            logger.error('Error in updateProfile controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -137,7 +138,7 @@ class ProfileController extends Controller {
             const result = await profileService.changePassword(userId, currentPassword, newPassword);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in changePassword controller:', error);
+            logger.error('Error in changePassword controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -168,7 +169,7 @@ class ProfileController extends Controller {
             const result = await profileService.changePhone(userId, newPhone, otp);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in changePhone controller:', error);
+            logger.error('Error in changePhone controller:', error);
             return res.status(500).json({ success: false, error: 'Internal server error' });
         }
     }

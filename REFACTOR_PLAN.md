@@ -252,7 +252,7 @@ Legend: **Smell → Technique** (refactoring.guru names) · Risk L/M/H · ✅ ve
 - [x] **2.8 Unify V1/V2 error shapes behind the middleware.** *(Done: ErrorHandler factories return AppErrors, `/v2`-scoped `v2Shape` keeps the V2 500 body; 114 hand-built sends → `throw`, 43 try/catch-500 wrappers removed from the 6 V2 controllers, net −360 lines; contract snapshot unchanged.)* `util/errorHandler.js` becomes
   a thin wrapper that throws `AppError`, so the V2 controllers lose their 15-line blocks.
   Output stays byte-identical (`code`, `timestamp`, `details`). *M.*
-- [~] **2.9 Structured logging helper** *(`util/logger.js` added and used by Service, the error middleware and process handlers; bulk `console.log(error)` replacement open)* (`util/logger.js`, JSON lines like `observability.js`)
+- [x] **2.9 Structured logging helper** *(Done: `util/logger.js` `logger.error(msg, err, context)` writes one JSON line; the request id comes from an AsyncLocalStorage context opened in `middleware/requestMetrics.js`, so service code logs it without `req`. 385 `console.error(msg, err)` / `console.log(e)` calls in 40 files converted. Left for Phase 4: the 20 multi-line, already-structured `console.error({...})` calls in the payment controller/service. Informational `console.log`/`warn` untouched.)*
   with request id. Replace bare `console.log(error)`. *L.*
 
 ### Phase 3 — Thin controllers & de-duplicated plumbing

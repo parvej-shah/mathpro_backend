@@ -1,6 +1,7 @@
 const Controller = require('../base').Controller;
 const { respond } = require('../base');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
+const logger = require('../../util/logger');
 
 const moduleFeedbackService = new ModuleFeedbackService();
 
@@ -36,7 +37,7 @@ class ModuleFeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in submitFeedback:', error);
+            logger.error('Error in submitFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -67,7 +68,7 @@ class ModuleFeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getModuleFeedback:', error);
+            logger.error('Error in getModuleFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -98,7 +99,7 @@ class ModuleFeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getCourseFeedback:', error);
+            logger.error('Error in getCourseFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -129,7 +130,7 @@ class ModuleFeedbackController extends Controller {
 
             return res.status(result.success ? 200 : 404).json(result);
         } catch (error) {
-            console.error('Error in deleteFeedback:', error);
+            logger.error('Error in deleteFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -160,7 +161,7 @@ class ModuleFeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getModuleStats:', error);
+            logger.error('Error in getModuleStats:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -177,7 +178,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.getAllReasons(true); // Only active reasons
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getAvailableReasons:', error);
+            logger.error('Error in getAvailableReasons:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'

@@ -1,6 +1,7 @@
 const { Service } = require('../base');
 const { isValidPermission, validatePermissions, getAssignablePermissions } = require('../../util/permissions');
 const { SUPER_ADMIN_ROLE_NAME } = require('../../util/constants');
+const logger = require('../../util/logger');
 
 /**
  * RoleService - RBAC Role and Permission Management
@@ -66,7 +67,7 @@ class RoleService extends Service {
                 data: result.data
             };
         } catch (error) {
-            console.error('Error in getUserRoles:', error);
+            logger.error('Error in getUserRoles:', error);
             return {
                 success: false,
                 error: 'Failed to fetch user roles'
@@ -108,7 +109,7 @@ class RoleService extends Service {
                 data: permissions
             };
         } catch (error) {
-            console.error('Error in getUserPermissions:', error);
+            logger.error('Error in getUserPermissions:', error);
             return {
                 success: false,
                 error: 'Failed to fetch user permissions'
@@ -156,7 +157,7 @@ class RoleService extends Service {
                 hasPermission
             };
         } catch (error) {
-            console.error('Error in hasPermission:', error);
+            logger.error('Error in hasPermission:', error);
             return {
                 success: false,
                 error: 'Failed to check permission'
@@ -210,7 +211,7 @@ class RoleService extends Service {
                 matchedPermission: matchedPermission || null
             };
         } catch (error) {
-            console.error('Error in hasAnyPermission:', error);
+            logger.error('Error in hasAnyPermission:', error);
             return {
                 success: false,
                 error: 'Failed to check permissions'
@@ -265,7 +266,7 @@ class RoleService extends Service {
                 missingPermissions
             };
         } catch (error) {
-            console.error('Error in hasAllPermissions:', error);
+            logger.error('Error in hasAllPermissions:', error);
             return {
                 success: false,
                 error: 'Failed to check permissions'
@@ -318,7 +319,7 @@ class RoleService extends Service {
                 reason: `User does not have ${globalPermission}`
             };
         } catch (error) {
-            console.error('Error in hasScopeAccess:', error);
+            logger.error('Error in hasScopeAccess:', error);
             return {
                 success: false,
                 error: 'Failed to check scope access'
@@ -352,7 +353,7 @@ class RoleService extends Service {
                 data: result.data[0].id
             };
         } catch (error) {
-            console.error('Error in getRoleIdByName:', error);
+            logger.error('Error in getRoleIdByName:', error);
             return {
                 success: false,
                 error: 'Failed to fetch role by name'
@@ -426,7 +427,7 @@ class RoleService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in assignRole:', error);
+            logger.error('Error in assignRole:', error);
             return {
                 success: false,
                 error: 'Failed to assign role'
@@ -503,7 +504,7 @@ class RoleService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in removeRole:', error);
+            logger.error('Error in removeRole:', error);
             return {
                 success: false,
                 error: 'Failed to remove role'
@@ -548,7 +549,7 @@ class RoleService extends Service {
                 data: result.data
             };
         } catch (error) {
-            console.error('Error in getAllRoles:', error);
+            logger.error('Error in getAllRoles:', error);
             return {
                 success: false,
                 error: 'Failed to fetch roles'
@@ -604,7 +605,7 @@ class RoleService extends Service {
                 data: result.data[0]
             };
         } catch (error) {
-            console.error('Error in getRoleById:', error);
+            logger.error('Error in getRoleById:', error);
             return {
                 success: false,
                 error: 'Failed to fetch role'
@@ -691,7 +692,7 @@ class RoleService extends Service {
                 data: result.data[0]
             };
         } catch (error) {
-            console.error('Error in createRole:', error);
+            logger.error('Error in createRole:', error);
             return {
                 success: false,
                 error: 'Failed to create role'
@@ -801,7 +802,7 @@ class RoleService extends Service {
                 data: result.data[0]
             };
         } catch (error) {
-            console.error('Error in updateRole:', error);
+            logger.error('Error in updateRole:', error);
             return {
                 success: false,
                 error: 'Failed to update role'
@@ -867,7 +868,7 @@ class RoleService extends Service {
                 success: true
             };
         } catch (error) {
-            console.error('Error in deleteRole:', error);
+            logger.error('Error in deleteRole:', error);
             return {
                 success: false,
                 error: 'Failed to delete role'

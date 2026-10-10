@@ -1,5 +1,6 @@
 const Service = require('./base').Service;
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../util/logger');
 
 class FeedbackService extends Service {
     constructor() {
@@ -49,7 +50,7 @@ class FeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error submitting feedback:', error);
+            logger.error('Error submitting feedback:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -91,7 +92,7 @@ class FeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error checking user feedback:', error);
+            logger.error('Error checking user feedback:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -155,7 +156,7 @@ class FeedbackService extends Service {
 
             return countResult.success ? feedbacksResult : countResult;
         } catch (error) {
-            console.error('Error getting course feedbacks:', error);
+            logger.error('Error getting course feedbacks:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -233,7 +234,7 @@ class FeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error updating feedback:', error);
+            logger.error('Error updating feedback:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -278,7 +279,7 @@ class FeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error deleting feedback:', error);
+            logger.error('Error deleting feedback:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -384,7 +385,7 @@ class FeedbackService extends Service {
 
             return countResult.success ? feedbacksResult : countResult;
         } catch (error) {
-            console.error('Error getting all feedbacks:', error);
+            logger.error('Error getting all feedbacks:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -526,7 +527,7 @@ class FeedbackService extends Service {
 
             return totalResult;
         } catch (error) {
-            console.error('Error getting feedback stats:', error);
+            logger.error('Error getting feedback stats:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -568,7 +569,7 @@ class FeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error deleting feedback (admin):', error);
+            logger.error('Error deleting feedback (admin):', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -636,7 +637,7 @@ class FeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error exporting feedbacks:', error);
+            logger.error('Error exporting feedbacks:', error);
             return {
                 success: false,
                 error: 'Internal server error'

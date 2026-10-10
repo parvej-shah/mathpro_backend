@@ -1,6 +1,7 @@
 const { Controller } = require('../base');
 const { RoleService } = require('../../service/managerial/roleService');
 const { getAssignablePermissions, getAssignablePermissionsByResource } = require('../../util/permissions');
+const logger = require('../../util/logger');
 
 const roleService = new RoleService();
 
@@ -43,7 +44,7 @@ class RoleController extends Controller {
                 count: assignablePermissions.length
             });
         } catch (error) {
-            console.error('Error in getPermissionsList controller:', error);
+            logger.error('Error in getPermissionsList controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching permissions list',
@@ -75,7 +76,7 @@ class RoleController extends Controller {
                 count: result.data.length
             });
         } catch (error) {
-            console.error('Error in listRoles controller:', error);
+            logger.error('Error in listRoles controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching roles',
@@ -116,7 +117,7 @@ class RoleController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in getRole controller:', error);
+            logger.error('Error in getRole controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching role',
@@ -175,7 +176,7 @@ class RoleController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in createRole controller:', error);
+            logger.error('Error in createRole controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while creating role',
@@ -243,7 +244,7 @@ class RoleController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in updateRole controller:', error);
+            logger.error('Error in updateRole controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while updating role',
@@ -284,7 +285,7 @@ class RoleController extends Controller {
                 message: 'Role deleted successfully'
             });
         } catch (error) {
-            console.error('Error in deleteRole controller:', error);
+            logger.error('Error in deleteRole controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while deleting role',
@@ -326,7 +327,7 @@ class RoleController extends Controller {
                 count: result.data.length
             });
         } catch (error) {
-            console.error('Error in getUserRoles controller:', error);
+            logger.error('Error in getUserRoles controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching user roles',
@@ -368,7 +369,7 @@ class RoleController extends Controller {
                 count: result.data.length
             });
         } catch (error) {
-            console.error('Error in getUserPermissions controller:', error);
+            logger.error('Error in getUserPermissions controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching user permissions',
@@ -420,7 +421,7 @@ class RoleController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in assignRole controller:', error);
+            logger.error('Error in assignRole controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while assigning role',
@@ -471,7 +472,7 @@ class RoleController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in removeRole controller:', error);
+            logger.error('Error in removeRole controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while removing role',

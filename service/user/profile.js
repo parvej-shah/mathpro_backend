@@ -2,6 +2,7 @@ const Service = require('../base').Service;
 const bcrypt=require('bcryptjs');
 const { normalizeContact, isValidPhone } = require('../../util/authHelpers');
 const AuthService = require('../managerial/auth').AuthService;
+const logger = require('../../util/logger');
 
 const authService = new AuthService();
 
@@ -128,7 +129,7 @@ class ProfileService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getUserProfileForCheckout:', error);
+            logger.error('Error in getUserProfileForCheckout:', error);
             return {
                 success: false,
                 error: 'Failed to fetch user profile'
@@ -286,7 +287,7 @@ class ProfileService extends Service {
                 message: 'Profile updated successfully'
             };
         } catch (error) {
-            console.error('Error in updateUserProfileForCheckout:', error);
+            logger.error('Error in updateUserProfileForCheckout:', error);
             return {
                 success: false,
                 error: 'Failed to update profile'
@@ -371,7 +372,7 @@ class ProfileService extends Service {
                 message: passwordSet ? 'Password changed successfully' : 'Password set successfully'
             };
         } catch (error) {
-            console.error('Error in changePassword:', error);
+            logger.error('Error in changePassword:', error);
             return {
                 success: false,
                 error: 'Failed to update password'
@@ -439,7 +440,7 @@ class ProfileService extends Service {
 
             return { success: true, message: 'Phone number updated successfully' };
         } catch (error) {
-            console.error('Error in changePhone:', error);
+            logger.error('Error in changePhone:', error);
             return { success: false, error: 'Failed to update phone number' };
         }
     }

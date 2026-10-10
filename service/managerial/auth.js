@@ -18,6 +18,7 @@ const {
     isOTPExpired,
     sanitizeContactForLog
 } = require('../../util/authHelpers');
+const logger = require('../../util/logger');
 
 // Max concurrent sessions (devices) for a regular user; oldest is evicted beyond this.
 const MAX_REGULAR_SESSIONS = 2;
@@ -358,7 +359,7 @@ class AuthService extends Service {
             );
 
             if (!insertResult.success) {
-                console.error('Failed to store OTP');
+                logger.error('Failed to store OTP');
                 return {
                     success: false,
                     error: 'Failed to process OTP. Please try again.'
@@ -368,7 +369,7 @@ class AuthService extends Service {
             const sendResult = await messagingService.sendOTP(value, contactType, otp, purpose);
 
             if (!sendResult.success) {
-                console.error('Failed to send OTP:', sendResult.error);
+                logger.error('Failed to send OTP:', sendResult.error);
                 return {
                     success: false,
                     error: 'Failed to send OTP. Please try again.'
@@ -388,7 +389,7 @@ class AuthService extends Service {
 
             return response;
         } catch (error) {
-            console.error('Error in requestOTP:', error);
+            logger.error('Error in requestOTP:', error);
             return {
                 success: false,
                 error: 'An error occurred while processing your request'
@@ -451,7 +452,7 @@ class AuthService extends Service {
 
             return { success: true, message: 'OTP verified successfully' };
         } catch (error) {
-            console.error('Error in verifyOTP:', error);
+            logger.error('Error in verifyOTP:', error);
             return {
                 success: false,
                 error: 'An error occurred while verifying OTP'
@@ -580,7 +581,7 @@ class AuthService extends Service {
                 error: 'Registration failed'
             };
         } catch (error) {
-            console.error('Error in register:', error);
+            logger.error('Error in register:', error);
             return {
                 success: false,
                 error: 'An error occurred during registration'
@@ -658,7 +659,7 @@ class AuthService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in login:', error);
+            logger.error('Error in login:', error);
             return {
                 success: false,
                 error: 'An error occurred during login'
@@ -766,7 +767,7 @@ class AuthService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in googleLogin:', error);
+            logger.error('Error in googleLogin:', error);
             return {
                 success: false,
                 error: 'An error occurred during Google login'
@@ -837,7 +838,7 @@ class AuthService extends Service {
             console.log(`Phone linked for user ${userId}: ${sanitizeContactForLog(normalizedPhone, 'phone')}`);
             return { success: true, message: 'Phone number linked successfully' };
         } catch (error) {
-            console.error('Error in linkPhone:', error);
+            logger.error('Error in linkPhone:', error);
             return { success: false, error: 'An error occurred while linking phone' };
         }
     }
@@ -908,7 +909,7 @@ class AuthService extends Service {
             console.log(`Google connected for user ${userId}: ${sanitizeContactForLog(email, 'email')}`);
             return { success: true, message: 'Google account connected', email };
         } catch (error) {
-            console.error('Error in connectGoogle:', error);
+            logger.error('Error in connectGoogle:', error);
             return { success: false, error: 'An error occurred while connecting Google' };
         }
     }
@@ -969,13 +970,13 @@ class AuthService extends Service {
                 };
             }
 
-            console.error(`Failed to update password - no rows affected for: ${sanitizeContactForLog(value, contactType)}`);
+            logger.error(`Failed to update password - no rows affected for: ${sanitizeContactForLog(value, contactType)}`);
             return {
                 success: false,
                 error: 'Failed to update password - user not found'
             };
         } catch (error) {
-            console.error('Error in resetPasswordWithOTP:', error);
+            logger.error('Error in resetPasswordWithOTP:', error);
             return {
                 success: false,
                 error: 'An error occurred while resetting password'

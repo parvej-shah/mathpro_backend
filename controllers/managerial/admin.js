@@ -1,6 +1,7 @@
 const Controller = require('../base').Controller;
 const { respond } = require('../base');
 const AdminService = require('../../service/managerial/admin').AdminService;
+const logger = require('../../util/logger');
 
 const adminService = new AdminService();
 
@@ -18,7 +19,7 @@ class AdminController extends Controller {
             const result = await adminService.list();
             return respond(res, result);
         } catch (error) {
-            console.error('Error in admin list controller:', error);
+            logger.error('Error in admin list controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching admins',
@@ -45,7 +46,7 @@ class AdminController extends Controller {
             const result = await adminService.get(id);
             return res.status(result.success ? 200 : 404).json(result);
         } catch (error) {
-            console.error('Error in admin get controller:', error);
+            logger.error('Error in admin get controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching admin',
@@ -63,7 +64,7 @@ class AdminController extends Controller {
             const result = await adminService.create(req.body);
             return res.status(result.success ? 201 : 400).json(result);
         } catch (error) {
-            console.error('Error in admin create controller:', error);
+            logger.error('Error in admin create controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while creating admin',
@@ -91,7 +92,7 @@ class AdminController extends Controller {
             const result = await adminService.update(id, req.body, updaterId);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in admin update controller:', error);
+            logger.error('Error in admin update controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while updating admin',
@@ -128,7 +129,7 @@ class AdminController extends Controller {
             const result = await adminService.setPassword(id, updaterId, currentPassword);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in admin setPassword controller:', error);
+            logger.error('Error in admin setPassword controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while setting password',
@@ -164,7 +165,7 @@ class AdminController extends Controller {
             const result = await adminService.promote(id, type);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in admin promote controller:', error);
+            logger.error('Error in admin promote controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while promoting user',
@@ -191,7 +192,7 @@ class AdminController extends Controller {
             const result = await adminService.searchUsers(query);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in searchUsers controller:', error);
+            logger.error('Error in searchUsers controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while searching users',
@@ -218,7 +219,7 @@ class AdminController extends Controller {
             const result = await adminService.delete(id);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in admin delete controller:', error);
+            logger.error('Error in admin delete controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while deleting admin',

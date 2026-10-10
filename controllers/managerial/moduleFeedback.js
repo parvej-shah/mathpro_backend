@@ -2,6 +2,7 @@ const Controller = require('../base').Controller;
 const { respond } = require('../base');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 const { getAccessibleCourseIds, checkCourseAccess, resolveCourseId } = require('../../util/courseAccessHelpers');
+const logger = require('../../util/logger');
 
 const moduleFeedbackService = new ModuleFeedbackService();
 
@@ -47,7 +48,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.getModuleStats(parseInt(moduleId));
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getModuleStats:', error);
+            logger.error('Error in getModuleStats:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -84,7 +85,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.getCourseReport(parseInt(courseId));
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getCourseReport:', error);
+            logger.error('Error in getCourseReport:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -135,7 +136,7 @@ class ModuleFeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getAllFeedback:', error);
+            logger.error('Error in getAllFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -217,7 +218,7 @@ class ModuleFeedbackController extends Controller {
 
             return res.send(csvRows.join('\n'));
         } catch (error) {
-            console.error('Error in exportFeedback:', error);
+            logger.error('Error in exportFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -238,7 +239,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.getAllReasons(activeOnly === 'true');
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getAllReasons:', error);
+            logger.error('Error in getAllReasons:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -264,7 +265,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.getReasonById(parseInt(id));
             return res.status(result.success ? 200 : 404).json(result);
         } catch (error) {
-            console.error('Error in getReasonById:', error);
+            logger.error('Error in getReasonById:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -298,7 +299,7 @@ class ModuleFeedbackController extends Controller {
 
             return res.status(result.success ? 201 : 400).json(result);
         } catch (error) {
-            console.error('Error in createReason:', error);
+            logger.error('Error in createReason:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -332,7 +333,7 @@ class ModuleFeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in updateReason:', error);
+            logger.error('Error in updateReason:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -358,7 +359,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.deleteReason(parseInt(id));
             return respond(res, result);
         } catch (error) {
-            console.error('Error in deleteReason:', error);
+            logger.error('Error in deleteReason:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -385,7 +386,7 @@ class ModuleFeedbackController extends Controller {
             const result = await moduleFeedbackService.updateReasonOrders(orders);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in updateReasonOrders:', error);
+            logger.error('Error in updateReasonOrders:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'

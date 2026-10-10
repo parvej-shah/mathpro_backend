@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const { BundleService } = require("../../service/managerial/bundle");
+const logger = require('../../util/logger');
 
 const bundleService = new BundleService();
 
@@ -15,7 +16,7 @@ class UserBundleController extends Controller {
       const result = await bundleService.list({ isLiveOnly: true });
       return respond(res, result);
     } catch (error) {
-      console.error("User bundle list error:", error);
+      logger.error("User bundle list error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -43,7 +44,7 @@ class UserBundleController extends Controller {
       
       return respond(res, result);
     } catch (error) {
-      console.error("User bundle get error:", error);
+      logger.error("User bundle get error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -64,7 +65,7 @@ class UserBundleController extends Controller {
       
       return respond(res, result);
     } catch (error) {
-      console.error("User bundle get by slug error:", error);
+      logger.error("User bundle get by slug error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -104,7 +105,7 @@ class UserBundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("❌ Get my bundles error:", error);
+      logger.error("❌ Get my bundles error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -136,7 +137,7 @@ class UserBundleController extends Controller {
         data: { purchased: hasPurchased },
       });
     } catch (error) {
-      console.error("Check bundle purchase status error:", error);
+      logger.error("Check bundle purchase status error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -167,7 +168,7 @@ class UserBundleController extends Controller {
         data: { prebooked: hasPrebooked },
       });
     } catch (error) {
-      console.error("Check bundle prebook status error:", error);
+      logger.error("Check bundle prebook status error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -213,8 +214,8 @@ class UserBundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("❌ Get bundle courses error:", error);
-      console.error("Error stack:", error.stack);
+      logger.error("❌ Get bundle courses error:", error);
+      logger.error("Error stack:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -243,7 +244,7 @@ class UserBundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Check duplicate courses error:", error);
+      logger.error("Check duplicate courses error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -289,8 +290,8 @@ class UserBundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("❌ Get all courses error:", error);
-      console.error("Error stack:", error.stack);
+      logger.error("❌ Get all courses error:", error);
+      logger.error("Error stack:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -339,7 +340,7 @@ class UserBundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("❌ Get course access error:", error);
+      logger.error("❌ Get course access error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",

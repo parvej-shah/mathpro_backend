@@ -1,4 +1,5 @@
 const axios = require("axios");
+const logger = require('./logger');
 
 /**
  * Fire-and-forget cache revalidation to the student Frontend.
@@ -31,10 +32,7 @@ function revalidateFrontend(tags) {
       }
     )
     .catch((err) => {
-      console.error(
-        "[revalidate] frontend revalidation failed:",
-        err.message
-      );
+      logger.error("[revalidate] frontend revalidation failed:", err.message);
     });
 }
 

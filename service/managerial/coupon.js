@@ -1,6 +1,7 @@
 const { Service } = require("../base");
 const CouponValidator = require("./CouponValidator");
 const CouponAuditLogger = require("./CouponAuditLogger");
+const logger = require('../../util/logger');
 
 class CouponService extends Service {
   constructor() {
@@ -95,7 +96,7 @@ class CouponService extends Service {
       );
       return result;
     } catch (error) {
-      console.error("Error creating coupon:", error);
+      logger.error("Error creating coupon:", error);
       // Log error in coupon creation
       CouponAuditLogger.logCouponCreation(
         couponData,
@@ -153,7 +154,7 @@ class CouponService extends Service {
         error: "Coupon not found",
       };
     } catch (error) {
-      console.error("Error getting coupon:", error);
+      logger.error("Error getting coupon:", error);
       return {
         success: false,
         error: "Failed to retrieve coupon",
@@ -295,7 +296,7 @@ class CouponService extends Service {
       );
       return result;
     } catch (error) {
-      console.error("Error updating coupon:", error);
+      logger.error("Error updating coupon:", error);
       // Log error in coupon update
       CouponAuditLogger.logCouponUpdate(
         id,
@@ -406,7 +407,7 @@ class CouponService extends Service {
         error: "Failed to delete coupon",
       };
     } catch (error) {
-      console.error("Error deleting coupon:", error);
+      logger.error("Error deleting coupon:", error);
       // Log error in coupon deletion
       CouponAuditLogger.logCouponDeletion(
         id,
@@ -553,7 +554,7 @@ class CouponService extends Service {
 
       return dataResult;
     } catch (error) {
-      console.error("Error listing coupons:", error);
+      logger.error("Error listing coupons:", error);
       return {
         success: false,
         error: "Failed to retrieve coupons",
@@ -627,7 +628,7 @@ class CouponService extends Service {
           originalPrice > 0 ? (discountAmount / originalPrice) * 100 : 0,
       };
     } catch (error) {
-      console.error("Error calculating discount:", error);
+      logger.error("Error calculating discount:", error);
       return {
         success: false,
         error: "Failed to calculate discount",
@@ -786,7 +787,7 @@ class CouponService extends Service {
         valid: true,
       };
     } catch (error) {
-      console.error(`Error checking ${itemType} eligibility:`, error);
+      logger.error(`Error checking ${itemType} eligibility:`, error);
       return {
         valid: false,
         error: `Failed to check ${itemType} eligibility`,
@@ -841,7 +842,7 @@ class CouponService extends Service {
         valid: true,
       };
     } catch (error) {
-      console.error(`Error checking user ${itemType} eligibility:`, error);
+      logger.error(`Error checking user ${itemType} eligibility:`, error);
       return {
         valid: false,
         error: "Failed to check user eligibility",
@@ -929,7 +930,7 @@ class CouponService extends Service {
         coupon: this.formatValidatedCoupon(coupon),
       };
     } catch (error) {
-      console.error(`Error validating coupon for ${itemType}:`, error);
+      logger.error(`Error validating coupon for ${itemType}:`, error);
       return {
         valid: false,
         error: options.failureError || "Failed to validate coupon",
@@ -988,7 +989,7 @@ class CouponService extends Service {
         totalCoupons: result.data.length,
       };
     } catch (error) {
-      console.error(`Error getting active coupons for ${itemType}:`, error);
+      logger.error(`Error getting active coupons for ${itemType}:`, error);
       return {
         success: false,
         error: `Failed to retrieve active coupons for ${itemType}`,
@@ -1071,7 +1072,7 @@ class CouponService extends Service {
         }
       };
     } catch (error) {
-      console.error(`Error applying coupon${errorLabel}:`, error);
+      logger.error(`Error applying coupon${errorLabel}:`, error);
       return {
         success: false,
         error: "Failed to apply coupon",
@@ -1694,14 +1695,14 @@ class CouponService extends Service {
             }
           } catch (linkError) {
             // Don't fail the main operation if click linking fails
-            console.error('recordUsage: Failed to link click to purchase (non-critical):', linkError);
+            logger.error('recordUsage: Failed to link click to purchase (non-critical):', linkError);
           }
         }
       }
 
       return result;
     } catch (error) {
-      console.error("Error recording coupon usage:", error);
+      logger.error("Error recording coupon usage:", error);
 
       // Log error in coupon usage recording
       CouponAuditLogger.logCouponUsage(
@@ -1791,7 +1792,7 @@ class CouponService extends Service {
         error: "Failed to track coupon click",
       };
     } catch (error) {
-      console.error("Error tracking coupon click:", error);
+      logger.error("Error tracking coupon click:", error);
       return {
         success: false,
         error: "Failed to track coupon click due to system error",
@@ -1909,7 +1910,7 @@ class CouponService extends Service {
         error: "Failed to update click record",
       };
     } catch (error) {
-      console.error("Error linking click to purchase:", error);
+      logger.error("Error linking click to purchase:", error);
       return {
         success: false,
         error: "Failed to link click to purchase due to system error",
@@ -2029,7 +2030,7 @@ class CouponService extends Service {
 
       return dataResult;
     } catch (error) {
-      console.error("Error getting coupon clicks:", error);
+      logger.error("Error getting coupon clicks:", error);
       return {
         success: false,
         error: "Failed to retrieve coupon clicks",
@@ -2148,7 +2149,7 @@ class CouponService extends Service {
 
       return dataResult;
     } catch (error) {
-      console.error("Error getting all coupon clicks:", error);
+      logger.error("Error getting all coupon clicks:", error);
       return {
         success: false,
         error: "Failed to retrieve coupon clicks",
@@ -2221,7 +2222,7 @@ class CouponService extends Service {
         error: "Click not found",
       };
     } catch (error) {
-      console.error("Error getting click details:", error);
+      logger.error("Error getting click details:", error);
       return {
         success: false,
         error: "Failed to retrieve click details",
@@ -2302,7 +2303,7 @@ class CouponService extends Service {
         error: "Failed to retrieve conversion stats",
       };
     } catch (error) {
-      console.error("Error getting coupon conversion stats:", error);
+      logger.error("Error getting coupon conversion stats:", error);
       return {
         success: false,
         error: "Failed to retrieve conversion stats",
@@ -2365,7 +2366,7 @@ class CouponService extends Service {
         },
       };
     } catch (error) {
-      console.error("Error getting coupon click analytics:", error);
+      logger.error("Error getting coupon click analytics:", error);
       return {
         success: false,
         error: "Failed to retrieve click analytics",
@@ -2440,7 +2441,7 @@ class CouponService extends Service {
         error: "Failed to retrieve overall stats",
       };
     } catch (error) {
-      console.error("Error getting all coupon stats:", error);
+      logger.error("Error getting all coupon stats:", error);
       return {
         success: false,
         error: "Failed to retrieve overall stats",
@@ -2555,7 +2556,7 @@ class CouponService extends Service {
         error: "Failed to update coupon usage status",
       };
     } catch (error) {
-      console.error("Error updating coupon usage status:", error);
+      logger.error("Error updating coupon usage status:", error);
       return {
         success: false,
         error: "Failed to update coupon usage status due to system error",
@@ -2731,7 +2732,7 @@ class CouponService extends Service {
         error: "Failed to create course associations",
       };
     } catch (error) {
-      console.error("Error adding courses to coupon:", error);
+      logger.error("Error adding courses to coupon:", error);
       return {
         success: false,
         error: "Failed to add courses to coupon",
@@ -2793,7 +2794,7 @@ class CouponService extends Service {
         error: "Failed to remove course associations",
       };
     } catch (error) {
-      console.error("Error removing courses from coupon:", error);
+      logger.error("Error removing courses from coupon:", error);
       return {
         success: false,
         error: "Failed to remove courses from coupon",
@@ -3015,7 +3016,7 @@ class CouponService extends Service {
         error: "Failed to retrieve associated courses",
       };
     } catch (error) {
-      console.error("Error getting coupon courses:", error);
+      logger.error("Error getting coupon courses:", error);
       return {
         success: false,
         error: "Failed to retrieve coupon courses",
@@ -3062,7 +3063,7 @@ class CouponService extends Service {
         error: "Failed to retrieve available courses",
       };
     } catch (error) {
-      console.error("Error getting available courses:", error);
+      logger.error("Error getting available courses:", error);
       return {
         success: false,
         error: "Failed to retrieve available courses",
@@ -3183,7 +3184,7 @@ class CouponService extends Service {
         error: "Failed to create bundle associations",
       };
     } catch (error) {
-      console.error("Error adding bundles to coupon:", error);
+      logger.error("Error adding bundles to coupon:", error);
       return {
         success: false,
         error: "Failed to add bundles to coupon",
@@ -3245,7 +3246,7 @@ class CouponService extends Service {
         error: "Failed to remove bundle associations",
       };
     } catch (error) {
-      console.error("Error removing bundles from coupon:", error);
+      logger.error("Error removing bundles from coupon:", error);
       return {
         success: false,
         error: "Failed to remove bundles from coupon",
@@ -3310,7 +3311,7 @@ class CouponService extends Service {
         error: "Failed to retrieve coupon bundles",
       };
     } catch (error) {
-      console.error("Error getting coupon bundles:", error);
+      logger.error("Error getting coupon bundles:", error);
       return {
         success: false,
         error: "Failed to retrieve coupon bundles",
@@ -3357,7 +3358,7 @@ class CouponService extends Service {
         error: "Failed to retrieve available bundles",
       };
     } catch (error) {
-      console.error("Error getting available bundles:", error);
+      logger.error("Error getting available bundles:", error);
       return {
         success: false,
         error: "Failed to retrieve available bundles",
@@ -3405,7 +3406,7 @@ class CouponService extends Service {
         error: "Failed to check coupon applicability",
       };
     } catch (error) {
-      console.error("Error checking coupon applicability:", error);
+      logger.error("Error checking coupon applicability:", error);
       return {
         success: false,
         error: "Failed to check coupon applicability",
@@ -3588,7 +3589,7 @@ class CouponService extends Service {
         },
       };
     } catch (error) {
-      console.error("Error generating coupon usage statistics:", error);
+      logger.error("Error generating coupon usage statistics:", error);
       return {
         success: false,
         error: "Failed to generate usage statistics",
@@ -3714,7 +3715,7 @@ class CouponService extends Service {
         },
       };
     } catch (error) {
-      console.error("Error generating revenue impact analytics:", error);
+      logger.error("Error generating revenue impact analytics:", error);
       return {
         success: false,
         error: "Failed to generate revenue impact analytics",
@@ -3870,7 +3871,7 @@ class CouponService extends Service {
         },
       };
     } catch (error) {
-      console.error("Error getting top performing coupons:", error);
+      logger.error("Error getting top performing coupons:", error);
       return {
         success: false,
         error: "Failed to get top performing coupons",
@@ -4000,7 +4001,7 @@ class CouponService extends Service {
         },
       };
     } catch (error) {
-      console.error("Error generating coupon usage report:", error);
+      logger.error("Error generating coupon usage report:", error);
       return {
         success: false,
         error: "Failed to generate usage report",
@@ -4094,7 +4095,7 @@ class CouponService extends Service {
 
       return result;
     } catch (error) {
-      console.error("Error storing payment coupon data:", error);
+      logger.error("Error storing payment coupon data:", error);
       return {
         success: false,
         error: "Failed to store payment coupon data"
@@ -4157,7 +4158,7 @@ class CouponService extends Service {
         error: "Coupon tracking data not found or expired"
       };
     } catch (error) {
-      console.error("Error retrieving payment coupon data:", error);
+      logger.error("Error retrieving payment coupon data:", error);
       return {
         success: false,
         error: "Failed to retrieve payment coupon data"
@@ -4191,7 +4192,7 @@ class CouponService extends Service {
 
       return result;
     } catch (error) {
-      console.error("Error marking payment coupon as used:", error);
+      logger.error("Error marking payment coupon as used:", error);
       return {
         success: false,
         error: "Failed to mark payment coupon as used"

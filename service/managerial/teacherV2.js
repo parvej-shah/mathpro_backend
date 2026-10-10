@@ -10,6 +10,7 @@ const MessagingService = require('../../service/messagingService').MessagingServ
 const RoleService = require('./roleService').RoleService;
 const AdminService = require('./admin').AdminService;
 const { createTtlCache } = require('../../util/ttlCache');
+const logger = require('../../util/logger');
 
 const messagingService = new MessagingService();
 const roleService = new RoleService();
@@ -51,7 +52,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return result;
         } catch (error) {
-            console.error('Error listing teacher names:', error);
+            logger.error('Error listing teacher names:', error);
             return {
                 success: false,
                 error: 'Failed to list teachers',
@@ -128,7 +129,7 @@ class TeacherServiceV2 extends TeacherService {
                 data: teacherFull
             };
         } catch (error) {
-            console.error('Error getting teacher full:', error);
+            logger.error('Error getting teacher full:', error);
             return {
                 success: false,
                 error: 'Failed to get teacher',
@@ -199,7 +200,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return result;
         } catch (error) {
-            console.error('Error getting teachers by course:', error);
+            logger.error('Error getting teachers by course:', error);
             return {
                 success: false,
                 error: 'Failed to get teachers',
@@ -343,7 +344,7 @@ class TeacherServiceV2 extends TeacherService {
                 }
             };
         } catch (error) {
-            console.error('Error creating teacher:', error);
+            logger.error('Error creating teacher:', error);
             return {
                 success: false,
                 error: 'Failed to create teacher',
@@ -563,7 +564,7 @@ class TeacherServiceV2 extends TeacherService {
                 };
             }
         } catch (error) {
-            console.error('Error updating teacher:', error);
+            logger.error('Error updating teacher:', error);
             return {
                 success: false,
                 error: 'Failed to update teacher',
@@ -637,7 +638,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return result;
         } catch (error) {
-            console.error('Error listing teachers full:', error);
+            logger.error('Error listing teachers full:', error);
             return {
                 success: false,
                 error: 'Failed to list teachers',
@@ -707,7 +708,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return result;
         } catch (error) {
-            console.error('Error assigning teacher to course:', error);
+            logger.error('Error assigning teacher to course:', error);
             return {
                 success: false,
                 error: 'Failed to assign teacher to course',
@@ -744,7 +745,7 @@ class TeacherServiceV2 extends TeacherService {
                 code: 'ASSIGNMENT_NOT_FOUND'
             };
         } catch (error) {
-            console.error('Error removing teacher from course:', error);
+            logger.error('Error removing teacher from course:', error);
             return {
                 success: false,
                 error: 'Failed to remove teacher from course',
@@ -778,7 +779,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return result;
         } catch (error) {
-            console.error('Error getting teacher courses:', error);
+            logger.error('Error getting teacher courses:', error);
             return {
                 success: false,
                 error: 'Failed to get teacher courses',
@@ -886,7 +887,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return result;
         } catch (error) {
-            console.error('Error searching teachers:', error);
+            logger.error('Error searching teachers:', error);
             return {
                 success: false,
                 error: 'Failed to search teachers',
@@ -939,7 +940,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return updateResult;
         } catch (error) {
-            console.error('Error updating teacher image:', error);
+            logger.error('Error updating teacher image:', error);
             return {
                 success: false,
                 error: 'Failed to update teacher image',
@@ -989,7 +990,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return updateResult;
         } catch (error) {
-            console.error('Error deleting teacher image:', error);
+            logger.error('Error deleting teacher image:', error);
             return {
                 success: false,
                 error: 'Failed to delete teacher image',
@@ -1054,7 +1055,7 @@ class TeacherServiceV2 extends TeacherService {
                 }
             };
         } catch (error) {
-            console.error('Error getting teacher statistics:', error);
+            logger.error('Error getting teacher statistics:', error);
             return {
                 success: false,
                 error: 'Failed to get teacher statistics',
@@ -1107,7 +1108,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return updateResult;
         } catch (error) {
-            console.error('Error toggling teacher active status:', error);
+            logger.error('Error toggling teacher active status:', error);
             return {
                 success: false,
                 error: 'Failed to toggle teacher active status',
@@ -1171,7 +1172,7 @@ class TeacherServiceV2 extends TeacherService {
                 }
             };
         } catch (error) {
-            console.error('Error in bulk assign to course:', error);
+            logger.error('Error in bulk assign to course:', error);
             return {
                 success: false,
                 error: 'Failed to bulk assign teachers to course',
@@ -1205,7 +1206,7 @@ class TeacherServiceV2 extends TeacherService {
 
             return { success: true, data: { course_id: courseId, teacher_ids: teacherIds || [] } };
         } catch (error) {
-            console.error('Error replacing instructors for course:', error);
+            logger.error('Error replacing instructors for course:', error);
             return { success: false, error: 'Failed to replace instructors', code: 'INTERNAL_SERVER_ERROR' };
         }
     }
@@ -1282,7 +1283,7 @@ class TeacherServiceV2 extends TeacherService {
                 };
             });
         } catch (error) {
-            console.error('Error getting public instructors:', error);
+            logger.error('Error getting public instructors:', error);
             return {
                 success: false,
                 error: 'Failed to get instructors',

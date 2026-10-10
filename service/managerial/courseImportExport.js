@@ -14,6 +14,7 @@ const presignedUploadService = require('../../util/presignedUploadService');
 
 // csv-parser is now installed
 const csvParser = require('csv-parser');
+const logger = require('../../util/logger');
 
 class CourseImportExportService extends CourseServiceV2 {
     constructor() {
@@ -312,7 +313,7 @@ class CourseImportExportService extends CourseServiceV2 {
             // Process import asynchronously (don't await)
             this.processImport(uploadKey, format, importMode, createdBy, importId, validateOnly)
                 .catch(error => {
-                    console.error('Error in async import processing:', error);
+                    logger.error('Error in async import processing:', error);
                     this.updateImportTracking(importId, {
                         status: 'failed',
                         errors: [{ error: error.message }]
@@ -329,7 +330,7 @@ class CourseImportExportService extends CourseServiceV2 {
                 }
             };
         } catch (error) {
-            console.error('Error starting import:', error);
+            logger.error('Error starting import:', error);
             return {
                 success: false,
                 error: 'Failed to start import',
@@ -789,7 +790,7 @@ class CourseImportExportService extends CourseServiceV2 {
                 }
             });
         } catch (error) {
-            console.error('Error processing import:', error);
+            logger.error('Error processing import:', error);
             await this.updateImportTracking(importId, {
                 status: 'failed',
                 errors: [{ error: error.message }]
@@ -870,7 +871,7 @@ class CourseImportExportService extends CourseServiceV2 {
                 data: exportData
             };
         } catch (error) {
-            console.error('Error exporting course:', error);
+            logger.error('Error exporting course:', error);
             return {
                 success: false,
                 error: 'Failed to export course',

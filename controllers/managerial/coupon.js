@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const CouponService = require("../../service/managerial/coupon");
+const logger = require('../../util/logger');
 
 const couponService = new CouponService();
 
@@ -28,7 +29,7 @@ class CouponController extends Controller {
       const result = await couponService.createCoupon(req.body, createdBy);
       return res.status(result.success ? 201 : 400).json(result);
     } catch (error) {
-      console.error("Error in coupon create controller:", error);
+      logger.error("Error in coupon create controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -54,7 +55,7 @@ class CouponController extends Controller {
       const result = await couponService.getCoupon(couponId);
       return res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
-      console.error("Error in coupon get controller:", error);
+      logger.error("Error in coupon get controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -80,7 +81,7 @@ class CouponController extends Controller {
       const result = await couponService.updateCoupon(couponId, req.body);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in coupon update controller:", error);
+      logger.error("Error in coupon update controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -115,7 +116,7 @@ class CouponController extends Controller {
       const result = await couponService.deleteCoupon(couponId, deletedBy);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in coupon delete controller:", error);
+      logger.error("Error in coupon delete controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -154,7 +155,7 @@ class CouponController extends Controller {
       const result = await couponService.listCoupons(filters, pagination);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in coupon list controller:", error);
+      logger.error("Error in coupon list controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -191,7 +192,7 @@ class CouponController extends Controller {
       );
       return respond(res, result);
     } catch (error) {
-      console.error("Error in add courses to coupon controller:", error);
+      logger.error("Error in add courses to coupon controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -228,7 +229,7 @@ class CouponController extends Controller {
       );
       return respond(res, result);
     } catch (error) {
-      console.error("Error in remove courses from coupon controller:", error);
+      logger.error("Error in remove courses from coupon controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -254,7 +255,7 @@ class CouponController extends Controller {
       const result = await couponService.getCouponCourses(couponId);
       return res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
-      console.error("Error in get coupon courses controller:", error);
+      logger.error("Error in get coupon courses controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -273,7 +274,7 @@ class CouponController extends Controller {
       const result = await couponService.getAvailableCourses(couponId);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get available courses controller:", error);
+      logger.error("Error in get available courses controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -310,7 +311,7 @@ class CouponController extends Controller {
       );
       return respond(res, result);
     } catch (error) {
-      console.error("Error in add bundles to coupon controller:", error);
+      logger.error("Error in add bundles to coupon controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -347,7 +348,7 @@ class CouponController extends Controller {
       );
       return respond(res, result);
     } catch (error) {
-      console.error("Error in remove bundles from coupon controller:", error);
+      logger.error("Error in remove bundles from coupon controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -373,7 +374,7 @@ class CouponController extends Controller {
       const result = await couponService.getCouponBundles(couponId);
       return res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
-      console.error("Error in get coupon bundles controller:", error);
+      logger.error("Error in get coupon bundles controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -392,7 +393,7 @@ class CouponController extends Controller {
       const result = await couponService.getAvailableBundles(couponId);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get available bundles controller:", error);
+      logger.error("Error in get available bundles controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -420,7 +421,7 @@ class CouponController extends Controller {
       const result = await couponService.getCouponUsageStatistics(filters);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get coupon statistics controller:", error);
+      logger.error("Error in get coupon statistics controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -445,7 +446,7 @@ class CouponController extends Controller {
       const result = await couponService.getRevenueImpactAnalytics(filters);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get revenue impact analytics controller:", error);
+      logger.error("Error in get revenue impact analytics controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -472,7 +473,7 @@ class CouponController extends Controller {
       const result = await couponService.getTopPerformingCoupons(options);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get top performing coupons controller:", error);
+      logger.error("Error in get top performing coupons controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -505,7 +506,7 @@ class CouponController extends Controller {
       );
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get coupon usage report controller:", error);
+      logger.error("Error in get coupon usage report controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -589,7 +590,7 @@ class CouponController extends Controller {
 
       return res.status(200).json(dashboardData);
     } catch (error) {
-      console.error("Error in get analytics dashboard controller:", error);
+      logger.error("Error in get analytics dashboard controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -630,7 +631,7 @@ class CouponController extends Controller {
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error("Error in getCouponClicks controller:", error);
+      logger.error("Error in getCouponClicks controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -663,7 +664,7 @@ class CouponController extends Controller {
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error("Error in getAllCouponClicks controller:", error);
+      logger.error("Error in getAllCouponClicks controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -701,7 +702,7 @@ class CouponController extends Controller {
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error("Error in getCouponClickStats controller:", error);
+      logger.error("Error in getCouponClickStats controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",

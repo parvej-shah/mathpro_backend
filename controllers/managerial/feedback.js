@@ -2,6 +2,7 @@ const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const FeedbackService = require("../../service/feedback").FeedbackService;
 const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
+const logger = require('../../util/logger');
 
 const feedbackService = new FeedbackService();
 
@@ -78,7 +79,7 @@ class FeedbackController extends Controller {
             const result = await feedbackService.getAllFeedbacks(filters);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getAllFeedbacks:', error);
+            logger.error('Error in getAllFeedbacks:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -116,7 +117,7 @@ class FeedbackController extends Controller {
             const result = await feedbackService.getFeedbackStats(courseId, access);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getFeedbackStats:', error);
+            logger.error('Error in getFeedbackStats:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -139,7 +140,7 @@ class FeedbackController extends Controller {
             }
             return respond(res, result);
         } catch (error) {
-            console.error('Error in deleteFeedback (admin):', error);
+            logger.error('Error in deleteFeedback (admin):', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -253,7 +254,7 @@ class FeedbackController extends Controller {
                 return res.send(csv);
             }
         } catch (error) {
-            console.error('Error in exportFeedbacks:', error);
+            logger.error('Error in exportFeedbacks:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'

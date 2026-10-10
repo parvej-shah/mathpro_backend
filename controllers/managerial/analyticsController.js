@@ -3,6 +3,7 @@ const AnalyticsV2Service = require("../../service/managerial/analyticsV2/analyti
   .AnalyticsV2Service;
 const { AnalyticsV2MetadataService } = require("../../service/managerial/analyticsV2/analyticsV2MetadataService");
 const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
+const logger = require('../../util/logger');
 
 const analyticsService = new AnalyticsV2Service();
 const metadataService = new AnalyticsV2MetadataService();
@@ -24,7 +25,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getDashboardOverview(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getDashboardOverview:", error);
+      logger.error("Error in getDashboardOverview:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -42,7 +43,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getDashboardTimeseries(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getDashboardTimeseries:", error);
+      logger.error("Error in getDashboardTimeseries:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -61,7 +62,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getDashboardBreakdown(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getDashboardBreakdown:", error);
+      logger.error("Error in getDashboardBreakdown:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -86,7 +87,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getRevenueSummary(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getRevenueSummary:", error);
+      logger.error("Error in getRevenueSummary:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -114,7 +115,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getRevenueTrends(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getRevenueTrends:", error);
+      logger.error("Error in getRevenueTrends:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -134,7 +135,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getRevenueByCourse(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getRevenueByCourse:", error);
+      logger.error("Error in getRevenueByCourse:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -154,7 +155,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getRevenueByBundle(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getRevenueByBundle:", error);
+      logger.error("Error in getRevenueByBundle:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -170,7 +171,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getRevenuePredictions(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getRevenuePredictions:", error);
+      logger.error("Error in getRevenuePredictions:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -186,7 +187,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getUserOverview(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getUserOverview:", error);
+      logger.error("Error in getUserOverview:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -206,7 +207,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getUserGrowth(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getUserGrowth:", error);
+      logger.error("Error in getUserGrowth:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -223,7 +224,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getUserEngagement(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getUserEngagement:", error);
+      logger.error("Error in getUserEngagement:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -246,7 +247,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getCourseOverview(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getCourseOverview:", error);
+      logger.error("Error in getCourseOverview:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -269,7 +270,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getCourseDetailed(courseId, filters);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getCourseDetailed:", error);
+      logger.error("Error in getCourseDetailed:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -292,7 +293,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getCourseCompletion(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getCourseCompletion:", error);
+      logger.error("Error in getCourseCompletion:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -308,7 +309,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getBundleOverview(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getBundleOverview:", error);
+      logger.error("Error in getBundleOverview:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -328,7 +329,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getBundleDetailed(bundleId, filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getBundleDetailed:", error);
+      logger.error("Error in getBundleDetailed:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -351,7 +352,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getLearningProgress(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getLearningProgress:", error);
+      logger.error("Error in getLearningProgress:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -374,7 +375,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getStreakAnalytics(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getStreakAnalytics:", error);
+      logger.error("Error in getStreakAnalytics:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -390,7 +391,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getCouponOverview(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getCouponOverview:", error);
+      logger.error("Error in getCouponOverview:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -409,7 +410,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getCouponPerformance(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getCouponPerformance:", error);
+      logger.error("Error in getCouponPerformance:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -425,7 +426,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getPaymentOverview(filters, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getPaymentOverview:", error);
+      logger.error("Error in getPaymentOverview:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -441,7 +442,7 @@ class AnalyticsController extends Controller {
       const result = await analyticsService.getFilterOptions(type, access);
       return res.status(result.success ? 200 : 500).json(result);
     } catch (error) {
-      console.error("Error in getFilterOptions:", error);
+      logger.error("Error in getFilterOptions:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -451,7 +452,7 @@ class AnalyticsController extends Controller {
       const metadata = metadataService.getAllMetadata();
       return res.status(200).json({ success: true, data: metadata });
     } catch (error) {
-      console.error("Error in getAllMetadata:", error);
+      logger.error("Error in getAllMetadata:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -465,7 +466,7 @@ class AnalyticsController extends Controller {
       }
       return res.status(200).json({ success: true, data: metadata });
     } catch (error) {
-      console.error("Error in getCategoryMetadata:", error);
+      logger.error("Error in getCategoryMetadata:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
@@ -479,7 +480,7 @@ class AnalyticsController extends Controller {
       }
       return res.status(200).json({ success: true, data: metadata });
     } catch (error) {
-      console.error("Error in getDataPointMetadata:", error);
+      logger.error("Error in getDataPointMetadata:", error);
       return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };

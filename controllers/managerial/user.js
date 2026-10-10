@@ -2,6 +2,7 @@ const Controller = require('../base').Controller;
 const { respond } = require('../base');
 const UserService = require('../../service/managerial/user').UserService;
 const { managerialAccountTypes } = require('../../util/constants');
+const logger = require('../../util/logger');
 
 const userService = new UserService();
 
@@ -37,7 +38,7 @@ class UserController extends Controller {
             const result = await userService.listUsers(filters, pagination);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in user list controller:', error);
+            logger.error('Error in user list controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching users',
@@ -64,7 +65,7 @@ class UserController extends Controller {
             const result = await userService.getUserDetails(id);
             return res.status(result.success ? 200 : 404).json(result);
         } catch (error) {
-            console.error('Error in user get controller:', error);
+            logger.error('Error in user get controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching user',
@@ -91,7 +92,7 @@ class UserController extends Controller {
             const result = await userService.getUserHistory(id);
             return res.status(result.success ? 200 : 404).json(result);
         } catch (error) {
-            console.error('Error in user history controller:', error);
+            logger.error('Error in user history controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching user history',
@@ -128,7 +129,7 @@ class UserController extends Controller {
             const result = await userService.createUser({ name, email, phone, profile });
             return res.status(result.success ? 201 : 400).json(result);
         } catch (error) {
-            console.error('Error in user create controller:', error);
+            logger.error('Error in user create controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while creating user',
@@ -168,7 +169,7 @@ class UserController extends Controller {
             const result = await userService.updateUser(id, { name, email, phone, profile }, adminId);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in user update controller:', error);
+            logger.error('Error in user update controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while updating user',
@@ -207,7 +208,7 @@ class UserController extends Controller {
             const result = await userService.deleteUser(id, adminId, permanent);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in user delete controller:', error);
+            logger.error('Error in user delete controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while deleting user',
@@ -235,7 +236,7 @@ class UserController extends Controller {
             const result = await userService.resetUserPassword(id, adminId);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in reset password controller:', error);
+            logger.error('Error in reset password controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while resetting password',
@@ -274,7 +275,7 @@ class UserController extends Controller {
             }
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getUserCourseAccess controller:', error);
+            logger.error('Error in getUserCourseAccess controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while fetching course access',
@@ -368,7 +369,7 @@ class UserController extends Controller {
 
             return res.status(result.success ? 201 : 400).json(result);
         } catch (error) {
-            console.error('Error in grantUserCourseAccess controller:', error);
+            logger.error('Error in grantUserCourseAccess controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while granting course access',
@@ -440,7 +441,7 @@ class UserController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in revokeUserCourseAccess controller:', error);
+            logger.error('Error in revokeUserCourseAccess controller:', error);
             return res.status(500).json({
                 success: false,
                 message: 'An error occurred while revoking course access',

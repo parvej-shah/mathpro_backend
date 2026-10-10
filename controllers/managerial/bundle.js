@@ -2,6 +2,7 @@ require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const { BundleService } = require("../../service/managerial/bundle");
+const logger = require('../../util/logger');
 
 const bundleService = new BundleService();
 
@@ -30,7 +31,7 @@ class BundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle create error:", error);
+      logger.error("Bundle create error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -78,7 +79,7 @@ class BundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Enhanced bundle create error:", error);
+      logger.error("Enhanced bundle create error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -107,7 +108,7 @@ class BundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle update error:", error);
+      logger.error("Bundle update error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -156,7 +157,7 @@ class BundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Enhanced bundle update error:", error);
+      logger.error("Enhanced bundle update error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -171,7 +172,7 @@ class BundleController extends Controller {
       const result = await bundleService.delete(parseInt(id));
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle delete error:", error);
+      logger.error("Bundle delete error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -185,7 +186,7 @@ class BundleController extends Controller {
       const result = await bundleService.list();
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle list error:", error);
+      logger.error("Bundle list error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -207,7 +208,7 @@ class BundleController extends Controller {
       const result = await bundleService.get(parseInt(id), userId);
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle get error:", error);
+      logger.error("Bundle get error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -222,7 +223,7 @@ class BundleController extends Controller {
       const result = await bundleService.getBySlug(slug, userId);
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle get by slug error:", error);
+      logger.error("Bundle get by slug error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -250,7 +251,7 @@ class BundleController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Add courses to bundle error:", error);
+      logger.error("Add courses to bundle error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -265,7 +266,7 @@ class BundleController extends Controller {
       const result = await bundleService.getBundleStats(parseInt(id));
       return respond(res, result);
     } catch (error) {
-      console.error("Bundle stats error:", error);
+      logger.error("Bundle stats error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -296,7 +297,7 @@ class BundleController extends Controller {
       const result = await bundleService.getAllBundlePurchases(bundleId);
       return respond(res, result);
     } catch (error) {
-      console.error("Get bundle purchases error:", error);
+      logger.error("Get bundle purchases error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -322,7 +323,7 @@ class BundleController extends Controller {
       const result = await bundleService.getAllBundlePurchasesApi(bundleId);
       return respond(res, result);
     } catch (error) {
-      console.error("Get bundle purchases API error:", error);
+      logger.error("Get bundle purchases API error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -394,7 +395,7 @@ class BundleController extends Controller {
 
       res.csv([csvHeaders, ...csvData]);
     } catch (error) {
-      console.error("Export bundle prebookings error:", error);
+      logger.error("Export bundle prebookings error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -411,7 +412,7 @@ class BundleController extends Controller {
       const result = await bundleService.getAllBundlePrebookings(bundleId);
       return respond(res, result);
     } catch (error) {
-      console.error("Get bundle prebookings error:", error);
+      logger.error("Get bundle prebookings error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -449,7 +450,7 @@ class BundleController extends Controller {
         });
       }
     } catch (error) {
-      console.error("Update bundle prebooking UTM error:", error);
+      logger.error("Update bundle prebooking UTM error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -486,7 +487,7 @@ class BundleController extends Controller {
         });
       }
     } catch (error) {
-      console.error("Delete bundle prebooking UTM error:", error);
+      logger.error("Delete bundle prebooking UTM error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",

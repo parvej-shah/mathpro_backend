@@ -1,4 +1,5 @@
 const StreakService = require('../../service/streakService');
+const logger = require('../../util/logger');
 
 class StreakController {
     constructor() {
@@ -50,7 +51,7 @@ class StreakController {
             }
 
         } catch (error) {
-            console.error('Error in completeLessonStreak:', error);
+            logger.error('Error in completeLessonStreak:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -100,7 +101,7 @@ class StreakController {
             }
 
         } catch (error) {
-            console.error('Error in getCourseStreak:', error);
+            logger.error('Error in getCourseStreak:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -147,7 +148,7 @@ class StreakController {
             }
 
         } catch (error) {
-            console.error('Error in getDashboardStreaks:', error);
+            logger.error('Error in getDashboardStreaks:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -189,7 +190,7 @@ class StreakController {
             }
 
         } catch (error) {
-            console.error('Error in getCourseLeaderboard:', error);
+            logger.error('Error in getCourseLeaderboard:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'

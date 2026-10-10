@@ -1,5 +1,6 @@
 const Controller = require("../base").Controller;
 const { ModuleViewsService } = require("../../service/user/moduleViews");
+const logger = require('../../util/logger');
 
 const moduleViewsService = new ModuleViewsService();
 
@@ -69,7 +70,7 @@ class ModuleViewsController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in recordView controller:', error);
+            logger.error('Error in recordView controller:', error);
             return res.status(500).json({
                 success: false,
                 error: "Internal server error"
@@ -123,7 +124,7 @@ class ModuleViewsController extends Controller {
                 data: result.data
             });
         } catch (error) {
-            console.error('Error in getMostRecent controller:', error);
+            logger.error('Error in getMostRecent controller:', error);
             return res.status(500).json({
                 success: false,
                 error: "Internal server error"

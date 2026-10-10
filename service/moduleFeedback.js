@@ -1,4 +1,5 @@
 const Service = require('./base').Service;
+const logger = require('../util/logger');
 
 class ModuleFeedbackService extends Service {
     constructor() {
@@ -92,7 +93,7 @@ class ModuleFeedbackService extends Service {
                 error: 'Failed to submit feedback'
             };
         } catch (error) {
-            console.error('Error in submitFeedback:', error);
+            logger.error('Error in submitFeedback:', error);
             return {
                 success: false,
                 error: 'An error occurred while submitting feedback'
@@ -123,7 +124,7 @@ class ModuleFeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error in getUserModuleFeedback:', error);
+            logger.error('Error in getUserModuleFeedback:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching feedback'
@@ -159,7 +160,7 @@ class ModuleFeedbackService extends Service {
 
             return result;
         } catch (error) {
-            console.error('Error in getUserCourseFeedback:', error);
+            logger.error('Error in getUserCourseFeedback:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching feedback'
@@ -194,7 +195,7 @@ class ModuleFeedbackService extends Service {
                 error: 'Feedback not found'
             };
         } catch (error) {
-            console.error('Error in deleteFeedback:', error);
+            logger.error('Error in deleteFeedback:', error);
             return {
                 success: false,
                 error: 'An error occurred while deleting feedback'
@@ -260,7 +261,7 @@ class ModuleFeedbackService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getModuleStats:', error);
+            logger.error('Error in getModuleStats:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching module stats'
@@ -365,7 +366,7 @@ class ModuleFeedbackService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getCourseReport:', error);
+            logger.error('Error in getCourseReport:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching course report'
@@ -464,7 +465,7 @@ class ModuleFeedbackService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getAllFeedback:', error);
+            logger.error('Error in getAllFeedback:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching feedback'
@@ -510,7 +511,7 @@ class ModuleFeedbackService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getModuleStatsWithUserReaction:', error);
+            logger.error('Error in getModuleStatsWithUserReaction:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching module stats'
@@ -540,7 +541,7 @@ class ModuleFeedbackService extends Service {
                 data: result.success ? result.data : []
             };
         } catch (error) {
-            console.error('Error in getAllReasons:', error);
+            logger.error('Error in getAllReasons:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching reasons'
@@ -572,7 +573,7 @@ class ModuleFeedbackService extends Service {
                 error: 'Reason not found'
             };
         } catch (error) {
-            console.error('Error in getReasonById:', error);
+            logger.error('Error in getReasonById:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching reason'
@@ -639,7 +640,7 @@ class ModuleFeedbackService extends Service {
                 error: 'Failed to create reason'
             };
         } catch (error) {
-            console.error('Error in createReason:', error);
+            logger.error('Error in createReason:', error);
             return {
                 success: false,
                 error: 'An error occurred while creating reason'
@@ -709,7 +710,7 @@ class ModuleFeedbackService extends Service {
                 error: 'Reason not found'
             };
         } catch (error) {
-            console.error('Error in updateReason:', error);
+            logger.error('Error in updateReason:', error);
             return {
                 success: false,
                 error: 'An error occurred while updating reason'
@@ -760,7 +761,7 @@ class ModuleFeedbackService extends Service {
                 error: 'Reason not found'
             };
         } catch (error) {
-            console.error('Error in deleteReason:', error);
+            logger.error('Error in deleteReason:', error);
             return {
                 success: false,
                 error: 'An error occurred while deleting reason'
@@ -797,7 +798,7 @@ class ModuleFeedbackService extends Service {
                 };
             });
         } catch (error) {
-            console.error('Error in updateReasonOrders:', error);
+            logger.error('Error in updateReasonOrders:', error);
             return {
                 success: false,
                 error: 'An error occurred while updating reason orders'

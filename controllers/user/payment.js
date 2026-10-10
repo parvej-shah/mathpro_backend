@@ -8,6 +8,7 @@ const PaymentService=require("../../service/user/payment.js").PaymentService
 const CourseService=require("../../service/managerial/course").CourseService
 
 const MessagingService=require('../../service/messagingService.js').MessagingService
+const logger = require('../../util/logger');
 
 
 const paymentService=new PaymentService()
@@ -74,7 +75,7 @@ class PaymentController extends Controller {
             // Redirect to frontend (GET request)
             return res.redirect(redirectUrl);
         } catch (error) {
-            console.error('Error in handlePaymentSuccess:', error);
+            logger.error('Error in handlePaymentSuccess:', error);
             // Fallback to generic success page
             const frontendUrl = process.env.FRONTEND_URL || 'https://mathpro.academy';
             return res.redirect(`${frontendUrl}/dashboard`); // Redirect to dashboard if something goes wrong (user can see their purchases there)
@@ -95,7 +96,7 @@ class PaymentController extends Controller {
 
             return res.redirect(redirectUrl);
         } catch (error) {
-            console.error('Error in handlePaymentFailure:', error);
+            logger.error('Error in handlePaymentFailure:', error);
             return res.redirect(`${frontendUrl}/post-payment/failure`);
         }
     }
@@ -114,7 +115,7 @@ class PaymentController extends Controller {
 
             return res.redirect(redirectUrl);
         } catch (error) {
-            console.error('Error in handlePaymentCancel:', error);
+            logger.error('Error in handlePaymentCancel:', error);
             return res.redirect(`${frontendUrl}/post-payment/cancel`);
         }
     }
@@ -138,7 +139,7 @@ class PaymentController extends Controller {
         try {
             // Validate required fields
             if (!req.body.status) {
-                console.error('IPN: Missing status field', req.body);
+                logger.error('IPN: Missing status field', req.body);
                 // Log the attempt
                 await paymentService.logPaymentAttempt({
                     sslcommerz_tran_id: sslcommerzTranId,
@@ -255,7 +256,7 @@ class PaymentController extends Controller {
                 // Check if validation failed
                 if (!validationResult.success) {
                     const errorMsg = `SSLCommerz validation failed: ${validationResult.error}`;
-                    console.error('IPN Validation Error:', errorMsg);
+                    logger.error('IPN Validation Error:', errorMsg);
                     
                     if (auditLogId) {
                         await paymentService.updatePaymentLog(auditLogId, {
@@ -275,7 +276,7 @@ class PaymentController extends Controller {
                 // Check if transaction is valid
                 if (!validationResult.isValid) {
                     const errorMsg = validationResult.error || `Transaction status: ${validationResult.status}`;
-                    console.error('IPN: Transaction not valid:', errorMsg);
+                    logger.error('IPN: Transaction not valid:', errorMsg);
                     
                     if (auditLogId) {
                         await paymentService.updatePaymentLog(auditLogId, {
@@ -339,7 +340,7 @@ class PaymentController extends Controller {
                         const amountDiff = Math.abs(parseFloat(amount) - validationResult.amount);
                         if (amountDiff > 0.01) { // Allow 0.01 BDT difference for rounding
                             const errorMsg = `Amount mismatch: IPN amount (${amount}) != Validated amount (${validationResult.amount})`;
-                            console.error('IPN Amount Mismatch:', errorMsg);
+                            logger.error('IPN Amount Mismatch:', errorMsg);
 
                             if (auditLogId) {
                                 await paymentService.updatePaymentLog(auditLogId, {
@@ -397,7 +398,7 @@ class PaymentController extends Controller {
                             });
                         }
                     } catch (couponError) {
-                        console.error('IPN: Error getting coupon data (non-critical):', couponError);
+                        logger.error('IPN: Error getting coupon data (non-critical):', couponError);
                         // Don't fail payment if coupon lookup fails
                     }
                     
@@ -706,7 +707,7 @@ class PaymentController extends Controller {
                                                 course_id: itemId,
                                                 amount: amount,
                                                 type: 'bundle'
-                                            }).catch(err => console.error('IPN: Log creation error:', err))
+                                            }).catch(err => logger.error('IPN: Log creation error:', err))
                                         ]).then(results => {
                                             console.log('IPN: Bundle notifications sent:', {
                                                 userId,
@@ -752,7 +753,7 @@ class PaymentController extends Controller {
                         } else {
                             // Bundle purchase failed
                             const errorMsg = purchaseResult.error || 'Bundle purchase failed';
-                            console.error('Bundle purchase failed:', errorMsg);
+                            logger.error('Bundle purchase failed:', errorMsg);
                             
                             if (auditLogId) {
                                 await paymentService.updatePaymentLog(auditLogId, {
@@ -1114,7 +1115,7 @@ class PaymentController extends Controller {
                                                 user_id: userId,
                                                 course_id: courseId || itemId,
                                                 amount: req.body.amount || amount
-                                            }).catch(err => console.error('IPN: Log creation error:', err))
+                                            }).catch(err => logger.error('IPN: Log creation error:', err))
                                         ]).then(results => {
                                             console.log('IPN: Course notifications sent:', {
                                                 userId,
@@ -1160,7 +1161,7 @@ class PaymentController extends Controller {
                         } else {
                             // Course enrollment failed
                             const errorMsg = takesResult.error || 'Course enrollment failed';
-                            console.error('Course enrollment failed:', errorMsg);
+                            logger.error('Course enrollment failed:', errorMsg);
                             
                             if (auditLogId) {
                                 await paymentService.updatePaymentLog(auditLogId, {
@@ -1176,7 +1177,7 @@ class PaymentController extends Controller {
                 } catch (processingError) {
                     // Error during processing
                     const errorMsg = processingError.message || 'Payment processing error';
-                    console.error('IPN Processing Error:', processingError);
+                    logger.error('IPN Processing Error:', processingError);
                     
                     if (auditLogId) {
                         await paymentService.updatePaymentLog(auditLogId, {
@@ -1203,14 +1204,14 @@ class PaymentController extends Controller {
             }
         } catch (error) {
             // Top-level error handler
-            console.error('IPN Endpoint Error:', error);
+            logger.error('IPN Endpoint Error:', error);
             
             if (auditLogId) {
                 await paymentService.updatePaymentLog(auditLogId, {
                     processing_status: 'ERROR',
                     error_message: error.message || 'Unknown error',
                     processing_result: { error: error.message, stack: error.stack }
-                }).catch(err => console.error('Failed to update audit log:', err));
+                }).catch(err => logger.error('Failed to update audit log:', err));
             }
             
             // Always return 200 to SSLCommerz (they expect 200 even on errors)
@@ -1231,7 +1232,7 @@ class PaymentController extends Controller {
             const result = await paymentService.getPaymentHistoryAndEnrollments(userId);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getPaymentHistory controller:', error);
+            logger.error('Error in getPaymentHistory controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -1269,7 +1270,7 @@ class PaymentController extends Controller {
             const result = await paymentService.getPaymentAuditLogs(filters);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getPaymentAuditLogs controller:', error);
+            logger.error('Error in getPaymentAuditLogs controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -1306,7 +1307,7 @@ class PaymentController extends Controller {
             const result = await paymentService.exportPaymentAuditLogs(filters);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in exportPaymentAuditLogs controller:', error);
+            logger.error('Error in exportPaymentAuditLogs controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -1488,17 +1489,17 @@ class PaymentController extends Controller {
                                 if (userPhone || userEmail) {
                                     Promise.all([
                                         userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
-                                            console.error('Reconciliation: Bundle SMS send error:', err);
+                                            logger.error('Reconciliation: Bundle SMS send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No phone' }),
                                         userEmail ? messagingService.sendMail(userEmail, 'Bundle Purchase Confirmation | Math Pro', emailText).catch(err => {
-                                            console.error('Reconciliation: Bundle Email send error:', err);
+                                            logger.error('Reconciliation: Bundle Email send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No email' })
                                     ]).then(() => {
                                         console.log('Reconciliation: Notifications sent for bundle purchase');
                                     }).catch(err => {
-                                        console.error('Reconciliation: Notification error:', err);
+                                        logger.error('Reconciliation: Notification error:', err);
                                     });
                                 }
                             } else {
@@ -1550,17 +1551,17 @@ class PaymentController extends Controller {
                                 if (userPhone || userEmail) {
                                     Promise.all([
                                         userPhone ? messagingService.sendMessage(userPhone, text).catch(err => {
-                                            console.error('Reconciliation: Course SMS send error:', err);
+                                            logger.error('Reconciliation: Course SMS send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No phone' }),
                                         userEmail ? messagingService.sendMail(userEmail, 'Course Purchased Confirmation | Math Pro', emailText).catch(err => {
-                                            console.error('Reconciliation: Course Email send error:', err);
+                                            logger.error('Reconciliation: Course Email send error:', err);
                                             return { success: false };
                                         }) : Promise.resolve({ success: false, error: 'No email' })
                                     ]).then(() => {
                                         console.log('Reconciliation: Notifications sent for course purchase');
                                     }).catch(err => {
-                                        console.error('Reconciliation: Notification error:', err);
+                                        logger.error('Reconciliation: Notification error:', err);
                                     });
                                 }
                             }
@@ -1568,13 +1569,13 @@ class PaymentController extends Controller {
                     }
                 } catch (notificationError) {
                     // CRITICAL: Never fail reconciliation due to notification errors
-                    console.error('Reconciliation: Error sending notifications (non-critical):', notificationError);
+                    logger.error('Reconciliation: Error sending notifications (non-critical):', notificationError);
                 }
             }
             
             return respond(res, result);
         } catch (error) {
-            console.error('Error in reconcilePayment controller:', error);
+            logger.error('Error in reconcilePayment controller:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'

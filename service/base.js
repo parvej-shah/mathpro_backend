@@ -37,7 +37,7 @@ const pool = new Pool({
 // An error on an idle client (dropped connection, DB restart) would otherwise be
 // an unhandled 'error' event. Log it and let pg evict the client from the pool.
 pool.on('error', (err) => {
-    console.error('Unexpected error on idle pg client', err);
+    logger.error('Unexpected error on idle pg client', err);
 })
 
 

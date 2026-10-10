@@ -4,6 +4,7 @@ const {
   nowMs,
   shouldLogRequest,
 } = require("../util/observability");
+const { requestContext } = require("../util/logger");
 
 module.exports = function requestMetrics(req, res, next) {
   req.requestId = req.headers["x-request-id"] || makeRequestId();
@@ -19,5 +20,6 @@ module.exports = function requestMetrics(req, res, next) {
     console.log(JSON.stringify(formatRequestLog(req, res, durationMs)));
   });
 
-  next();
+  // Everything this request runs (including async service code) logs with its id.
+  requestContext.run({ requestId: req.requestId }, next);
 };

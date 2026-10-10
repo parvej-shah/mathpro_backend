@@ -1,4 +1,5 @@
 const StreakService = require('../../service/streakService');
+const logger = require('../../util/logger');
 
 class AdminStreakController {
     constructor() {
@@ -50,7 +51,7 @@ class AdminStreakController {
             }
 
         } catch (error) {
-            console.error('Error in getStreakAnalytics:', error);
+            logger.error('Error in getStreakAnalytics:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -81,7 +82,7 @@ class AdminStreakController {
             }
 
         } catch (error) {
-            console.error('Error in getUserStreakDetails:', error);
+            logger.error('Error in getUserStreakDetails:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -113,7 +114,7 @@ class AdminStreakController {
             }
 
         } catch (error) {
-            console.error('Error in getAdminCourseLeaderboard:', error);
+            logger.error('Error in getAdminCourseLeaderboard:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -163,7 +164,7 @@ class AdminStreakController {
             }
 
         } catch (error) {
-            console.error('Error in manualStreakUpdate:', error);
+            logger.error('Error in manualStreakUpdate:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -213,7 +214,7 @@ class AdminStreakController {
             }
 
         } catch (error) {
-            console.error('Error in bulkStreakUpdate:', error);
+            logger.error('Error in bulkStreakUpdate:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'
@@ -262,7 +263,7 @@ class AdminStreakController {
             }
 
         } catch (error) {
-            console.error('Error in getStreakTrends:', error);
+            logger.error('Error in getStreakTrends:', error);
             res.status(500).json({
                 success: false,
                 message: 'Internal server error'

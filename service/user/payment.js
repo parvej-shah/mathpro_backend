@@ -2,6 +2,7 @@ const Service = require('../base').Service;
 const SSLCommerzPayment = require('sslcommerz-lts');
 const https = require('https');
 const http = require('http');
+const logger = require('../../util/logger');
 
 // SSLCommerzPayment constructor's 3rd arg: true = sandbox, false = live.
 const SSLCOMMERZ_IS_LIVE = process.env.SSLCOMMERZ_LIVE === 'false' ? false : true;
@@ -184,7 +185,7 @@ class PaymentService extends Service {
 
                             resolve(validationResult);
                         } catch (parseError) {
-                            console.error('Error parsing SSLCommerz validation response:', parseError);
+                            logger.error('Error parsing SSLCommerz validation response:', parseError);
                             resolve({
                                 success: false,
                                 error: 'Failed to parse validation response',
@@ -196,7 +197,7 @@ class PaymentService extends Service {
                 });
 
                 req.on('error', (error) => {
-                    console.error('Error calling SSLCommerz validation API:', error);
+                    logger.error('Error calling SSLCommerz validation API:', error);
                     resolve({
                         success: false,
                         error: 'Failed to connect with SSLCommerz validation API',
@@ -215,7 +216,7 @@ class PaymentService extends Service {
                 req.end();
             });
         } catch (error) {
-            console.error('Error in validateTransactionWithSSLCommerz:', error);
+            logger.error('Error in validateTransactionWithSSLCommerz:', error);
             return {
                 success: false,
                 error: error.message || 'Unknown error during validation'
@@ -422,7 +423,7 @@ class PaymentService extends Service {
                 couponId = validation.coupon.id;
                 couponData = validation.coupon;
             } catch (error) {
-                console.error('Error processing coupon:', error);
+                logger.error('Error processing coupon:', error);
                 return {
                     success: false,
                     error: 'Failed to process coupon'
@@ -555,7 +556,7 @@ class PaymentService extends Service {
                 books_total: bookSelection.booksTotal
             }
         } catch (e) {
-            console.log(e)
+            logger.error('Error in initiatePayment:', e);
             return {
                 success: false,
                 data: 'error occurred'
@@ -615,7 +616,7 @@ class PaymentService extends Service {
                 couponId = validation.coupon.id;
                 couponData = validation.coupon;
             } catch (error) {
-                console.error('Error processing bundle coupon:', error);
+                logger.error('Error processing bundle coupon:', error);
                 return {
                     success: false,
                     error: 'Failed to process coupon'
@@ -747,7 +748,7 @@ class PaymentService extends Service {
                 books_total: bookSelection.booksTotal
             }
         } catch (e) {
-            console.log(e)
+            logger.error('Error in initiatePaymentForBundle:', e);
             return {
                 success: false,
                 data: 'error occurred'
@@ -825,7 +826,7 @@ class PaymentService extends Service {
                 couponId = validation.coupon.id;
                 couponData = validation.coupon;
             } catch (error) {
-                console.error('Error processing book coupon:', error);
+                logger.error('Error processing book coupon:', error);
                 return {
                     success: false,
                     error: 'Failed to process coupon'
@@ -936,7 +937,7 @@ class PaymentService extends Service {
                 discount_amount: couponId ? (originalPrice - finalPrice) : 0
             }
         } catch (e) {
-            console.log(e)
+            logger.error('Error in initiatePaymentForBook:', e);
             return {
                 success: false,
                 data: 'error occurred'
@@ -1217,7 +1218,7 @@ class PaymentService extends Service {
             };
 
         } catch (error) {
-            console.error('Error in getPaymentHistoryAndEnrollments:', error);
+            logger.error('Error in getPaymentHistoryAndEnrollments:', error);
             return {
                 success: false,
                 error: 'Internal server error'
@@ -1278,7 +1279,7 @@ class PaymentService extends Service {
             const result = await this.query(query, params);
             return result;
         } catch (error) {
-            console.error('Error logging payment attempt:', error);
+            logger.error('Error logging payment attempt:', error);
             // Don't throw - logging should never break payment processing
             return { success: false, error: error.message };
         }
@@ -1330,7 +1331,7 @@ class PaymentService extends Service {
             const result = await this.query(query, params);
             return result;
         } catch (error) {
-            console.error('Error updating payment log:', error);
+            logger.error('Error updating payment log:', error);
             return { success: false, error: error.message };
         }
     }
@@ -1423,7 +1424,7 @@ class PaymentService extends Service {
             const result = await this.query(query, params);
             return result;
         } catch (error) {
-            console.error('Error getting payment audit logs:', error);
+            logger.error('Error getting payment audit logs:', error);
             return { success: false, error: error.message };
         }
     }
@@ -1514,7 +1515,7 @@ class PaymentService extends Service {
             const result = await this.query(query, params);
             return result;
         } catch (error) {
-            console.error('Error exporting payment audit logs:', error);
+            logger.error('Error exporting payment audit logs:', error);
             return { success: false, error: error.message };
         }
     }
@@ -1785,7 +1786,7 @@ class PaymentService extends Service {
             };
         } catch (error) {
             // Even top-level errors don't fail reconciliation
-            console.error('Reconciliation: Error (attempting to mark as reconciled anyway):', error);
+            logger.error('Reconciliation: Error (attempting to mark as reconciled anyway):', error);
             
             try {
                 const logResult = await this.query(
@@ -1814,7 +1815,7 @@ class PaymentService extends Service {
                     );
                 }
             } catch (markError) {
-                console.error('Reconciliation: Failed to mark as reconciled after error:', markError);
+                logger.error('Reconciliation: Failed to mark as reconciled after error:', markError);
             }
             
             // Still return success - reconciliation attempt was made

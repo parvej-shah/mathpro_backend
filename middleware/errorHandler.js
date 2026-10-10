@@ -17,7 +17,7 @@ module.exports = function errorHandler(err, req, res, next) {
 
   if (err instanceof AppError) {
     if (err.status >= 500) {
-      logger.error("http_error", err, { requestId: req.requestId, method: req.method, path: req.originalUrl });
+      logger.error("http_error", err, { method: req.method, path: req.originalUrl });
     }
     return res.status(err.status).json({ success: false, error: err.message, ...err.body });
   }
@@ -26,6 +26,6 @@ module.exports = function errorHandler(err, req, res, next) {
     return res.status(err.status).json({ success: false, error: err.message });
   }
 
-  logger.error("http_error", err, { requestId: req.requestId, method: req.method, path: req.originalUrl });
+  logger.error("http_error", err, { method: req.method, path: req.originalUrl });
   return res.status(500).json({ success: false, error: "Internal Server Error" });
 };

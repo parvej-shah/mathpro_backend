@@ -5,6 +5,7 @@
 
 const Controller = require("../base").Controller;
 const TeacherServiceV2 = require("../../service/managerial/teacherV2").TeacherServiceV2;
+const logger = require('../../util/logger');
 
 const teacherServiceV2 = new TeacherServiceV2();
 
@@ -35,7 +36,7 @@ class InstructorController extends Controller {
                 data: result.data || []
             });
         } catch (error) {
-            console.error("Error in instructor list:", error);
+            logger.error("Error in instructor list:", error);
             return res.status(500).json({
                 success: false,
                 error: "Internal server error",

@@ -1,4 +1,5 @@
 const Service = require("../base").Service;
+const logger = require('../../util/logger');
 
 class ModuleViewsService extends Service {
     constructor() {
@@ -30,7 +31,7 @@ class ModuleViewsService extends Service {
                 enrolled: result.success && result.data && result.data.length > 0
             };
         } catch (error) {
-            console.error('Error checking enrollment:', error);
+            logger.error('Error checking enrollment:', error);
             return {
                 success: false,
                 enrolled: false,
@@ -165,7 +166,7 @@ class ModuleViewsService extends Service {
                 }
             });
         } catch (error) {
-            console.error('Error recording module view:', error);
+            logger.error('Error recording module view:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to record module view'
@@ -344,7 +345,7 @@ class ModuleViewsService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error getting most recent module:', error);
+            logger.error('Error getting most recent module:', error);
             return {
                 success: false,
                 error: error.message || 'Failed to get most recent module'

@@ -10,6 +10,7 @@ const {
   validateOffset,
   buildDateGrouping,
 } = require("../../../util/analyticsV2/queryUtils");
+const logger = require('../../../util/logger');
 
 class AnalyticsV2Service extends Service {
   constructor() {
@@ -567,7 +568,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getDashboardOverview:", error);
+      logger.error("Error in getDashboardOverview:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -652,7 +653,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getDashboardTimeseries:", error);
+      logger.error("Error in getDashboardTimeseries:", error);
       return { success: false, error: "Internal server error" };
     }
   };
@@ -759,7 +760,7 @@ class AnalyticsV2Service extends Service {
         meta,
       };
     } catch (error) {
-      console.error("Error in getDashboardBreakdown:", error);
+      logger.error("Error in getDashboardBreakdown:", error);
       return { success: false, error: "Internal server error" };
     }
   };
@@ -1034,7 +1035,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getRevenueSummary:", error);
+      logger.error("Error in getRevenueSummary:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -1230,7 +1231,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getRevenueTrends:", error);
+      logger.error("Error in getRevenueTrends:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -1398,7 +1399,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getRevenueByCourse:", error);
+      logger.error("Error in getRevenueByCourse:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -1564,7 +1565,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getRevenueByBundle:", error);
+      logger.error("Error in getRevenueByBundle:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -1745,7 +1746,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getRevenuePredictions:", error);
+      logger.error("Error in getRevenuePredictions:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -1924,7 +1925,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getUserOverview:", error);
+      logger.error("Error in getUserOverview:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -2083,7 +2084,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getUserGrowth:", error);
+      logger.error("Error in getUserGrowth:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -2213,7 +2214,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getFilterOptions:", error);
+      logger.error("Error in getFilterOptions:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -2359,7 +2360,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getUserEngagement:", error);
+      logger.error("Error in getUserEngagement:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -2529,7 +2530,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getCourseOverview:", error);
+      logger.error("Error in getCourseOverview:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -2759,7 +2760,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getCourseDetailed:", error);
+      logger.error("Error in getCourseDetailed:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -2912,7 +2913,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getCourseCompletion:", error);
+      logger.error("Error in getCourseCompletion:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -3058,7 +3059,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getBundleOverview:", error);
+      logger.error("Error in getBundleOverview:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -3209,7 +3210,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getBundleDetailed:", error);
+      logger.error("Error in getBundleDetailed:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -3453,7 +3454,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getLearningProgress:", error);
+      logger.error("Error in getLearningProgress:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -3595,7 +3596,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getStreakAnalytics:", error);
+      logger.error("Error in getStreakAnalytics:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -3776,7 +3777,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getCouponOverview:", error);
+      logger.error("Error in getCouponOverview:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -3908,7 +3909,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getCouponPerformance:", error);
+      logger.error("Error in getCouponPerformance:", error);
       return {
         success: false,
         error: "Internal server error",
@@ -4098,7 +4099,7 @@ class AnalyticsV2Service extends Service {
         },
       };
     } catch (error) {
-      console.error("Error in getPaymentOverview:", error);
+      logger.error("Error in getPaymentOverview:", error);
       return {
         success: false,
         error: "Internal server error",

@@ -1,5 +1,6 @@
 const Service = require("../base").Service;
 const { safeMessage } = require("../../errors/dbErrors");
+const logger = require('../../util/logger');
 
 class BundleService extends Service {
   constructor() {
@@ -302,7 +303,7 @@ class BundleService extends Service {
             result.data[0].active_coupons = [];
           }
         } catch (error) {
-          console.error('Error fetching active coupons for bundle:', error);
+          logger.error('Error fetching active coupons for bundle:', error);
           if (result.data && result.data.length > 0) {
             result.data[0].active_coupons = [];
           }
@@ -334,7 +335,7 @@ class BundleService extends Service {
           0
         );
       } catch (error) {
-        console.error('Error fetching attached books for bundle:', error);
+        logger.error('Error fetching attached books for bundle:', error);
         bundleData.attached_books = [];
         bundleData.books_total = 0;
       }
@@ -502,7 +503,7 @@ class BundleService extends Service {
 
       return result;
     } catch (error) {
-      console.error("❌ getUserBundleCourses service error:", error);
+      logger.error("❌ getUserBundleCourses service error:", error);
       return { success: false, error: error.message };
     }
   };
@@ -606,7 +607,7 @@ class BundleService extends Service {
 
       return result;
     } catch (error) {
-      console.error("❌ getUserAllCourses service error:", error);
+      logger.error("❌ getUserAllCourses service error:", error);
       return { success: false, error: error.message };
     }
   };
@@ -732,7 +733,7 @@ class BundleService extends Service {
 
       return await this.query(query, params);
     } catch (error) {
-      console.error("Get bundle purchases API error:", error);
+      logger.error("Get bundle purchases API error:", error);
       return {
         success: false,
         error: error.message || "Failed to retrieve bundle purchases",

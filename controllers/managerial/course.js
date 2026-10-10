@@ -6,6 +6,7 @@ const CourseService =
 const RevenueService =
   require("../../service/managerial/revenueService").RevenueService;
 const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
+const logger = require('../../util/logger');
 
 const courseService = new CourseService();
 const revenueService = new RevenueService();
@@ -241,7 +242,7 @@ class CourseController extends Controller {
         });
       }
     } catch (error) {
-      console.error("Update prebooking UTM error:", error);
+      logger.error("Update prebooking UTM error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -278,7 +279,7 @@ class CourseController extends Controller {
         });
       }
     } catch (error) {
-      console.error("Delete prebooking UTM error:", error);
+      logger.error("Delete prebooking UTM error:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",

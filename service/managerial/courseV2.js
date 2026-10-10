@@ -8,6 +8,7 @@ const { safeMessage } = require('../../errors/dbErrors');
 const ModuleService = require('./module').ModuleService;
 const ChapterService = require('./chapter').ChapterService;
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../../util/logger');
 
 class CourseServiceV2 extends Service {
     constructor() {
@@ -169,7 +170,7 @@ class CourseServiceV2 extends Service {
             const booksResult = await bookService.booksForCourse(id);
             resultObject.books = booksResult.success ? booksResult.data : [];
         } catch (error) {
-            console.error('Error fetching books for course (getFull):', error);
+            logger.error('Error fetching books for course (getFull):', error);
             resultObject.books = [];
         }
 
@@ -194,7 +195,7 @@ class CourseServiceV2 extends Service {
                     : [],
             };
         } catch (error) {
-            console.error('Error fetching instructors for course (getFull):', error);
+            logger.error('Error fetching instructors for course (getFull):', error);
         }
 
         return {
@@ -515,7 +516,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
                 };
             });
         } catch (error) {
-            console.error('Error reordering modules:', error);
+            logger.error('Error reordering modules:', error);
             return {
                 success: false,
                 error: 'Failed to reorder modules',
@@ -563,7 +564,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
                 data: result.data[0]
             };
         } catch (error) {
-            console.error('Error creating import tracking:', error);
+            logger.error('Error creating import tracking:', error);
             return {
                 success: false,
                 error: 'Failed to create import tracking',
@@ -644,7 +645,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
                 data: result.data[0]
             };
         } catch (error) {
-            console.error('Error updating import tracking:', error);
+            logger.error('Error updating import tracking:', error);
             return {
                 success: false,
                 error: 'Failed to update import tracking',
@@ -694,7 +695,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
                 }
             };
         } catch (error) {
-            console.error('Error getting import tracking:', error);
+            logger.error('Error getting import tracking:', error);
             return {
                 success: false,
                 error: 'Failed to get import tracking',
@@ -762,7 +763,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
 
             return fullResult;
         } catch (error) {
-            console.error('Error in getFullEnhanced:', error);
+            logger.error('Error in getFullEnhanced:', error);
             return {
                 success: false,
                 error: 'Failed to get full course data',

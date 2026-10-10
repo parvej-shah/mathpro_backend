@@ -1,5 +1,6 @@
 const { RoleService } = require('../service/managerial/roleService');
 const { Service } = require('../service/base');
+const logger = require('./logger');
 
 /**
  * Course-scoped access helper functions
@@ -56,7 +57,7 @@ const checkCourseAccess = async (userId, resource, action, courseId) => {
             reason: hasAccess ? 'Access granted' : 'Access denied'
         };
     } catch (error) {
-        console.error('Error in checkCourseAccess:', error);
+        logger.error('Error in checkCourseAccess:', error);
         return {
             hasAccess: false,
             reason: 'Internal error checking course access'
@@ -113,7 +114,7 @@ const getAccessibleCourseIds = async (userId, resource, action) => {
 
         return { hasGlobalAccess: false, courseIds: [] };
     } catch (error) {
-        console.error('Error in getAccessibleCourseIds:', error);
+        logger.error('Error in getAccessibleCourseIds:', error);
         return {
             hasGlobalAccess: false,
             courseIds: []
@@ -158,7 +159,7 @@ const resolveCourseId = async (resourceType, resourceId) => {
 
         const query = queries[resourceType];
         if (!query) {
-            console.error(`Unknown resourceType: ${resourceType}`);
+            logger.error(`Unknown resourceType: ${resourceType}`);
             return null;
         }
 
@@ -172,7 +173,7 @@ const resolveCourseId = async (resourceType, resourceId) => {
 
         return result.data[0].course_id || null;
     } catch (error) {
-        console.error('Error in resolveCourseId:', error);
+        logger.error('Error in resolveCourseId:', error);
         return null;
     }
 };
@@ -245,7 +246,7 @@ const assertCourseAccess = async (userId, resource, action, resourceType, resour
             courseId
         };
     } catch (error) {
-        console.error('Error in assertCourseAccess:', error);
+        logger.error('Error in assertCourseAccess:', error);
         return {
             hasAccess: false,
             reason: 'Internal error checking course access'

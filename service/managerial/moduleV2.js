@@ -5,6 +5,7 @@
 
 const ModuleService = require('./module').ModuleService;
 const { validateGoogleDriveLink } = require('../../util/googleDriveValidation');
+const logger = require('../../util/logger');
 
 class ModuleServiceV2 extends ModuleService {
     constructor() {
@@ -196,7 +197,7 @@ class ModuleServiceV2 extends ModuleService {
                 }
             };
         } catch (error) {
-            console.error('Error importing quiz:', error);
+            logger.error('Error importing quiz:', error);
             return {
                 success: false,
                 error: 'Failed to import quiz',
@@ -327,7 +328,7 @@ class ModuleServiceV2 extends ModuleService {
                 }
             };
         } catch (error) {
-            console.error('Error exporting quiz:', error);
+            logger.error('Error exporting quiz:', error);
             return {
                 success: false,
                 error: 'Failed to export quiz',
@@ -494,7 +495,7 @@ class ModuleServiceV2 extends ModuleService {
                 };
             }
         } catch (error) {
-            console.error('Error updating module:', error);
+            logger.error('Error updating module:', error);
             return {
                 success: false,
                 error: 'Failed to update module',
@@ -604,7 +605,7 @@ class ModuleServiceV2 extends ModuleService {
                 }
             };
         } catch (error) {
-            console.error('Error duplicating module:', error);
+            logger.error('Error duplicating module:', error);
             return {
                 success: false,
                 error: 'Failed to duplicate module',
@@ -669,7 +670,7 @@ class ModuleServiceV2 extends ModuleService {
                 }
             };
         } catch (error) {
-            console.error('Error in batch update:', error);
+            logger.error('Error in batch update:', error);
             return {
                 success: false,
                 error: 'Failed to perform batch update',

@@ -8,6 +8,7 @@ const ModuleService = require("./module").ModuleService;
 const MessagingService =
   require("../../service/messagingService").MessagingService;
 const { createTtlCache } = require("../../util/ttlCache");
+const logger = require('../../util/logger');
 
 const messagingService = new MessagingService();
 const publicLiveCourseCache = createTtlCache(15000);
@@ -554,7 +555,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
           resultObject["active_coupons"] = [];
         }
       } catch (error) {
-        console.error('Error fetching active coupons for course:', error);
+        logger.error('Error fetching active coupons for course:', error);
         resultObject["active_coupons"] = [];
       }
     } else {
@@ -607,7 +608,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
         0
       );
     } catch (error) {
-      console.error('Error fetching attached books for course:', error);
+      logger.error('Error fetching attached books for course:', error);
       resultObject["attached_books"] = [];
       resultObject["books_total"] = 0;
     }
@@ -632,7 +633,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
           : [],
       };
     } catch (error) {
-      console.error("Error fetching instructors for course:", error);
+      logger.error("Error fetching instructors for course:", error);
     }
 
     return {
@@ -826,7 +827,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
         }
       };
     } catch (error) {
-      console.error('Error in getDashboard:', error);
+      logger.error('Error in getDashboard:', error);
       return {
         success: false,
         error: "Internal server error"
@@ -1060,7 +1061,7 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
         }
       };
     } catch (error) {
-      console.error('Error in applyCoupon:', error);
+      logger.error('Error in applyCoupon:', error);
       return {
         success: false,
         error: 'Failed to apply coupon'

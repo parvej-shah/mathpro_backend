@@ -7,6 +7,7 @@ const {
     normalizeContact
 } = require('../../util/authHelpers');
 const { managerialAccountTypes, SUPER_ADMIN_ROLE_NAME } = require('../../util/constants');
+const logger = require('../../util/logger');
 
 const messagingService = new MessagingService();
 
@@ -187,7 +188,7 @@ class AdminService extends Service {
                 data: result.data
             };
         } catch (error) {
-            console.error('Error in admin list:', error);
+            logger.error('Error in admin list:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching admins'
@@ -217,7 +218,7 @@ class AdminService extends Service {
 
             // Check if query failed
             if (!result.success) {
-                console.error('Database query error:', result.error);
+                logger.error('Database query error:', result.error);
                 return {
                     success: false,
                     error: 'An error occurred while fetching admin'
@@ -237,7 +238,7 @@ class AdminService extends Service {
                 data: result.data[0]
             };
         } catch (error) {
-            console.error('Error in admin get:', error);
+            logger.error('Error in admin get:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching admin'
@@ -358,7 +359,7 @@ class AdminService extends Service {
             const smsResult = await messagingService.sendMessage(normalizedPhone, smsText);
 
             if (!smsResult.success) {
-                console.error('Failed to send credentials SMS:', smsResult.error);
+                logger.error('Failed to send credentials SMS:', smsResult.error);
                 return {
                     success: true,
                     data: newAdmin,
@@ -374,7 +375,7 @@ class AdminService extends Service {
                 message: 'Admin created successfully. Credentials have been sent via SMS.'
             };
         } catch (error) {
-            console.error('Error in admin create:', error);
+            logger.error('Error in admin create:', error);
             return {
                 success: false,
                 error: 'An error occurred while creating admin'
@@ -429,7 +430,7 @@ class AdminService extends Service {
                 const smsText = `Math Pro: You have been promoted to ${typeName}. You can now access the admin panel at https://admin.mathpro.academy/`;
                 const smsResult = await messagingService.sendMessage(user.phone, smsText);
                 if (!smsResult.success) {
-                    console.error('Failed to send promotion SMS:', smsResult.error);
+                    logger.error('Failed to send promotion SMS:', smsResult.error);
                 }
             }
 
@@ -439,7 +440,7 @@ class AdminService extends Service {
                 message: `User promoted to ${typeName} successfully`
             };
         } catch (error) {
-            console.error('Error in admin promote:', error);
+            logger.error('Error in admin promote:', error);
             return { success: false, error: 'An error occurred while promoting user' };
         }
     }
@@ -475,7 +476,7 @@ class AdminService extends Service {
                 data: result.data || []
             };
         } catch (error) {
-            console.error('Error in searchUsers:', error);
+            logger.error('Error in searchUsers:', error);
             return { success: false, error: 'An error occurred while searching users' };
         }
     }
@@ -659,7 +660,7 @@ class AdminService extends Service {
                 message: 'Admin updated successfully'
             };
         } catch (error) {
-            console.error('Error in admin update:', error);
+            logger.error('Error in admin update:', error);
             return {
                 success: false,
                 error: 'An error occurred while updating admin'
@@ -682,7 +683,7 @@ class AdminService extends Service {
 
             // Check if query failed
             if (!updaterResult.success) {
-                console.error('Database query error in setPassword:', updaterResult.error);
+                logger.error('Database query error in setPassword:', updaterResult.error);
                 return {
                     success: false,
                     error: 'An error occurred while verifying credentials'
@@ -750,7 +751,7 @@ class AdminService extends Service {
                 const smsText = `Math Pro: Your password has been reset.\nLogin: ${admin.login}\nNew Password: ${plainPassword}`;
                 const smsResult = await messagingService.sendMessage(admin.phone, smsText);
                 if (!smsResult.success) {
-                    console.error('Failed to send password reset SMS:', smsResult.error);
+                    logger.error('Failed to send password reset SMS:', smsResult.error);
                     return {
                         success: true,
                         data: updateResult.data[0],
@@ -775,7 +776,7 @@ class AdminService extends Service {
                 message: 'Password has been reset and sent via SMS'
             };
         } catch (error) {
-            console.error('Error in admin setPassword:', error);
+            logger.error('Error in admin setPassword:', error);
             return {
                 success: false,
                 error: 'An error occurred while setting password'

@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const FeedbackService = require("../../service/feedback").FeedbackService;
+const logger = require('../../util/logger');
 
 const feedbackService = new FeedbackService();
 
@@ -50,7 +51,7 @@ class FeedbackController extends Controller {
 
             return res.status(result.success ? 201 : 400).json(result);
         } catch (error) {
-            console.error('Error in submitFeedback:', error);
+            logger.error('Error in submitFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -75,7 +76,7 @@ class FeedbackController extends Controller {
             const result = await feedbackService.checkUserFeedback(userId, courseId);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in checkFeedbackStatus:', error);
+            logger.error('Error in checkFeedbackStatus:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -93,7 +94,7 @@ class FeedbackController extends Controller {
             const result = await feedbackService.getCourseFeedbacks(courseId, page, limit);
             return respond(res, result);
         } catch (error) {
-            console.error('Error in getCourseFeedbacks:', error);
+            logger.error('Error in getCourseFeedbacks:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -138,7 +139,7 @@ class FeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in updateFeedback:', error);
+            logger.error('Error in updateFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'
@@ -160,7 +161,7 @@ class FeedbackController extends Controller {
 
             return respond(res, result);
         } catch (error) {
-            console.error('Error in deleteFeedback:', error);
+            logger.error('Error in deleteFeedback:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Internal server error'

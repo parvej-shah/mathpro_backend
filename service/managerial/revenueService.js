@@ -1,4 +1,5 @@
 const Service = require("../base").Service;
+const logger = require('../../util/logger');
 
 class RevenueService extends Service {
   constructor() {
@@ -135,7 +136,7 @@ class RevenueService extends Service {
 
       return result;
     } catch (error) {
-      console.error("Error in getDetailedRevenue:", error);
+      logger.error("Error in getDetailedRevenue:", error);
       return { success: false, error: "Internal service error" };
     }
   };
@@ -256,7 +257,7 @@ class RevenueService extends Service {
 
       return this.query(query, params);
     } catch (error) {
-      console.error("Error in getTopRevenueGenerators:", error);
+      logger.error("Error in getTopRevenueGenerators:", error);
       return { success: false, error: error.toString() };
     }
   };

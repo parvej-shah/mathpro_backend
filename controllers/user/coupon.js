@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const CouponService = require("../../service/managerial/coupon");
+const logger = require('../../util/logger');
 
 const couponService = new CouponService();
 
@@ -96,7 +97,7 @@ class UserCouponController extends Controller {
 
       return res.status(result.valid ? 200 : 400).json(result);
     } catch (error) {
-      console.error("Error in coupon validation controller:", error);
+      logger.error("Error in coupon validation controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -238,7 +239,7 @@ class UserCouponController extends Controller {
 
       return respond(res, result);
     } catch (error) {
-      console.error("Error in coupon application controller:", error);
+      logger.error("Error in coupon application controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",
@@ -264,7 +265,7 @@ class UserCouponController extends Controller {
       const result = await couponService.getActiveCouponsForCourse(courseId);
       return respond(res, result);
     } catch (error) {
-      console.error("Error in get active coupons controller:", error);
+      logger.error("Error in get active coupons controller:", error);
       return res.status(500).json({
         success: false,
         error: "Internal server error",

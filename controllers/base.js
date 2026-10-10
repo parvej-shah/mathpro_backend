@@ -10,7 +10,7 @@ class Controller{
 // An Error object in `error` (raw pg or JS error) is logged and replaced by a safe message.
 function respond(res, result) {
     if (!result.success && result.error instanceof Error) {
-        logger.error('result_error', result.error, { requestId: res.req && res.req.requestId });
+        logger.error('result_error', result.error);
         result = { ...result, error: safeMessage(result.error) };
     }
     return res.status(result.success ? 200 : 400).json(result);

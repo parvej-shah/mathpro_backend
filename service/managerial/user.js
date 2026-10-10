@@ -7,6 +7,7 @@ const {
     normalizeContact
 } = require('../../util/authHelpers');
 const { managerialAccountTypes } = require('../../util/constants');
+const logger = require('../../util/logger');
 
 const messagingService = new MessagingService();
 
@@ -389,7 +390,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in user list:', error);
+            logger.error('Error in user list:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching users'
@@ -452,7 +453,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getUserDetails:', error);
+            logger.error('Error in getUserDetails:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching user details'
@@ -603,7 +604,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in getUserHistory:', error);
+            logger.error('Error in getUserHistory:', error);
             return {
                 success: false,
                 error: 'An error occurred while fetching user history'
@@ -645,7 +646,7 @@ class UserService extends Service {
                 ? { success: true, data: result.data }
                 : { success: false, error: 'Failed to fetch student course access' };
         } catch (error) {
-            console.error('Error in getStudentCourseAccess:', error);
+            logger.error('Error in getStudentCourseAccess:', error);
             return { success: false, error: 'Failed to fetch student course access' };
         }
     }
@@ -681,7 +682,7 @@ class UserService extends Service {
                 ? { success: true, data: result.data }
                 : { success: false, error: 'Failed to fetch student bundle access' };
         } catch (error) {
-            console.error('Error in getStudentBundleAccess:', error);
+            logger.error('Error in getStudentBundleAccess:', error);
             return { success: false, error: 'Failed to fetch student bundle access' };
         }
     }
@@ -736,7 +737,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in grantStudentCourseAccess:', error);
+            logger.error('Error in grantStudentCourseAccess:', error);
             return { success: false, error: 'Failed to grant course access' };
         }
     }
@@ -810,7 +811,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in grantStudentBundleAccess:', error);
+            logger.error('Error in grantStudentBundleAccess:', error);
             return { success: false, error: 'Failed to grant bundle access' };
         }
     }
@@ -848,7 +849,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in revokeStudentCourseAccess:', error);
+            logger.error('Error in revokeStudentCourseAccess:', error);
             return { success: false, error: 'Failed to revoke course access' };
         }
     }
@@ -880,7 +881,7 @@ class UserService extends Service {
                 }
             };
         } catch (error) {
-            console.error('Error in revokeStudentBundleAccess:', error);
+            logger.error('Error in revokeStudentBundleAccess:', error);
             return { success: false, error: 'Failed to revoke bundle access' };
         }
     }
@@ -997,7 +998,7 @@ class UserService extends Service {
             );
 
             if (!credentialsResult.success) {
-                console.error('Failed to send credentials:', credentialsResult.error);
+                logger.error('Failed to send credentials:', credentialsResult.error);
                 // Don't fail the creation, just log the error
                 // TODO: Send notification to admin
             }
@@ -1008,7 +1009,7 @@ class UserService extends Service {
                 message: 'User created successfully. Credentials have been sent.'
             };
         } catch (error) {
-            console.error('Error in createUser:', error);
+            logger.error('Error in createUser:', error);
             return {
                 success: false,
                 error: 'An error occurred while creating user'
@@ -1176,7 +1177,7 @@ class UserService extends Service {
                 message: 'User updated successfully'
             };
         } catch (error) {
-            console.error('Error in updateUser:', error);
+            logger.error('Error in updateUser:', error);
             return {
                 success: false,
                 error: 'An error occurred while updating user'
@@ -1267,7 +1268,7 @@ class UserService extends Service {
                 };
             }
         } catch (error) {
-            console.error('Error in deleteUser:', error);
+            logger.error('Error in deleteUser:', error);
             return {
                 success: false,
                 error: 'An error occurred while deleting user'
@@ -1331,7 +1332,7 @@ class UserService extends Service {
                 );
 
                 if (!credentialsResult.success) {
-                    console.error('Failed to send new credentials:', credentialsResult.error);
+                    logger.error('Failed to send new credentials:', credentialsResult.error);
                     return {
                         success: true,
                         data: updateResult.data[0],
@@ -1356,7 +1357,7 @@ class UserService extends Service {
                 message: `Password has been reset and sent via ${contactType === 'phone' ? 'SMS' : 'email'}`
             };
         } catch (error) {
-            console.error('Error in resetUserPassword:', error);
+            logger.error('Error in resetUserPassword:', error);
             return {
                 success: false,
                 error: 'An error occurred while resetting password'
