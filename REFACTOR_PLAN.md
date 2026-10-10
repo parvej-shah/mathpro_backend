@@ -345,14 +345,14 @@ the catalogue in `.claude/conventions.md` so future work reuses it instead of re
 
 Requires 0.4 green. Each step is a separate PR and deploy, watched in prod.
 
-- [ ] **4.1 SSLCommerz adapter** (*Extract Class*): `integrations/sslcommerz.js` owns
+- [x] **4.1 SSLCommerz adapter** (*Extract Class*): `integrations/sslcommerz.js` owns
   construction, `init`, `validate` and sandbox flag. Replaces the 3 `new SSLCommerzPayment`
   sites and `validateTransactionWithSSLCommerz`. *M.*
-- [ ] **4.2 `initiatePayment*` ×3 → one flow** (*Duplicate Code → Form Template Method*):
+- [x] **4.2 `initiatePayment*` ×3 → one flow** (*Duplicate Code → Form Template Method*):
   a shared `initiateCheckout(itemStrategy, body)` where each strategy (course / bundle / book)
   supplies `loadItem`, `price`, `couponValidator`, `productInfo`. The three public methods remain
   as one-line delegators, so the controller and routes don't change. *H.* ✅ 0.4.
-- [ ] **4.3 IPN handler, ~1,087 lines** (*Long Method → Extract Method → Move Method →
+- [x] **4.3 IPN handler, ~1,087 lines** (*Long Method → Extract Method → Move Method →
   Replace Conditional with Polymorphism*):
   1. Extract Method in place: `parseIpn`, `verifyWithGateway`, `markPaid`, `applyCoupon`,
      `enroll`, `notify` (no behavior change, still in the controller).
@@ -361,9 +361,9 @@ Requires 0.4 green. Each step is a separate PR and deploy, watched in prod.
   4. Wrap the DB side-effects in `withTransaction` (*bug-fix commit, separate*; today a failure
      mid-way can leave partial state, see §7).
   *H.* ✅ 0.4 after every sub-step. Deploy each sub-step separately.
-- [ ] **4.4 `reconcilePayment` / `getPaymentHistoryAndEnrollments`** (*Extract Method*,
+- [x] **4.4 `reconcilePayment` / `getPaymentHistoryAndEnrollments`** (*Extract Method*,
   *Decompose Conditional*). *M.*
-- [ ] **4.5 `CouponService`, 4,288 lines** (*Large Class → Extract Class*, keep a **Facade**):
+- [x] **4.5 `CouponService`, 4,288 lines** (*Large Class → Extract Class*, keep a **Facade**):
   - `CouponCrudService` (create/get/update/delete/list)
   - `CouponTargetingService` (courses/bundles/books links: **Parameterize Method** merges
     `add/remove/get/getAvailable{Courses,Bundles}` into `…Targets(itemType, …)`)
@@ -373,9 +373,9 @@ Requires 0.4 green. Each step is a separate PR and deploy, watched in prod.
   - `CouponClickTrackingService`, `CouponAnalyticsService`
   - `CouponService` stays as the exported facade delegating to these, so no caller or controller
     changes in this phase. *H.* ✅ 0.3 coupon tests + 0.4.
-- [ ] **4.6 `analyticsV2Service`, 4,114 lines** (*Extract Class* by dashboard domain: revenue,
+- [x] **4.6 `analyticsV2Service`, 4,114 lines** (*Extract Class* by dashboard domain: revenue,
   enrollment, engagement, coupon, …), with a facade as in 4.5. *M* (read-only queries).
-- [ ] **4.7 Other long methods:** `courseImportExport` (~477-line method → *Extract Method* per
+- [~] **4.7 Other long methods** *(Partly done: credential emails → `service/emailTemplates/credentials.js`; `requestOTP` split by account rules / rate limit / delivery; `admin.update` split into `currentPasswordRefusal` / `emailChange` / `phoneChange`, pinned by `test/service/adminUpdate.test.js`. Deferred, no pinning tests yet and low value: `admin.create` (~110 lines), `courseImportExport.processImport`, `auth.register`/`googleLogin`, `resetPasswordWithOTP`. Also: 4.6 parts `revenue.js` is 1,003 lines, 3 over target.)*: `courseImportExport` (~477-line method → *Extract Method* per
   entity), `user.sendUserCredentials`, `admin.update`/`create`, `auth.requestOTP` /
   `resetPasswordWithOTP` (*Decompose Conditional*; auth tests from 3.3 first). *M.*
 
