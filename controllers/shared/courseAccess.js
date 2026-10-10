@@ -1,10 +1,12 @@
 // Course-access replies shared by the admin controllers.
 const { checkCourseAccess } = require('../../util/courseAccessHelpers');
 
-const noCourseAccess = (res) => res.status(403).json({
+// 403 NO_COURSE_ACCESS. With `notFoundMessage`, a failed assertCourseAccess whose resource
+// doesn't exist gets that message instead (still a 403).
+const noCourseAccess = (res, access, notFoundMessage) => res.status(403).json({
     success: false,
     error: 'NO_COURSE_ACCESS',
-    message: 'No access to this course'
+    message: notFoundMessage && access.reason === 'resource_not_found' ? notFoundMessage : 'No access to this course'
 });
 
 // For an optional `courseId` query filter: a non-numeric id is a 400, a course the user can't
