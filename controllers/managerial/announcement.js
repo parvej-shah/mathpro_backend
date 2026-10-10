@@ -2,6 +2,7 @@ const Controller = require("../base.js").Controller;
 const { respond } = require('../base');
 const AnnouncementService=require("../../service/managerial/announcement.js").AnnouncementService;
 const { checkCourseAccess, assertCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { noCourseAccess } = require('../shared/courseAccess');
 
 const announcementService=new AnnouncementService();
 
@@ -23,13 +24,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
 
         const access = await checkCourseAccess(userId, 'announcement', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res);
 
         var result=await announcementService.getAllAnnouncementsCourseWisePaginated(courseId, parseInt(req.query.limit), parseInt(req.query.offset))
         return respond(res, result)
@@ -39,13 +34,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
 
         const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: access.reason === 'resource_not_found' ? 'Announcement not found' : 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
 
         var result=await announcementService.getEntry(announcementId)
         return respond(res, result)
@@ -57,13 +46,7 @@ class AnnouncementController extends Controller {
         
         // Check course access for create operation
         const access = await checkCourseAccess(userId, 'announcement', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res);
         
         var result=await announcementService.create(courseId,req.body)
         return respond(res, result)
@@ -74,13 +57,7 @@ class AnnouncementController extends Controller {
         
         // Use assertCourseAccess to resolve courseId and check access
         const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: access.reason === 'resource_not_found' ? 'Announcement not found' : 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
         
         var result=await announcementService.deleteEntry(announcementId)
         return respond(res, result)
@@ -91,13 +68,7 @@ class AnnouncementController extends Controller {
         
         // Use assertCourseAccess to resolve courseId and check access
         const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: access.reason === 'resource_not_found' ? 'Announcement not found' : 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
         
         var result=await announcementService.updateEntry(announcementId,req.body)
         return respond(res, result)
@@ -108,13 +79,7 @@ class AnnouncementController extends Controller {
         
         // Use assertCourseAccess to resolve courseId and check access
         const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: access.reason === 'resource_not_found' ? 'Announcement not found' : 'No access to this course'
-            });
-        }
+        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
         
         var result=await announcementService.send(announcementId)
         return respond(res, result)
