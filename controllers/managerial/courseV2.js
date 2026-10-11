@@ -4,6 +4,7 @@
 
 const Controller = require('../base').Controller;
 const { respond, handle } = require('../base');
+const { denyCourseAccess } = require('../shared/courseAccess');
 const CourseServiceV2 = require('../../service/managerial/courseV2').CourseServiceV2;
 const CourseImportExportService = require('../../service/managerial/courseImportExport').CourseImportExportService;
 const ErrorHandler = require('../../util/errorHandler');
@@ -61,15 +62,7 @@ class CourseControllerV2 extends Controller {
             });
         }
 
-        const { checkCourseAccess } = require('../../util/courseAccessHelpers');
-        const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
         const result = await courseServiceV2.get(courseId);
         return respond(res, result);
@@ -83,15 +76,7 @@ class CourseControllerV2 extends Controller {
             });
         }
 
-        const { checkCourseAccess } = require('../../util/courseAccessHelpers');
-        const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
         const result = await courseServiceV2.getFull(courseId);
         return respond(res, result);
@@ -120,15 +105,7 @@ class CourseControllerV2 extends Controller {
             });
         }
 
-        const { checkCourseAccess } = require('../../util/courseAccessHelpers');
-        const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
         const result = await courseServiceV2.getUserProgress(userId, courseId);
         return respond(res, result);
@@ -146,15 +123,7 @@ class CourseControllerV2 extends Controller {
         }
 
         // Check course access for .own permission users
-        const { checkCourseAccess } = require('../../util/courseAccessHelpers');
-        const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
         const { module_orders } = req.body;
 
@@ -190,15 +159,7 @@ class CourseControllerV2 extends Controller {
         }
 
         // Check course access for .own permission users
-        const { checkCourseAccess } = require('../../util/courseAccessHelpers');
-        const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
         const result = await courseServiceV2.getFullEnhanced(courseId);
 
@@ -300,15 +261,7 @@ class CourseControllerV2 extends Controller {
         }
 
         // Check course access for .own permission users
-        const { checkCourseAccess } = require('../../util/courseAccessHelpers');
-        const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
         const format = req.query.format || 'json';
         const includeContent = req.query.include_content !== 'false';

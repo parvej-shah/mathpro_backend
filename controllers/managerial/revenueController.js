@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const RevenueService = require("../../service/managerial/revenueService").RevenueService;
-const { checkCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { denyCourseAccess } = require("../shared/courseAccess");
 
 const revenueService = new RevenueService();
 
@@ -15,14 +16,7 @@ class RevenueController extends Controller {
     
     // If specific courseId is provided, check access to that course
     if (courseId) {
-      const access = await checkCourseAccess(userId, 'revenue', 'manage', courseId);
-      if (!access.hasAccess) {
-        return res.status(403).json({
-          success: false,
-          error: 'NO_COURSE_ACCESS',
-          message: 'No access to this course'
-        });
-      }
+      if (await denyCourseAccess(res, userId, 'revenue', courseId)) return;
     } else {
       // For overall revenue, filter by accessible courses
       const access = await getAccessibleCourseIds(userId, 'revenue', 'manage');

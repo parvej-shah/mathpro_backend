@@ -1,8 +1,8 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
 const RoutineService = require("../../service/managerial/routine.js").RoutineService;
-const { checkCourseAccess, assertCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
-const { noCourseAccess } = require('../shared/courseAccess');
+const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { denyCourseAccess, denyResourceAccess } = require('../shared/courseAccess');
 
 const routineService = new RoutineService();
 
@@ -24,8 +24,7 @@ class RoutineController extends Controller {
         const courseId = parseInt(req.params.courseId);
         const userId = req.user.id;
 
-        const access = await checkCourseAccess(userId, 'routine', 'manage', courseId);
-        if (!access.hasAccess) return noCourseAccess(res);
+        if (await denyCourseAccess(res, userId, 'routine', courseId)) return;
 
         var result = await routineService.listByCourse(courseId);
         return respond(res, result);
@@ -36,8 +35,7 @@ class RoutineController extends Controller {
         const courseId = parseInt(req.params.courseId);
         const userId = req.user.id;
         
-        const access = await checkCourseAccess(userId, 'routine', 'manage', courseId);
-        if (!access.hasAccess) return noCourseAccess(res);
+        if (await denyCourseAccess(res, userId, 'routine', courseId)) return;
         
         var result = await routineService.create(courseId, req.body);
         return respond(res, result);
@@ -48,8 +46,7 @@ class RoutineController extends Controller {
         const routineId = parseInt(req.params.id);
         const userId = req.user.id;
         
-        const access = await assertCourseAccess(userId, 'routine', 'manage', 'routine', routineId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Routine not found');
+        if (await denyResourceAccess(res, userId, 'routine', routineId, 'Routine not found')) return;
         
         var result = await routineService.update(routineId, req.body);
         return respond(res, result);
@@ -60,8 +57,7 @@ class RoutineController extends Controller {
         const routineId = parseInt(req.params.id);
         const userId = req.user.id;
 
-        const access = await assertCourseAccess(userId, 'routine', 'manage', 'routine', routineId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Routine not found');
+        if (await denyResourceAccess(res, userId, 'routine', routineId, 'Routine not found')) return;
 
         var result = await routineService.get(routineId);
         return respond(res, result);
@@ -73,8 +69,7 @@ class RoutineController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'routine', 'manage', 'routine', routineId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Routine not found');
+        if (await denyResourceAccess(res, userId, 'routine', routineId, 'Routine not found')) return;
         
         var result = await routineService.deleteEntry(routineId);
         return respond(res, result);
@@ -86,8 +81,7 @@ class RoutineController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'routine', 'manage', 'routine', routineId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Routine not found');
+        if (await denyResourceAccess(res, userId, 'routine', routineId, 'Routine not found')) return;
         
         var result = await routineService.toggleActive(
             routineId, 

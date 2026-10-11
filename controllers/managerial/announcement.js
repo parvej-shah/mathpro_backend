@@ -5,8 +5,8 @@ const { parseLimitOffset } = require('../../util/pagination');
 // The admin client's own page size.
 const ANNOUNCEMENT_PAGE = { defaultLimit: 100 };
 const AnnouncementService=require("../../service/managerial/announcement.js").AnnouncementService;
-const { checkCourseAccess, assertCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
-const { noCourseAccess } = require('../shared/courseAccess');
+const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { denyCourseAccess, denyResourceAccess } = require('../shared/courseAccess');
 
 const announcementService=new AnnouncementService();
 
@@ -28,8 +28,7 @@ class AnnouncementController extends Controller {
         const courseId = parseInt(req.params.courseId);
         const userId = req.user.id;
 
-        const access = await checkCourseAccess(userId, 'announcement', 'manage', courseId);
-        if (!access.hasAccess) return noCourseAccess(res);
+        if (await denyCourseAccess(res, userId, 'announcement', courseId)) return;
 
         const { limit, offset } = parseLimitOffset(req.query, ANNOUNCEMENT_PAGE);
         var result=await announcementService.getAllAnnouncementsCourseWisePaginated(courseId, limit, offset)
@@ -39,8 +38,7 @@ class AnnouncementController extends Controller {
         const announcementId = parseInt(req.params.id);
         const userId = req.user.id;
 
-        const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
+        if (await denyResourceAccess(res, userId, 'announcement', announcementId, 'Announcement not found')) return;
 
         var result=await announcementService.getEntry(announcementId)
         return respond(res, result)
@@ -51,8 +49,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
         
         // Check course access for create operation
-        const access = await checkCourseAccess(userId, 'announcement', 'manage', courseId);
-        if (!access.hasAccess) return noCourseAccess(res);
+        if (await denyCourseAccess(res, userId, 'announcement', courseId)) return;
         
         var result=await announcementService.create(courseId,req.body)
         return respond(res, result)
@@ -62,8 +59,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
+        if (await denyResourceAccess(res, userId, 'announcement', announcementId, 'Announcement not found')) return;
         
         var result=await announcementService.deleteEntry(announcementId)
         return respond(res, result)
@@ -73,8 +69,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
+        if (await denyResourceAccess(res, userId, 'announcement', announcementId, 'Announcement not found')) return;
         
         var result=await announcementService.updateEntry(announcementId,req.body)
         return respond(res, result)
@@ -84,8 +79,7 @@ class AnnouncementController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'announcement', 'manage', 'announcement', announcementId);
-        if (!access.hasAccess) return noCourseAccess(res, access, 'Announcement not found');
+        if (await denyResourceAccess(res, userId, 'announcement', announcementId, 'Announcement not found')) return;
         
         var result=await announcementService.send(announcementId)
         return respond(res, result)

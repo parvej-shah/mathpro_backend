@@ -5,7 +5,8 @@ const CourseService =
   require("../../service/managerial/course.js").CourseService;
 const RevenueService =
   require("../../service/managerial/revenueService").RevenueService;
-const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
+const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { denyCourseAccess } = require("../shared/courseAccess");
 
 const courseService = new CourseService();
 const revenueService = new RevenueService();
@@ -28,18 +29,12 @@ class CourseController extends Controller {
   };
   updateFull = handle((req) => courseService.updateFull(req.params.id, req.body));
   getEntry = async (req, res) => {
-    const access = await checkCourseAccess(req.user.id, 'course', 'manage', req.params.id);
-    if (!access.hasAccess) {
-      return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
-    }
+    if (await denyCourseAccess(res, req.user.id, 'course', req.params.id)) return;
     var result = await courseService.get(req.params.id);
     return respond(res, result);
   };
   getFull = async (req, res) => {
-    const access = await checkCourseAccess(req.user.id, 'course', 'manage', req.params.id);
-    if (!access.hasAccess) {
-      return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
-    }
+    if (await denyCourseAccess(res, req.user.id, 'course', req.params.id)) return;
     var result = await courseService.getFull(req.params.id);
     return respond(res, result);
   };
@@ -58,10 +53,7 @@ class CourseController extends Controller {
   };
 
   getUserProgress = async (req, res) => {
-    const access = await checkCourseAccess(req.user.id, 'course', 'manage', req.params.id);
-    if (!access.hasAccess) {
-      return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
-    }
+    if (await denyCourseAccess(res, req.user.id, 'course', req.params.id)) return;
     var result = await courseService.getUserProgress(
       req.params.user_id,
       req.params.id
@@ -111,10 +103,7 @@ class CourseController extends Controller {
     const courseId = parseInt(req.query.identifier / 639);
 
     // Course access check
-    const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-    if (!access.hasAccess) {
-      return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
-    }
+    if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
     var result = await courseService.listPurchasesWithCoupons(courseId);
 
@@ -128,10 +117,7 @@ class CourseController extends Controller {
   getAllPrebookingsApi = async (req, res) => {
     const courseId = parseInt(req.query.identifier / 639);
 
-    const access = await checkCourseAccess(req.user.id, 'course', 'manage', courseId);
-    if (!access.hasAccess) {
-      return res.status(403).json({ success: false, error: 'NO_COURSE_ACCESS', message: 'No access to this course' });
-    }
+    if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;
 
     var result = await courseService.listPrebookings(courseId);
     return respond(res, result);

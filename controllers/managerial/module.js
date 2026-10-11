@@ -1,7 +1,8 @@
 const Controller = require("../base").Controller;
 const { respond, handle } = require('../base');
 const ModuleService=require("../../service/managerial/module.js").ModuleService;
-const { resolveCourseId, checkCourseAccess, assertCourseAccess } = require("../../util/courseAccessHelpers");
+const { resolveCourseId } = require("../../util/courseAccessHelpers");
+const { denyCourseAccess, denyResourceAccess } = require("../shared/courseAccess");
 
 const moduleService=new ModuleService()
 
@@ -24,14 +25,7 @@ class ModuleController extends Controller {
             });
         }
         
-        const access = await checkCourseAccess(userId, 'module', 'manage', courseId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: 'No access to this course'
-            });
-        }
+        if (await denyCourseAccess(res, userId, 'module', courseId)) return;
         
         var result=await moduleService.create(chapterId,req.body)
         return respond(res, result)
@@ -41,14 +35,7 @@ class ModuleController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'module', 'manage', 'module', moduleId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: access.reason === 'resource_not_found' ? 'Module not found' : 'No access to this course'
-            });
-        }
+        if (await denyResourceAccess(res, userId, 'module', moduleId, 'Module not found')) return;
         
         var result=await moduleService.update(moduleId,req.body)
         return respond(res, result)
@@ -60,14 +47,7 @@ class ModuleController extends Controller {
         const userId = req.user.id;
         
         // Use assertCourseAccess to resolve courseId and check access
-        const access = await assertCourseAccess(userId, 'module', 'manage', 'module', moduleId);
-        if (!access.hasAccess) {
-            return res.status(403).json({
-                success: false,
-                error: 'NO_COURSE_ACCESS',
-                message: access.reason === 'resource_not_found' ? 'Module not found' : 'No access to this course'
-            });
-        }
+        if (await denyResourceAccess(res, userId, 'module', moduleId, 'Module not found')) return;
         
         var result=await moduleService.deleteEntry(moduleId)
         return respond(res, result)

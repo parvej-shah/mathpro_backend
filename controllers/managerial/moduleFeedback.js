@@ -2,8 +2,8 @@ const Controller = require('../base').Controller;
 const { respond, catchAs, handle } = require('../base');
 const { parsePagination } = require('../../util/pagination');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
-const { getAccessibleCourseIds, checkCourseAccess, resolveCourseId } = require('../../util/courseAccessHelpers');
-const { noCourseAccess, rejectCourseFilter } = require('../shared/courseAccess');
+const { getAccessibleCourseIds, resolveCourseId } = require('../../util/courseAccessHelpers');
+const { denyCourseAccess, rejectCourseFilter } = require('../shared/courseAccess');
 const { csvText } = require('../../util/csv');
 
 const moduleFeedbackService = new ModuleFeedbackService();
@@ -37,8 +37,7 @@ class ModuleFeedbackController extends Controller {
             });
         }
 
-        const access = await checkCourseAccess(userId, 'feedback', 'manage', courseId);
-        if (!access.hasAccess) return noCourseAccess(res);
+        if (await denyCourseAccess(res, userId, 'feedback', courseId)) return;
 
         const result = await moduleFeedbackService.getModuleStats(parseInt(moduleId));
         return respond(res, result);
@@ -60,8 +59,7 @@ class ModuleFeedbackController extends Controller {
 
         // Check access to the course
         const userId = req.user.id;
-        const access = await checkCourseAccess(userId, 'feedback', 'manage', parseInt(courseId));
-        if (!access.hasAccess) return noCourseAccess(res);
+        if (await denyCourseAccess(res, userId, 'feedback', parseInt(courseId))) return;
 
         const result = await moduleFeedbackService.getCourseReport(parseInt(courseId));
         return respond(res, result);

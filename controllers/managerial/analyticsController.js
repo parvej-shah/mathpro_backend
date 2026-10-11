@@ -4,8 +4,8 @@ const { parseLimitOffset } = require("../../util/pagination");
 const AnalyticsV2Service = require("../../service/managerial/analyticsV2/analyticsV2Service")
   .AnalyticsV2Service;
 const { AnalyticsV2MetadataService } = require("../../service/managerial/analyticsV2/analyticsV2MetadataService");
-const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/courseAccessHelpers");
-const { noCourseAccess } = require("../shared/courseAccess");
+const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
+const { denyCourseAccess } = require("../shared/courseAccess");
 
 const analyticsService = new AnalyticsV2Service();
 const metadataService = new AnalyticsV2MetadataService();
@@ -22,8 +22,7 @@ const analyticsAccess = (req) => getAccessibleCourseIds(req.user.id, "analytics"
 // An optional course_id filter the caller can't manage → 403 (the sent response); else null.
 const denyCourse = async (req, res, courseId) => {
   if (!courseId) return null;
-  const courseAccess = await checkCourseAccess(req.user.id, "analytics", "manage", courseId);
-  return courseAccess.hasAccess ? null : noCourseAccess(res);
+  return denyCourseAccess(res, req.user.id, "analytics", courseId);
 };
 
 // Analytics replies are 200 on success and 500 on a failed service result.
@@ -184,8 +183,7 @@ class AnalyticsController extends Controller {
     const filters = {
       ...dateFilters(req.query),
     };
-    const courseAccess = await checkCourseAccess(req.user.id, "analytics", "manage", courseId);
-    if (!courseAccess.hasAccess) return noCourseAccess(res);
+    if (await denyCourseAccess(res, req.user.id, "analytics", courseId)) return;
     const result = await analyticsService.getCourseDetailed(courseId, filters);
     return sendResult(res, result);
   });
