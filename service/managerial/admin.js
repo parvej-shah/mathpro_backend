@@ -14,6 +14,11 @@ const { buildUpdate } = require('../../util/buildUpdate');
 // Columns update() may set, in SET-list order (an email change sets login then email).
 const ADMIN_UPDATE_COLUMNS = ['name', 'type', 'login', 'email', 'phone', 'profile', 'password'];
 
+const TYPE_REFUSAL = 'Type must be 1 (Admin) or 2 (Moderator)';
+const PHONE_FORMAT_REFUSAL = 'Invalid phone number. Must be 11 digits starting with 01';
+const isAdminType = (type) => type === managerialAccountTypes.admin || type === managerialAccountTypes.moderator;
+const hashPassword = async (password) => bcrypt.hash(password, await bcrypt.genSalt(10));
+
 const messagingService = new MessagingService();
 
 class AdminService extends Service {
@@ -148,71 +153,15 @@ class AdminService extends Service {
      */
     create = async (adminData) => {
         try {
-            const { name, type, email, phone, profile } = adminData;
+            const { name, type, profile } = adminData;
 
-            // Validate required fields
-            if (!name || !type || !phone) {
-                return {
-                    success: false,
-                    error: 'Name, type, and phone are required'
-                };
-            }
+            const input = this.newAdminInput(adminData);
+            const refusal = input.refusal || await this.newAdminTakenRefusal(input.phone, input.email);
+            if (refusal) return { success: false, error: refusal };
+            const { phone: normalizedPhone, email: normalizedEmail } = input;
 
-            // Validate type (must be 1 or 2)
-            if (type !== managerialAccountTypes.admin && type !== managerialAccountTypes.moderator) {
-                return {
-                    success: false,
-                    error: 'Type must be 1 (Admin) or 2 (Moderator)'
-                };
-            }
-
-            // Validate and normalize phone
-            const normalizedPhone = normalizeContact(phone);
-            if (!isValidPhone(normalizedPhone)) {
-                return {
-                    success: false,
-                    error: 'Invalid phone number. Must be 11 digits starting with 01'
-                };
-            }
-
-            // Validate email if provided
-            let normalizedEmail = null;
-            if (email) {
-                normalizedEmail = normalizeContact(email);
-                if (!isValidEmail(normalizedEmail)) {
-                    return {
-                        success: false,
-                        error: 'Invalid email format'
-                    };
-                }
-            }
-
-            // Check if phone already exists
-            const phoneCheckQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`;
-            const phoneCheckResult = await this.query(phoneCheckQuery, [normalizedPhone]);
-            if (phoneCheckResult.data.length > 0) {
-                return {
-                    success: false,
-                    error: 'Phone number already exists'
-                };
-            }
-
-            // Check if email already exists (if provided)
-            if (normalizedEmail) {
-                const emailCheckQuery = `SELECT id FROM managerial_auth WHERE login = $1 OR email = $1`;
-                const emailCheckResult = await this.query(emailCheckQuery, [normalizedEmail]);
-                if (emailCheckResult.data.length > 0) {
-                    return {
-                        success: false,
-                        error: 'Email already exists'
-                    };
-                }
-            }
-
-            // Generate password
             const plainPassword = this.generatePassword();
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(plainPassword, salt);
+            const hashedPassword = await hashPassword(plainPassword);
 
             // login = phone (primary identifier for SMS-based auth)
             const insertQuery = `
@@ -247,29 +196,7 @@ class AdminService extends Service {
                 };
             }
 
-            const newAdmin = insertResult.data[0];
-
-            // Send credentials via SMS
-            const adminUrl = process.env.ADMIN_URL || 'https://admin.mathprobd.com';
-            const smsText = `Math Pro Admin\nName: ${name}\nLogin: ${normalizedPhone}\nPassword: ${plainPassword}\nLogin at: ${adminUrl}/`;
-            const smsResult = await messagingService.sendMessage(normalizedPhone, smsText);
-
-            if (!smsResult.success) {
-                logger.error('Failed to send credentials SMS:', smsResult.error);
-                return {
-                    success: true,
-                    data: newAdmin,
-                    password: plainPassword,
-                    smsFailed: true,
-                    message: 'Admin created but SMS delivery failed. Please share the password manually.'
-                };
-            }
-
-            return {
-                success: true,
-                data: newAdmin,
-                message: 'Admin created successfully. Credentials have been sent via SMS.'
-            };
+            return await this.deliverCredentials(insertResult.data[0], name, normalizedPhone, plainPassword);
         } catch (error) {
             logger.error('Error in admin create:', error);
             return {
@@ -277,6 +204,55 @@ class AdminService extends Service {
                 error: 'An error occurred while creating admin'
             };
         }
+    }
+
+    /**
+     * create() input: required fields, type, then phone and email format (no DB yet).
+     * @returns {{refusal: string}|{phone: string, email: string|null}} normalised contacts
+     */
+    newAdminInput = ({ name, type, email, phone }) => {
+        if (!name || !type || !phone) return { refusal: 'Name, type, and phone are required' };
+        if (!isAdminType(type)) return { refusal: TYPE_REFUSAL };
+        const normalizedPhone = normalizeContact(phone);
+        if (!isValidPhone(normalizedPhone)) return { refusal: PHONE_FORMAT_REFUSAL };
+        const normalizedEmail = email ? normalizeContact(email) : null;
+        if (normalizedEmail !== null && !isValidEmail(normalizedEmail)) return { refusal: 'Invalid email format' };
+        return { phone: normalizedPhone, email: normalizedEmail };
+    }
+
+    // A new admin's phone (as login or phone) or email (as login or email) already in use;
+    // returns the refusal or null.
+    newAdminTakenRefusal = async (phone, email) => {
+        const phoneTaken = await this.query(`SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`, [phone]);
+        if (phoneTaken.data.length > 0) return 'Phone number already exists';
+        if (!email) return null;
+        const emailTaken = await this.query(`SELECT id FROM managerial_auth WHERE login = $1 OR email = $1`, [email]);
+        return emailTaken.data.length > 0 ? 'Email already exists' : null;
+    }
+
+    // Texts the new admin their login; if the SMS fails the reply carries the password so it
+    // can be shared by hand.
+    deliverCredentials = async (newAdmin, name, phone, plainPassword) => {
+        const adminUrl = process.env.ADMIN_URL || 'https://admin.mathprobd.com';
+        const smsText = `Math Pro Admin\nName: ${name}\nLogin: ${phone}\nPassword: ${plainPassword}\nLogin at: ${adminUrl}/`;
+        const smsResult = await messagingService.sendMessage(phone, smsText);
+
+        if (!smsResult.success) {
+            logger.error('Failed to send credentials SMS:', smsResult.error);
+            return {
+                success: true,
+                data: newAdmin,
+                password: plainPassword,
+                smsFailed: true,
+                message: 'Admin created but SMS delivery failed. Please share the password manually.'
+            };
+        }
+
+        return {
+            success: true,
+            data: newAdmin,
+            message: 'Admin created successfully. Credentials have been sent via SMS.'
+        };
     }
 
     /**
@@ -291,8 +267,8 @@ class AdminService extends Service {
                 return { success: false, error: 'User ID and type are required' };
             }
 
-            if (newType !== managerialAccountTypes.admin && newType !== managerialAccountTypes.moderator) {
-                return { success: false, error: 'Type must be 1 (Admin) or 2 (Moderator)' };
+            if (!isAdminType(newType)) {
+                return { success: false, error: TYPE_REFUSAL };
             }
 
             const userResult = await this.query(
@@ -420,7 +396,7 @@ class AdminService extends Service {
         }
         const normalizedPhone = normalizeContact(phone);
         if (!isValidPhone(normalizedPhone)) {
-            return { refusal: { success: false, error: 'Invalid phone number. Must be 11 digits starting with 01' } };
+            return { refusal: { success: false, error: PHONE_FORMAT_REFUSAL } };
         }
         const taken = await this.query(`SELECT id FROM managerial_auth WHERE (login = $1 OR phone = $1) AND id != $2`, [normalizedPhone, id]);
         if (taken.data.length > 0) {
@@ -459,8 +435,8 @@ class AdminService extends Service {
                 changes.push(['name', name]);
             }
             if (type !== undefined) {
-                if (type !== managerialAccountTypes.admin && type !== managerialAccountTypes.moderator) {
-                    return { success: false, error: 'Type must be 1 (Admin) or 2 (Moderator)' };
+                if (!isAdminType(type)) {
+                    return { success: false, error: TYPE_REFUSAL };
                 }
                 changes.push(['type', type]);
             }
@@ -479,7 +455,7 @@ class AdminService extends Service {
                 changes.push(['profile', typeof profile === 'string' ? JSON.parse(profile) : profile]);
             }
             if (adminData.password !== undefined) {
-                changes.push(['password', await bcrypt.hash(adminData.password, await bcrypt.genSalt(10))]);
+                changes.push(['password', await hashPassword(adminData.password)]);
             }
 
             if (changes.length === 0) {
@@ -575,8 +551,7 @@ class AdminService extends Service {
 
             // Generate new password
             const plainPassword = this.generatePassword();
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(plainPassword, salt);
+            const hashedPassword = await hashPassword(plainPassword);
 
             // Update password
             const updateQuery = `
