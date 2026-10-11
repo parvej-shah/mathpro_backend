@@ -1,5 +1,5 @@
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { handle } = require('../base');
 const AuthService=require("../../service/managerial/auth").AuthService
 
 const authService=new AuthService()
@@ -20,22 +20,14 @@ class AuthController extends Controller {
      * POST /admin/auth/request-otp
      * Body: { contact: string }
      */
-    requestOTP = async (req, res) => {
-        const { contact } = req.body;
-        const result = await authService.requestOTP(contact, 'registration');
-        return respond(res, result);
-    }
+    requestOTP = handle((req) => authService.requestOTP(req.body.contact, 'registration'));
 
     /**
      * Verify an OTP without consuming it for a specific action.
      * POST /admin/auth/verify-otp
      * Body: { contact: string, otp: string }
      */
-    verifyOTP = async (req, res) => {
-        const { contact, otp } = req.body;
-        const result = await authService.verifyOTP(contact, otp, false);
-        return respond(res, result);
-    }
+    verifyOTP = handle((req) => authService.verifyOTP(req.body.contact, req.body.otp, false));
 
     /**
      * Register with phone (or email). OTP required.
@@ -52,90 +44,58 @@ class AuthController extends Controller {
      * POST /admin/auth/login
      * Body: { login: string, password: string }
      */
-    login = async (req, res) => {
-        const result = await authService.login(req.body, getDeviceInfo(req));
-        return respond(res, result);
-    }
+    login = handle((req) => authService.login(req.body, getDeviceInfo(req)));
 
     /**
      * Login with Google
      * POST /admin/auth/google
      * Body: { id_token: string }
      */
-    googleLogin = async (req, res) => {
-        const result = await authService.googleLogin(req.body, getDeviceInfo(req));
-        return respond(res, result);
-    }
+    googleLogin = handle((req) => authService.googleLogin(req.body, getDeviceInfo(req)));
 
     /**
      * Link a phone + password to the logged-in account (Google-first users).
      * POST /admin/auth/link-phone  (authenticated)
      * Body: { phone: string, password: string, otp: string }
      */
-    linkPhone = async (req, res) => {
-        const result = await authService.linkPhone(req.body.user_id, req.body);
-        return respond(res, result);
-    }
+    linkPhone = handle((req) => authService.linkPhone(req.body.user_id, req.body));
 
     /**
      * Connect (or change) the Google-verified email on the logged-in account.
      * POST /admin/auth/connect-google  (authenticated)
      * Body: { id_token: string }
      */
-    connectGoogle = async (req, res) => {
-        const result = await authService.connectGoogle(req.body.user_id, req.body);
-        return respond(res, result);
-    }
+    connectGoogle = handle((req) => authService.connectGoogle(req.body.user_id, req.body));
 
     /**
      * Logout the current device (revoke this session).
      * POST /admin/auth/logout  (authenticated)
      */
-    logout = async (req, res) => {
-        const result = await authService.revokeSession(req.body.user_id, req.user?.sid);
-        return respond(res, result);
-    }
+    logout = handle((req) => authService.revokeSession(req.body.user_id, req.user?.sid));
 
     /**
      * List active sessions (devices) for the logged-in user.
      * GET /admin/auth/sessions  (authenticated)
      */
-    getSessions = async (req, res) => {
-        const result = await authService.listSessions(req.body.user_id);
-        return respond(res, result);
-    }
+    getSessions = handle((req) => authService.listSessions(req.body.user_id));
 
     /**
      * Request OTP for password reset (phone or email)
      * POST /admin/auth/forgot-password
      * Body: { contact: string }
      */
-    requestPasswordResetOTP = async (req, res) => {
-        const { contact } = req.body;
-        const result = await authService.requestOTP(contact, 'password_reset');
-        return respond(res, result);
-    }
+    requestPasswordResetOTP = handle((req) => authService.requestOTP(req.body.contact, 'password_reset'));
     
     /**
      * Reset password with OTP
      * POST /admin/auth/reset-password
      * Body: { contact: string, otp: string, newPassword: string } where contact is an email
      */
-    resetPassword = async (req, res) => {
-        const { contact, otp, newPassword } = req.body;
-        const result = await authService.resetPasswordWithOTP(contact, otp, newPassword);
-        return respond(res, result);
-    }
+    resetPassword = handle((req) => authService.resetPasswordWithOTP(req.body.contact, req.body.otp, req.body.newPassword));
 
-    getProfile=async (req,res)=>{
-        var result=await authService.getProfile(req.body.user_id)
-        return respond(res, result)
-    }
+    getProfile = handle((req) => authService.getProfile(req.body.user_id))
 
-    setProfile=async (req,res)=>{
-        var result=await authService.setProfile(req.body.user_id,req.body.name,req.body.profile)
-        return respond(res, result)
-    }
+    setProfile = handle((req) => authService.setProfile(req.body.user_id,req.body.name,req.body.profile))
 }
 
 module.exports={AuthController}

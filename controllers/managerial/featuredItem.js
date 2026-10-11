@@ -1,5 +1,5 @@
 const Controller = require('../base').Controller;
-const { respond } = require('../base');
+const { respond, handle } = require('../base');
 const FeaturedItemService = require('../../service/managerial/featuredItem').FeaturedItemService;
 const ErrorHandler = require('../../util/errorHandler');
 
@@ -10,15 +10,9 @@ class FeaturedItemController extends Controller {
         super();
     }
 
-    list = async (req, res) => {
-        const result = await featuredItemService.listAdmin();
-        return respond(res, result);
-    };
+    list = handle(() => featuredItemService.listAdmin());
 
-    create = async (req, res) => {
-        const result = await featuredItemService.create(req.body);
-        return respond(res, result);
-    };
+    create = handle((req) => featuredItemService.create(req.body));
 
     update = async (req, res) => {
         const { itemType, itemId } = req.params;
@@ -33,11 +27,7 @@ class FeaturedItemController extends Controller {
         return respond(res, result);
     };
 
-    reorder = async (req, res) => {
-        const { items } = req.body;
-        const result = await featuredItemService.reorder(items);
-        return respond(res, result);
-    };
+    reorder = handle((req) => featuredItemService.reorder(req.body.items));
 
     deleteEntry = async (req, res) => {
         const { itemType, itemId } = req.params;

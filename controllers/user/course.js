@@ -1,5 +1,5 @@
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { respond, handle } = require('../base');
 const { parseLimitOffset } = require('../../util/pagination');
 const CourseService = require("../../service/managerial/course.js").CourseService
 const FeaturedItemService = require("../../service/managerial/featuredItem").FeaturedItemService
@@ -13,33 +13,15 @@ class CourseController extends Controller {
     constructor() {
         super();
     }
-    list = async (req, res) => {
-        var result = await courseService.listForUser(req);
-        return respond(res, result);
-    };
-    featured = async (req, res) => {
-        var result = await featuredItemService.listPublic();
-        return respond(res, result);
-    };
+    list = handle((req) => courseService.listForUser(req));
+    featured = handle(() => featuredItemService.listPublic());
     // Public course directory grouped by category (FT-style homepage layout).
-    directory = async (req, res) => {
-        var result = await courseService.directoryForUser(req);
-        return respond(res, result);
-    };
+    directory = handle((req) => courseService.directoryForUser(req));
 
-    enrollFree = async (req, res) => {
-        var result = await courseService.enrollFree(req.body.user_id, parseInt(req.params.id))
-        return respond(res, result)
-    }
-    getFull = async (req, res) => {
-        var result = await courseService.getFullUser(req.body, req.params.id)
-        return respond(res, result)
-    }
+    enrollFree = handle((req) => courseService.enrollFree(req.body.user_id, parseInt(req.params.id)))
+    getFull = handle((req) => courseService.getFullUser(req.body, req.params.id))
 
-    getFullBySlug = async (req, res) => {
-        var result = await courseService.getFullUserBySlug(req.body, req.params.slug)
-        return respond(res, result)
-    }
+    getFullBySlug = handle((req) => courseService.getFullUserBySlug(req.body, req.params.slug))
 
     getRanking = async (req, res) => {
         const { limit, offset } = parseLimitOffset(req.query, { defaultLimit: 10 });
@@ -67,38 +49,20 @@ class CourseController extends Controller {
         return respond(res, result)
     }
 
-    applyCoupon = async (req, res) => {
-        var result = await courseService.applyCoupon(req.body.user_id, req.params.course_id, req.body.coupon)
-        return respond(res, result)
-    }
+    applyCoupon = handle((req) => courseService.applyCoupon(req.body.user_id, req.params.course_id, req.body.coupon))
 
-    getAnalytics = async (req, res) => {
-        var result = await courseService.getAnalytics()
-        return respond(res, result)
-    }
+    getAnalytics = handle(() => courseService.getAnalytics())
 
     // Dashboard listing: enrolled courses + purchased bundles with thumbnails/slug/progress.
-    getMyDashboard = async (req, res) => {
-        var result = await courseService.getMyDashboard(req.body.user_id)
-        return respond(res, result)
-    }
+    getMyDashboard = handle((req) => courseService.getMyDashboard(req.body.user_id))
 
-    getEnrolledCoursesByUserId = async (req, res) => {
-        var result = await courseService.getEnrolledCoursesByUserId(req.body.user_id)
-        return respond(res, result)
-    }
+    getEnrolledCoursesByUserId = handle((req) => courseService.getEnrolledCoursesByUserId(req.body.user_id))
 
     // Get current week's routine for a course
-    getRoutine = async (req, res) => {
-        var result = await routineService.getCurrentRoutine(parseInt(req.params.courseId))
-        return respond(res, result)
-    }
+    getRoutine = handle((req) => routineService.getCurrentRoutine(parseInt(req.params.courseId)))
 
     // Get lightweight dashboard data for a course
-    getDashboard = async (req, res) => {
-        var result = await courseService.getDashboard(req.body, req.params.id)
-        return respond(res, result)
-    }
+    getDashboard = handle((req) => courseService.getDashboard(req.body, req.params.id))
 }
 
 module.exports = { CourseController }

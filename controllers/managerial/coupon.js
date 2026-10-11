@@ -1,5 +1,5 @@
 const Controller = require("../base").Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const { toLimit, parsePagination } = require('../../util/pagination');
 
 // { page, limit } for a service that computes its own offset.
@@ -208,12 +208,8 @@ class CouponController extends Controller {
    * Get available courses that can be associated with coupons
    * GET /admin/coupon/available-courses
    */
-  getAvailableCourses = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const couponId = req.query.couponId ? parseInt(req.query.couponId) : null;
-
-    const result = await couponService.getAvailableCourses(couponId);
-    return respond(res, result);
-  });
+  getAvailableCourses = catchAs({ success: false, error: "Internal server error" }, handle((req) =>
+    couponService.getAvailableCourses(req.query.couponId ? parseInt(req.query.couponId) : null)));
 
   /**
    * Add bundles to a coupon
@@ -295,12 +291,8 @@ class CouponController extends Controller {
    * Get available bundles that can be associated with coupons
    * GET /admin/coupon/available-bundles
    */
-  getAvailableBundles = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const couponId = req.query.couponId ? parseInt(req.query.couponId) : null;
-
-    const result = await couponService.getAvailableBundles(couponId);
-    return respond(res, result);
-  });
+  getAvailableBundles = catchAs({ success: false, error: "Internal server error" }, handle((req) =>
+    couponService.getAvailableBundles(req.query.couponId ? parseInt(req.query.couponId) : null)));
 
   /**
    * Get comprehensive coupon usage statistics

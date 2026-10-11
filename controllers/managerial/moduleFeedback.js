@@ -1,5 +1,5 @@
 const Controller = require('../base').Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const { parsePagination } = require('../../util/pagination');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 const { getAccessibleCourseIds, checkCourseAccess, resolveCourseId } = require('../../util/courseAccessHelpers');
@@ -162,11 +162,8 @@ class ModuleFeedbackController extends Controller {
      * GET /admin/module-feedback/reasons
      * Query: { activeOnly? }
      */
-    getAllReasons = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
-        const { activeOnly } = req.query;
-        const result = await moduleFeedbackService.getAllReasons(activeOnly === 'true');
-        return respond(res, result);
-    });
+    getAllReasons = catchAs({ success: false, error: 'Internal server error' }, handle((req) =>
+        moduleFeedbackService.getAllReasons(req.query.activeOnly === 'true')));
 
     /**
      * Get a single reason by ID

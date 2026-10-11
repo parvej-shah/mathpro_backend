@@ -1,5 +1,5 @@
 const Controller = require("../base").Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const { BundleService } = require("../../service/managerial/bundle");
 
 const bundleService = new BundleService();
@@ -30,10 +30,7 @@ class UserBundleController extends Controller {
   }
 
   // Get all available bundles for users
-  list = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const result = await bundleService.list({ isLiveOnly: true });
-    return respond(res, result);
-  });
+  list = catchAs({ success: false, error: "Internal server error" }, handle(() => bundleService.list({ isLiveOnly: true })));
 
   // Get specific bundle details
   get = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {

@@ -1,5 +1,5 @@
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { respond, handle } = require('../base');
 const ChapterService=require("../../service/managerial/chapter.js").ChapterService;
 const { checkCourseAccess, assertCourseAccess } = require("../../util/courseAccessHelpers");
 
@@ -9,10 +9,7 @@ class ChapterController extends Controller {
     constructor() {
         super();
     }
-    list =async (req,res)=>{
-        var result=await chapterService.list(req.params.id)
-        return respond(res, result)
-    }
+    list = handle((req) => chapterService.list(req.params.id))
     create =async (req,res)=>{
         const courseId = parseInt(req.params.id);
         const userId = req.user.id;
@@ -47,10 +44,7 @@ class ChapterController extends Controller {
         var result=await chapterService.update(chapterId,req.body)
         return respond(res, result)
     }
-    getEntry =async (req,res)=>{
-        var result=await chapterService.get(req.params.id)
-        return respond(res, result)
-    }
+    getEntry = handle((req) => chapterService.get(req.params.id))
     deleteEntry =async (req,res)=>{
         const chapterId = parseInt(req.params.id);
         const userId = req.user.id;

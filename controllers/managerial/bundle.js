@@ -1,6 +1,6 @@
 require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const { BundleService } = require("../../service/managerial/bundle");
 
 const bundleService = new BundleService();
@@ -133,17 +133,10 @@ class BundleController extends Controller {
   });
 
   // Delete bundle
-  delete = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const { id } = req.params;
-    const result = await bundleService.delete(parseInt(id));
-    return respond(res, result);
-  });
+  delete = catchAs({ success: false, error: "Internal server error" }, handle((req) => bundleService.delete(parseInt(req.params.id))));
 
   // List all bundles
-  list = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const result = await bundleService.list();
-    return respond(res, result);
-  });
+  list = catchAs({ success: false, error: "Internal server error" }, handle(() => bundleService.list()));
 
   // Get specific bundle
   get = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
@@ -187,11 +180,7 @@ class BundleController extends Controller {
   });
 
   // Get bundle statistics
-  getBundleStats = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
-    const { id } = req.params;
-    const result = await bundleService.getBundleStats(parseInt(id));
-    return respond(res, result);
-  });
+  getBundleStats = catchAs({ success: false, error: "Internal server error" }, handle((req) => bundleService.getBundleStats(parseInt(req.params.id))));
 
   // Get all bundle purchases
   getAllBundlePurchases = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {

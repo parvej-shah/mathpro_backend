@@ -3,7 +3,7 @@
  */
 
 const Controller = require('../base').Controller;
-const { respond } = require('../base');
+const { respond, handle } = require('../base');
 const CourseServiceV2 = require('../../service/managerial/courseV2').CourseServiceV2;
 const CourseImportExportService = require('../../service/managerial/courseImportExport').CourseImportExportService;
 const ErrorHandler = require('../../util/errorHandler');
@@ -25,10 +25,7 @@ class CourseControllerV2 extends Controller {
         return respond(res, result);
     };
 
-    create = async (req, res) => {
-        const result = await courseServiceV2.create(req.body);
-        return respond(res, result);
-    };
+    create = handle((req) => courseServiceV2.create(req.body));
 
     update = async (req, res) => {
         const courseId = parseInt(req.params.courseId);

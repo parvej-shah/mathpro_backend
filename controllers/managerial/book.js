@@ -1,5 +1,5 @@
 const Controller = require("../base.js").Controller;
-const { respond } = require('../base');
+const { respond, handle } = require('../base');
 const BookService = require("../../service/managerial/book.js").BookService;
 
 const bookService = new BookService();
@@ -13,37 +13,19 @@ class BookController extends Controller {
 
     // ---- catalogue CRUD ------------------------------------------------------
 
-    list = async (req, res) => {
-        var result = await bookService.list();
-        return respond(res, result);
-    };
+    list = handle(() => bookService.list());
 
-    getEntry = async (req, res) => {
-        var result = await bookService.get(parseInt(req.params.id));
-        return respond(res, result);
-    };
+    getEntry = handle((req) => bookService.get(parseInt(req.params.id)));
 
-    create = async (req, res) => {
-        var result = await bookService.create(req.body, req.user && req.user.id);
-        return respond(res, result);
-    };
+    create = handle((req) => bookService.create(req.body, req.user && req.user.id));
 
-    update = async (req, res) => {
-        var result = await bookService.update(parseInt(req.params.id), req.body);
-        return respond(res, result);
-    };
+    update = handle((req) => bookService.update(parseInt(req.params.id), req.body));
 
-    deleteEntry = async (req, res) => {
-        var result = await bookService.deleteEntry(parseInt(req.params.id));
-        return respond(res, result);
-    };
+    deleteEntry = handle((req) => bookService.deleteEntry(parseInt(req.params.id)));
 
     // ---- course_book link ----------------------------------------------------
 
-    listForCourse = async (req, res) => {
-        var result = await bookService.listForCourse(parseInt(req.params.courseId));
-        return respond(res, result);
-    };
+    listForCourse = handle((req) => bookService.listForCourse(parseInt(req.params.courseId)));
 
     attach = async (req, res) => {
         const bookId = parseInt(req.body.book_id);
@@ -64,10 +46,7 @@ class BookController extends Controller {
 
     // ---- admin fulfilment ----------------------------------------------------
 
-    listOrders = async (req, res) => {
-        var result = await bookService.listOrders(req.query.status || null);
-        return respond(res, result);
-    };
+    listOrders = handle((req) => bookService.listOrders(req.query.status || null));
 
     updateOrderStatus = async (req, res) => {
         const status = req.body.fulfillment_status;

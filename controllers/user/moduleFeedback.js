@@ -1,5 +1,5 @@
 const Controller = require('../base').Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 
 const moduleFeedbackService = new ModuleFeedbackService();
@@ -132,10 +132,8 @@ class ModuleFeedbackController extends Controller {
      * Get available feedback reasons (active only)
      * GET /user/module-feedback/reasons
      */
-    getAvailableReasons = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
-        const result = await moduleFeedbackService.getAllReasons(true); // Only active reasons
-        return respond(res, result);
-    });
+    // Only active reasons
+    getAvailableReasons = catchAs({ success: false, error: 'Internal server error' }, handle(() => moduleFeedbackService.getAllReasons(true)));
 }
 
 module.exports = {

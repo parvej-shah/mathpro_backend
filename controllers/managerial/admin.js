@@ -1,5 +1,5 @@
 const Controller = require('../base').Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const AdminService = require('../../service/managerial/admin').AdminService;
 
 const adminService = new AdminService();
@@ -13,10 +13,7 @@ class AdminController extends Controller {
      * LIST - Get all admins
      * GET /admin/admins
      */
-    list = catchAs({ success: false, message: 'An error occurred while fetching admins', error: 'SERVER_ERROR' }, async (req, res) => {
-        const result = await adminService.list();
-        return respond(res, result);
-    })
+    list = catchAs({ success: false, message: 'An error occurred while fetching admins', error: 'SERVER_ERROR' }, handle(() => adminService.list()))
 
     /**
      * GET - Get single admin by ID

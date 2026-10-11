@@ -2,7 +2,7 @@ const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/course
 
 
 const Controller = require("../base").Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const { parseLimitOffset } = require('../../util/pagination');
 const PaymentService=require("../../service/user/payment.js").PaymentService
 const paymentFulfillment = require('../../service/user/paymentFulfillment');
@@ -42,18 +42,9 @@ class PaymentController extends Controller {
     constructor() {
         super();
     }
-    initiatePayment =async (req,res)=>{
-        var result=await paymentService.initiatePayment(req.body,parseInt(req.params.id))
-        return respond(res, result)
-    }
-    initiatePaymentForBundle =async (req,res)=>{
-      var result=await paymentService.initiatePaymentForBundle(req.body,parseInt(req.params.id))
-      return respond(res, result)
-    }
-    initiatePaymentForBook =async (req,res)=>{
-      var result=await paymentService.initiatePaymentForBook(req.body,parseInt(req.params.id))
-      return respond(res, result)
-    }
+    initiatePayment = handle((req) => paymentService.initiatePayment(req.body,parseInt(req.params.id)))
+    initiatePaymentForBundle = handle((req) => paymentService.initiatePaymentForBundle(req.body,parseInt(req.params.id)))
+    initiatePaymentForBook = handle((req) => paymentService.initiatePaymentForBook(req.body,parseInt(req.params.id)))
     redirect =async (req,res)=>{
         // console.log(req.query.url)
         return res.redirect(`${req.query.url}/post-payment/${req.params.status}`)

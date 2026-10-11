@@ -1,6 +1,6 @@
 require("csv-express"); // registers res.csv()
 const Controller = require("../base").Controller;
-const { respond, catchAs } = require('../base');
+const { respond, catchAs, handle } = require('../base');
 const CourseService =
   require("../../service/managerial/course.js").CourseService;
 const RevenueService =
@@ -19,20 +19,14 @@ class CourseController extends Controller {
     var result = await courseService.list(req, access);
     return respond(res, result);
   };
-  create = async (req, res) => {
-    var result = await courseService.create(req.body);
-    return respond(res, result);
-  };
+  create = handle((req) => courseService.create(req.body));
   update = async (req, res) => {
     // instructor_list is now managed via the instructor junction table — ignore it on save
     const { instructor_list: _ignored, ...body } = req.body;
     var result = await courseService.update(req.params.id, body);
     return respond(res, result);
   };
-  updateFull = async (req, res) => {
-    var result = await courseService.updateFull(req.params.id, req.body);
-    return respond(res, result);
-  };
+  updateFull = handle((req) => courseService.updateFull(req.params.id, req.body));
   getEntry = async (req, res) => {
     const access = await checkCourseAccess(req.user.id, 'course', 'manage', req.params.id);
     if (!access.hasAccess) {
@@ -49,10 +43,7 @@ class CourseController extends Controller {
     var result = await courseService.getFull(req.params.id);
     return respond(res, result);
   };
-  deleteEntry = async (req, res) => {
-    var result = await courseService.deleteEntry(req.params.id);
-    return respond(res, result);
-  };
+  deleteEntry = handle((req) => courseService.deleteEntry(req.params.id));
 
   getRevenue = async (req, res) => {
     var result = await revenueService.getRevenue(req.params.id);

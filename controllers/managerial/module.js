@@ -1,5 +1,5 @@
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { respond, handle } = require('../base');
 const ModuleService=require("../../service/managerial/module.js").ModuleService;
 const { resolveCourseId, checkCourseAccess, assertCourseAccess } = require("../../util/courseAccessHelpers");
 
@@ -9,10 +9,7 @@ class ModuleController extends Controller {
     constructor() {
         super();
     }
-    list =async (req,res)=>{
-        var result=await moduleService.list(req.params.id)
-        return respond(res, result)
-    }
+    list = handle((req) => moduleService.list(req.params.id))
     create =async (req,res)=>{
         const chapterId = parseInt(req.params.id);
         const userId = req.user.id;
@@ -57,10 +54,7 @@ class ModuleController extends Controller {
         return respond(res, result)
     }
     
-    getEntry =async (req,res)=>{
-        var result=await moduleService.get(req.params.id)
-        return respond(res, result)
-    }
+    getEntry = handle((req) => moduleService.get(req.params.id))
     deleteEntry =async (req,res)=>{
         const moduleId = parseInt(req.params.id);
         const userId = req.user.id;
@@ -87,18 +81,9 @@ class ModuleController extends Controller {
         )
         return respond(res, result)
     }
-    getEntryUser =async (req,res)=>{
-        var result=await moduleService.get(req.params.id)
-        return respond(res, result)
-    }
-    getLiveModules =async (req,res)=>{
-        var result=await moduleService.getLiveModulesForUser(req.user.id)
-        return respond(res, result)
-    }
-    getLiveModulesForCourse =async (req,res)=>{
-        var result=await moduleService.getLiveModulesForCourse(req.user.id, req.params.courseId)
-        return respond(res, result)
-    }
+    getEntryUser = handle((req) => moduleService.get(req.params.id))
+    getLiveModules = handle((req) => moduleService.getLiveModulesForUser(req.user.id))
+    getLiveModulesForCourse = handle((req) => moduleService.getLiveModulesForCourse(req.user.id, req.params.courseId))
 
     
 }
