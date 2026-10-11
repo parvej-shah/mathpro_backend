@@ -1,14 +1,219 @@
 // Revenue: summary, trends, per course / bundle, predictions.
 // Part of AnalyticsV2Service (../analyticsV2Service.js), which callers use.
+//
+// Sales are paid course enrolments (takes with an amount and a transaction id) plus bundle
+// purchases. A course-scoped admin (access.hasGlobalAccess === false) sees the sales of their
+// courses and of bundles that contain one of them. Both timestamp columns are INTEGER seconds.
 const { AnalyticsV2Base } = require("./base");
 const { parseDateRange } = require("../../../../util/analyticsV2/dateUtils");
 const { buildOrderBy, validateLimit, validateOffset, buildDateGrouping } = require("../../../../util/analyticsV2/queryUtils");
 const logger = require('../../../../util/logger');
 
+// Every query's params start as [range.start, range.end]; either bound may be null (open).
+const IN_RANGE = `($1::bigint IS NULL OR timestamp >= $1) AND ($2::bigint IS NULL OR timestamp <= $2)`;
+
+// Appends a param and returns its placeholder.
+const bind = (params, value) => {
+  params.push(value);
+  return `$${params.length}`;
+};
+
+// SQL: the bundle contains one of the courses in the array param `ref`.
+const bundleInScope = (bundleColumn, ref) =>
+  `EXISTS (SELECT 1 FROM bundle_course bc WHERE bc.bundle_id = ${bundleColumn} AND bc.course_id = ANY(${ref}))`;
+
+// WHERE for paid course sales in the range, optionally one course, limited to `scope` course ids.
+const courseSales = (params, { courseId, scope } = {}) => {
+  let where = `amount IS NOT NULL AND transaction_id IS NOT NULL AND ${IN_RANGE}`;
+  if (courseId) where += ` AND course_id = ${bind(params, courseId)}`;
+  if (scope) where += ` AND course_id = ANY(${bind(params, scope)})`;
+  return where;
+};
+
+// WHERE for bundle purchases in the range, optionally one bundle, limited to `scope` course ids.
+const bundleSales = (params, { bundleId, scope } = {}) => {
+  let where = IN_RANGE;
+  if (bundleId) where += ` AND bundle_id = ${bind(params, bundleId)}`;
+  if (scope) where += ` AND ${bundleInScope('bundle_purchase.bundle_id', bind(params, scope))}`;
+  return where;
+};
+
+const firstRow = (result) => (result.success && result.data[0]) || null;
+const sum = (values) => values.reduce((a, b) => a + b, 0);
+const round2 = (value) => parseFloat(value.toFixed(2));
+// "YYYY-MM-DD" for a DATE_TRUNC period.
+const periodDay = (period) => (period ? new Date(period).toISOString().split("T")[0] : null);
+
+// Course and bundle trend rows merged by day, oldest first.
+const mergeTrends = (courseRows, bundleRows) => {
+  const trendsMap = new Map();
+  for (const t of courseRows) {
+    const period = periodDay(t.period);
+    if (period) {
+      const revenue = parseFloat(t.revenue);
+      trendsMap.set(period, { period, revenue, enrollments: parseInt(t.enrollments), course_revenue: revenue, bundle_revenue: 0 });
+    }
+  }
+  for (const t of bundleRows) {
+    const period = periodDay(t.period);
+    if (!period) continue;
+    const revenue = parseFloat(t.revenue);
+    const existing = trendsMap.get(period);
+    if (existing) {
+      existing.bundle_revenue = revenue;
+      existing.revenue += revenue;
+    } else {
+      trendsMap.set(period, { period, revenue, enrollments: 0, course_revenue: 0, bundle_revenue: revenue });
+    }
+  }
+  return Array.from(trendsMap.values()).sort((a, b) => a.period.localeCompare(b.period));
+};
+
+// A page of a per-item breakdown: { [listKey]: rows, meta: { total, limit, offset } }.
+const pageReply = (listKey, result, countResult, mapRow, limit, offset) => {
+  if (!result.success) {
+    return result;
+  }
+  const countRow = firstRow(countResult);
+  return {
+    success: true,
+    data: {
+      [listKey]: (result.data || []).map(mapRow),
+      meta: { total: countRow ? parseInt(countRow.total) : 0, limit, offset },
+    },
+  };
+};
+const emptyPage = (listKey, limit, offset) => ({
+  success: true,
+  data: { [listKey]: [], meta: { total: 0, limit, offset } },
+});
+
+// Prediction look-back: period length and how many past periods are averaged.
+const PREDICTION_WINDOWS = {
+  week: { seconds: 7 * 86400, periods: 6 },
+  month: { seconds: 30 * 86400, periods: 6 },
+  quarter: { seconds: 90 * 86400, periods: 6 },
+  year: { seconds: 365 * 86400, periods: 3 },
+};
+
+// average: mean of the periods. trend: mean of the last 3 periods, grown by their change
+// against the earlier ones (falls back to the mean below 2 periods). Unknown methods predict 0.
+const predict = (revenues, method) => {
+  const confidence = revenues.length >= 4 ? "medium" : "low";
+  if (method === "average") {
+    return { predictedRevenue: round2(sum(revenues) / revenues.length), confidence, growthRate: 0 };
+  }
+  if (method !== "trend") {
+    return { predictedRevenue: 0, confidence: "low", growthRate: 0 };
+  }
+  if (revenues.length < 2) {
+    return { predictedRevenue: round2(sum(revenues) / revenues.length), confidence: "low", growthRate: 0 };
+  }
+  const recent = revenues.slice(-3);
+  const older = revenues.slice(0, -3);
+  const recentAvg = sum(recent) / recent.length;
+  const olderAvg = older.length > 0 ? sum(older) / older.length : recentAvg;
+  const growthRate = olderAvg > 0 ? round2(((recentAvg - olderAvg) / olderAvg) * 100) : 0;
+  return { predictedRevenue: round2(recentAvg * (1 + growthRate / 100)), confidence, growthRate };
+};
+
 class RevenueAnalyticsService extends AnalyticsV2Base {
   constructor() {
     super();
   }
+
+  // The caller's course ids when they are course-scoped, else null (sees everything).
+  _scope = (access) => (this._isRestrictedAccess(access) ? this._getAccessibleCourseIds(access) : null);
+
+  // Sum of paid course sales.
+  _courseRevenue = async (range, courseId, scope) => {
+    const params = [range.start, range.end];
+    const where = courseSales(params, { courseId, scope });
+    const row = firstRow(await this.query(`SELECT COALESCE(SUM(amount), 0) as revenue FROM takes WHERE ${where}`, params));
+    return row ? parseFloat(row.revenue) : 0;
+  };
+
+  _bundleRevenue = async (range, bundleId, scope) => {
+    const params = [range.start, range.end];
+    const where = bundleSales(params, { bundleId, scope });
+    const row = firstRow(await this.query(`SELECT COALESCE(SUM(amount), 0) as revenue FROM bundle_purchase WHERE ${where}`, params));
+    return row ? parseFloat(row.revenue) : 0;
+  };
+
+  // Count and sum of all sales (courses + bundles); the raw row, or null if the query failed.
+  _salesTotals = async (range, scope) => {
+    const params = [range.start, range.end];
+    const query = `
+      SELECT COUNT(*) as total_transactions, COALESCE(SUM(amount), 0) as total_revenue
+      FROM (
+        SELECT amount FROM takes WHERE ${courseSales(params, { scope })}
+        UNION ALL
+        SELECT amount FROM bundle_purchase WHERE ${bundleSales(params, { scope })}
+      ) as all_transactions
+    `;
+    return firstRow(await this.query(query, params));
+  };
+
+  // Completed coupon sales: revenue and discount.
+  // KNOWN BUG (kept as is): coupon_usage has no item_type / item_id columns, so for a
+  // course-scoped admin this query fails and both figures read 0.
+  _couponRevenue = async (range, scope) => {
+    const params = [range.start, range.end];
+    let scopeSql = "";
+    if (scope) {
+      const ref = bind(params, scope);
+      scopeSql = `AND ((item_type = 'COURSE' AND item_id = ANY(${ref}))
+        OR (item_type = 'BUNDLE' AND ${bundleInScope('coupon_usage.item_id', ref)}))`;
+    }
+    const query = `
+      SELECT COALESCE(SUM(final_price), 0) as revenue_with_coupon, COALESCE(SUM(discount_amount), 0) as discount_given
+      FROM coupon_usage
+      WHERE payment_status = 'completed'
+        AND ($1::bigint IS NULL OR used_at >= $1)
+        AND ($2::bigint IS NULL OR used_at <= $2)
+        ${scopeSql}
+    `;
+    const row = firstRow(await this.query(query, params));
+    return row
+      ? { revenue_with_coupon: parseFloat(row.revenue_with_coupon), discount_given: parseFloat(row.discount_given) }
+      : { revenue_with_coupon: 0, discount_given: 0 };
+  };
+
+  // Enrolments (free ones included) and their amount per period, for the summary.
+  _enrolmentTrend = async (range, groupBy, scope) => {
+    const params = [range.start, range.end];
+    const scopeSql = scope ? `AND course_id = ANY(${bind(params, scope)})` : "";
+    const result = await this.query(`
+      SELECT ${buildDateGrouping(groupBy, "timestamp", true)} as period,
+        COALESCE(SUM(amount), 0) as revenue,
+        COUNT(*) as enrollments
+      FROM takes
+      WHERE ${IN_RANGE} ${scopeSql}
+      GROUP BY period
+      ORDER BY period ASC
+    `, params);
+    if (!result.success || !result.data) return [];
+    return result.data.map((t) => ({
+      period: periodDay(t.period),
+      revenue: parseFloat(t.revenue),
+      enrollments: parseInt(t.enrollments),
+    }));
+  };
+
+  // Per-period rows (period, revenue, count) of course or bundle sales.
+  _salesByPeriod = async (table, salesWhere, filter, groupBy, countAs) => {
+    const params = [filter.range.start, filter.range.end];
+    const where = salesWhere(params, filter);
+    const result = await this.query(`
+      SELECT ${buildDateGrouping(groupBy, "timestamp", true)} as period,
+        COALESCE(SUM(amount), 0) as revenue,
+        COUNT(*) as ${countAs}
+      FROM ${table}
+      WHERE ${where}
+      GROUP BY period ORDER BY period ASC
+    `, params);
+    return result.success && result.data ? result.data : [];
+  };
 
   /**
    * Get revenue summary with comprehensive breakdowns
@@ -45,9 +250,8 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
   getRevenueSummary = async (filters = {}, access = null) => {
     try {
       const { startDate, endDate, groupBy, courseId, bundleId } = filters;
-      const dateRange = parseDateRange(startDate, endDate);
-      const restricted = this._isRestrictedAccess(access);
-      const courseIds = this._getAccessibleCourseIds(access);
+      const range = parseDateRange(startDate, endDate);
+      const scope = this._scope(access);
 
       if (this._hasNoAccessibleCourses(access)) {
         return {
@@ -66,204 +270,13 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
         };
       }
 
-      // Build base query for revenue
-      // Note: takes.timestamp is INTEGER, so compare directly
-      // Filter out free enrollments (amount IS NULL or transaction_id IS NULL)
-      let courseRevenueQuery = `
-        SELECT COALESCE(SUM(amount), 0) as revenue
-        FROM takes
-        WHERE amount IS NOT NULL 
-          AND transaction_id IS NOT NULL
-          AND ($1::bigint IS NULL OR timestamp >= $1)
-          AND ($2::bigint IS NULL OR timestamp <= $2)
-      `;
-      let courseParams = [dateRange.start, dateRange.end];
-
-      if (courseId) {
-        courseRevenueQuery += ` AND course_id = $${courseParams.length + 1}`;
-        courseParams.push(courseId);
-      }
-
-      if (restricted) {
-        courseRevenueQuery += ` AND course_id = ANY($${courseParams.length + 1})`;
-        courseParams.push(courseIds);
-      }
-
-      const courseRevenueResult = await this.query(
-        courseRevenueQuery,
-        courseParams
-      );
-
-      // Note: bundle_purchase.timestamp is INTEGER, so compare directly
-      let bundleRevenueQuery = `
-        SELECT COALESCE(SUM(amount), 0) as revenue
-        FROM bundle_purchase
-        WHERE ($1::bigint IS NULL OR timestamp >= $1)
-          AND ($2::bigint IS NULL OR timestamp <= $2)
-      `;
-      let bundleParams = [dateRange.start, dateRange.end];
-
-      if (bundleId) {
-        bundleRevenueQuery += ` AND bundle_id = $${bundleParams.length + 1}`;
-        bundleParams.push(bundleId);
-      }
-
-      if (restricted) {
-        bundleRevenueQuery += ` AND EXISTS (
-          SELECT 1
-          FROM bundle_course bc
-          WHERE bc.bundle_id = bundle_purchase.bundle_id
-            AND bc.course_id = ANY($${bundleParams.length + 1})
-        )`;
-        bundleParams.push(courseIds);
-      }
-
-      const bundleRevenueResult = await this.query(
-        bundleRevenueQuery,
-        bundleParams
-      );
-
-      // Get coupon revenue
-      const couponRevenueQuery = `
-        SELECT 
-          COALESCE(SUM(final_price), 0) as revenue_with_coupon,
-          COALESCE(SUM(discount_amount), 0) as discount_given
-        FROM coupon_usage
-        WHERE payment_status = 'completed'
-          AND ($1::bigint IS NULL OR used_at >= $1)
-          AND ($2::bigint IS NULL OR used_at <= $2)
-          ${
-            restricted
-              ? `AND (
-            (item_type = 'COURSE' AND item_id = ANY($3))
-            OR
-            (item_type = 'BUNDLE' AND EXISTS (
-              SELECT 1
-              FROM bundle_course bc
-              WHERE bc.bundle_id = coupon_usage.item_id
-                AND bc.course_id = ANY($3)
-            ))
-          )`
-              : ""
-          }
-      `;
-      const couponRevenueResult = await this.query(couponRevenueQuery, [
-        dateRange.start,
-        dateRange.end,
-        ...(restricted ? [courseIds] : []),
-      ]);
-
-      // Get total transactions and average
-      // Note: Both takes.timestamp and bundle_purchase.timestamp are INTEGER, so compare directly
-      const totalTransactionsQuery = `
-        SELECT 
-          COUNT(*) as total_transactions,
-          COALESCE(SUM(amount), 0) as total_revenue
-        FROM (
-          SELECT amount FROM takes
-          WHERE amount IS NOT NULL 
-            AND transaction_id IS NOT NULL
-            AND ($1::bigint IS NULL OR timestamp >= $1)
-            AND ($2::bigint IS NULL OR timestamp <= $2)
-            ${restricted ? "AND course_id = ANY($5)" : ""}
-          UNION ALL
-          SELECT amount FROM bundle_purchase
-          WHERE ($3::bigint IS NULL OR timestamp >= $3)
-            AND ($4::bigint IS NULL OR timestamp <= $4)
-            ${
-              restricted
-                ? "AND EXISTS (SELECT 1 FROM bundle_course bc WHERE bc.bundle_id = bundle_purchase.bundle_id AND bc.course_id = ANY($5))"
-                : ""
-            }
-        ) as all_transactions
-      `;
-      const totalTransactionsResult = await this.query(
-        totalTransactionsQuery,
-        [
-          dateRange.start,
-          dateRange.end,
-          dateRange.start,
-          dateRange.end,
-          ...(restricted ? [courseIds] : []),
-        ]
-      );
-
-      const courseRevenue =
-        courseRevenueResult.success && courseRevenueResult.data[0]
-          ? parseFloat(courseRevenueResult.data[0].revenue)
-          : 0;
-      const bundleRevenue =
-        bundleRevenueResult.success && bundleRevenueResult.data[0]
-          ? parseFloat(bundleRevenueResult.data[0].revenue)
-          : 0;
+      const courseRevenue = await this._courseRevenue(range, courseId, scope);
+      const bundleRevenue = await this._bundleRevenue(range, bundleId, scope);
+      const couponData = await this._couponRevenue(range, scope);
+      const totals = await this._salesTotals(range, scope);
+      const totalTransactions = totals ? parseInt(totals.total_transactions) : 0;
+      const transactionsRevenue = totals ? parseFloat(totals.total_revenue) : 0;
       const totalRevenue = courseRevenue + bundleRevenue;
-
-      const couponData =
-        couponRevenueResult.success && couponRevenueResult.data[0]
-          ? {
-              revenue_with_coupon: parseFloat(
-                couponRevenueResult.data[0].revenue_with_coupon
-              ),
-              discount_given: parseFloat(
-                couponRevenueResult.data[0].discount_given
-              ),
-            }
-          : { revenue_with_coupon: 0, discount_given: 0 };
-
-      const transactionsData =
-        totalTransactionsResult.success && totalTransactionsResult.data[0]
-          ? {
-              total_transactions: parseInt(
-                totalTransactionsResult.data[0].total_transactions
-              ),
-              total_revenue: parseFloat(
-                totalTransactionsResult.data[0].total_revenue
-              ),
-            }
-          : { total_transactions: 0, total_revenue: 0 };
-
-      const averageOrderValue =
-        transactionsData.total_transactions > 0
-          ? parseFloat(
-              (
-                transactionsData.total_revenue /
-                transactionsData.total_transactions
-              ).toFixed(2)
-            )
-          : 0;
-
-      // Get trends if groupBy is provided
-      // Note: takes.timestamp is INTEGER, DATE_TRUNC needs timestamp conversion
-      let trends = [];
-      if (groupBy) {
-        const trendsQuery = `
-          SELECT 
-            ${buildDateGrouping(groupBy, "timestamp", true)} as period,
-            COALESCE(SUM(amount), 0) as revenue,
-            COUNT(*) as enrollments
-        FROM takes
-        WHERE ($1::bigint IS NULL OR timestamp >= $1)
-          AND ($2::bigint IS NULL OR timestamp <= $2)
-          ${restricted ? "AND course_id = ANY($3)" : ""}
-          GROUP BY period
-          ORDER BY period ASC
-        `;
-        const trendsResult = await this.query(trendsQuery, [
-          dateRange.start,
-          dateRange.end,
-          ...(restricted ? [courseIds] : []),
-        ]);
-
-        if (trendsResult.success && trendsResult.data) {
-          trends = trendsResult.data.map((t) => ({
-            period: t.period
-              ? new Date(t.period).toISOString().split("T")[0]
-              : null,
-            revenue: parseFloat(t.revenue),
-            enrollments: parseInt(t.enrollments),
-          }));
-        }
-      }
 
       return {
         success: true,
@@ -274,9 +287,9 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
           with_coupon_revenue: couponData.revenue_with_coupon,
           without_coupon_revenue: totalRevenue - couponData.discount_given,
           discount_given: couponData.discount_given,
-          average_order_value: averageOrderValue,
-          total_transactions: transactionsData.total_transactions,
-          trends: trends,
+          average_order_value: totalTransactions > 0 ? round2(transactionsRevenue / totalTransactions) : 0,
+          total_transactions: totalTransactions,
+          trends: groupBy ? await this._enrolmentTrend(range, groupBy, scope) : [],
         },
       };
     } catch (error) {
@@ -319,10 +332,7 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
    */
   getRevenueTrends = async (filters = {}, access = null) => {
     try {
-      const { startDate, endDate, groupBy = "day", courseId, bundleId } =
-        filters;
-      const restricted = this._isRestrictedAccess(access);
-      const courseIds = this._getAccessibleCourseIds(access);
+      const { startDate, endDate, groupBy = "day", courseId, bundleId } = filters;
 
       if (!startDate || !endDate) {
         return {
@@ -331,7 +341,7 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
         };
       }
 
-      const dateRange = parseDateRange(startDate, endDate);
+      const range = parseDateRange(startDate, endDate);
 
       if (this._hasNoAccessibleCourses(access)) {
         return {
@@ -346,132 +356,19 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
         };
       }
 
-      // Get course revenue trends
-      // Note: takes.timestamp is INTEGER, so compare directly
-      // Filter out free enrollments (amount IS NULL or transaction_id IS NULL)
-      let courseTrendsQuery = `
-        SELECT 
-          ${buildDateGrouping(groupBy, "timestamp", true)} as period,
-          COALESCE(SUM(amount), 0) as revenue,
-          COUNT(*) as enrollments
-        FROM takes
-        WHERE amount IS NOT NULL 
-          AND transaction_id IS NOT NULL
-          AND timestamp >= $1
-          AND timestamp <= $2
-      `;
-      let courseParams = [dateRange.start, dateRange.end];
-
-      if (courseId) {
-        courseTrendsQuery += ` AND course_id = $${courseParams.length + 1}`;
-        courseParams.push(courseId);
-      }
-
-      if (restricted) {
-        courseTrendsQuery += ` AND course_id = ANY($${courseParams.length + 1})`;
-        courseParams.push(courseIds);
-      }
-
-      courseTrendsQuery += ` GROUP BY period ORDER BY period ASC`;
-
-      const courseTrendsResult = await this.query(
-        courseTrendsQuery,
-        courseParams
-      );
-
-      // Get bundle revenue trends
-      // Note: bundle_purchase.timestamp is INTEGER, DATE_TRUNC needs timestamp conversion
-      let bundleTrendsQuery = `
-        SELECT 
-          ${buildDateGrouping(groupBy, "timestamp", true)} as period,
-          COALESCE(SUM(amount), 0) as revenue,
-          COUNT(*) as purchases
-        FROM bundle_purchase
-        WHERE timestamp >= $1
-          AND timestamp <= $2
-      `;
-      let bundleParams = [dateRange.start, dateRange.end];
-
-      if (bundleId) {
-        bundleTrendsQuery += ` AND bundle_id = $${bundleParams.length + 1}`;
-        bundleParams.push(bundleId);
-      }
-
-      if (restricted) {
-        bundleTrendsQuery += ` AND EXISTS (
-          SELECT 1
-          FROM bundle_course bc
-          WHERE bc.bundle_id = bundle_purchase.bundle_id
-            AND bc.course_id = ANY($${bundleParams.length + 1})
-        )`;
-        bundleParams.push(courseIds);
-      }
-
-      bundleTrendsQuery += ` GROUP BY period ORDER BY period ASC`;
-
-      const bundleTrendsResult = await this.query(
-        bundleTrendsQuery,
-        bundleParams
-      );
-
-      // Combine trends
-      const trendsMap = new Map();
-
-      if (courseTrendsResult.success && courseTrendsResult.data) {
-        courseTrendsResult.data.forEach((t) => {
-          const period = t.period
-            ? new Date(t.period).toISOString().split("T")[0]
-            : null;
-          if (period) {
-            trendsMap.set(period, {
-              period,
-              revenue: parseFloat(t.revenue),
-              enrollments: parseInt(t.enrollments),
-              course_revenue: parseFloat(t.revenue),
-              bundle_revenue: 0,
-            });
-          }
-        });
-      }
-
-      if (bundleTrendsResult.success && bundleTrendsResult.data) {
-        bundleTrendsResult.data.forEach((t) => {
-          const period = t.period
-            ? new Date(t.period).toISOString().split("T")[0]
-            : null;
-          if (period) {
-            const existing = trendsMap.get(period);
-            if (existing) {
-              existing.bundle_revenue = parseFloat(t.revenue);
-              existing.revenue += parseFloat(t.revenue);
-            } else {
-              trendsMap.set(period, {
-                period,
-                revenue: parseFloat(t.revenue),
-                enrollments: 0,
-                course_revenue: 0,
-                bundle_revenue: parseFloat(t.revenue),
-              });
-            }
-          }
-        });
-      }
-
-      const trends = Array.from(trendsMap.values()).sort((a, b) =>
-        a.period.localeCompare(b.period)
-      );
-
-      const totalRevenue = trends.reduce((sum, t) => sum + t.revenue, 0);
-      const averageDailyRevenue =
-        trends.length > 0 ? parseFloat((totalRevenue / trends.length).toFixed(2)) : 0;
+      const scope = this._scope(access);
+      const courseRows = await this._salesByPeriod('takes', courseSales, { range, courseId, scope }, groupBy, 'enrollments');
+      const bundleRows = await this._salesByPeriod('bundle_purchase', bundleSales, { range, bundleId, scope }, groupBy, 'purchases');
+      const trends = mergeTrends(courseRows, bundleRows);
+      const totalRevenue = sum(trends.map((t) => t.revenue));
 
       return {
         success: true,
         data: {
-          trends: trends,
+          trends,
           summary: {
             total_revenue: totalRevenue,
-            average_daily_revenue: averageDailyRevenue,
+            average_daily_revenue: trends.length > 0 ? round2(totalRevenue / trends.length) : 0,
           },
         },
       };
@@ -522,59 +419,30 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
    */
   getRevenueByCourse = async (filters = {}, access = null) => {
     try {
-      const {
-        startDate,
-        endDate,
-        limit = 20,
-        offset = 0,
-        sortBy = "revenue",
-        order = "desc",
-      } = filters;
-
-      const dateRange = parseDateRange(startDate, endDate);
+      const { startDate, endDate, limit = 20, offset = 0, sortBy = "revenue", order = "desc" } = filters;
+      const range = parseDateRange(startDate, endDate);
       const validLimit = validateLimit(limit);
       const validOffset = validateOffset(offset);
-      const restricted = this._isRestrictedAccess(access);
-      const courseIds = this._getAccessibleCourseIds(access);
 
       if (this._hasNoAccessibleCourses(access)) {
-        return {
-          success: true,
-          data: {
-            courses: [],
-            meta: {
-              total: 0,
-              limit: validLimit,
-              offset: validOffset,
-            },
-          },
-        };
+        return emptyPage('courses', validLimit, validOffset);
       }
 
-      const sortColumn =
-        sortBy === "enrollments" ? "enrollments" : "revenue";
-      const orderBy = buildOrderBy(sortColumn, order);
+      const scope = this._scope(access);
+      const params = [range.start, range.end];
+      const countParams = [];
+      const scopeWhere = scope ? `WHERE c.id = ANY(${bind(params, scope)})` : "";
+      const countWhere = scope ? `WHERE c.id = ANY(${bind(countParams, scope)})` : "";
+      const orderBy = buildOrderBy(sortBy === "enrollments" ? "enrollments" : "revenue", order);
 
-      const queryParams = [dateRange.start, dateRange.end];
-      let courseScopeWhere = "";
-
-      if (restricted) {
-        queryParams.push(courseIds);
-        courseScopeWhere = `WHERE c.id = ANY($${queryParams.length})`;
-      }
-
-      queryParams.push(validLimit);
-      queryParams.push(validOffset);
-
-      // Note: takes.timestamp is INTEGER, so compare directly
-      const query = `
-        SELECT 
+      const result = await this.query(`
+        SELECT
           c.id as course_id,
           c.title,
           COALESCE(SUM(t.amount), 0) as revenue,
           COUNT(DISTINCT t.user_id) as enrollments,
-          CASE 
-            WHEN COUNT(DISTINCT t.user_id) > 0 
+          CASE
+            WHEN COUNT(DISTINCT t.user_id) > 0
             THEN ROUND(COALESCE(SUM(t.amount), 0)::numeric / COUNT(DISTINCT t.user_id), 2)
             ELSE 0
           END as average_revenue_per_student,
@@ -586,63 +454,22 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
           AND t.transaction_id IS NOT NULL
           AND ($1::bigint IS NULL OR t.timestamp >= $1)
           AND ($2::bigint IS NULL OR t.timestamp <= $2)
-        ${courseScopeWhere}
+        ${scopeWhere}
         GROUP BY c.id, c.title
         ${orderBy}
-        LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}
-      `;
+        LIMIT ${bind(params, validLimit)} OFFSET ${bind(params, validOffset)}
+      `, params);
+      const countResult = await this.query(`SELECT COUNT(*) as total FROM course c ${countWhere}`, countParams);
 
-      const result = await this.query(query, queryParams);
-
-      // Get total count
-      // Note: takes.timestamp is INTEGER, so compare directly
-      const countQuery = `
-        SELECT COUNT(DISTINCT c.id) as total
-        FROM course c
-        LEFT JOIN takes t ON c.id = t.course_id
-          AND ($1::bigint IS NULL OR t.timestamp >= $1)
-          AND ($2::bigint IS NULL OR t.timestamp <= $2)
-        ${restricted ? "WHERE c.id = ANY($3)" : ""}
-      `;
-      const countResult = await this.query(countQuery, [
-        dateRange.start,
-        dateRange.end,
-        ...(restricted ? [courseIds] : []),
-      ]);
-
-      const total =
-        countResult.success && countResult.data[0]
-          ? parseInt(countResult.data[0].total)
-          : 0;
-
-      if (!result.success) {
-        return result;
-      }
-
-      return {
-        success: true,
-        data: {
-          courses:
-            result.data && result.data.length > 0
-              ? result.data.map((c) => ({
-                  course_id: parseInt(c.course_id),
-                  title: c.title,
-                  revenue: parseFloat(c.revenue),
-                  enrollments: parseInt(c.enrollments),
-                  average_revenue_per_student: parseFloat(
-                    c.average_revenue_per_student
-                  ),
-                  with_coupon_revenue: parseFloat(c.with_coupon_revenue),
-                  without_coupon_revenue: parseFloat(c.without_coupon_revenue),
-                }))
-              : [],
-          meta: {
-            total: total,
-            limit: validLimit,
-            offset: validOffset,
-          },
-        },
-      };
+      return pageReply('courses', result, countResult, (c) => ({
+        course_id: parseInt(c.course_id),
+        title: c.title,
+        revenue: parseFloat(c.revenue),
+        enrollments: parseInt(c.enrollments),
+        average_revenue_per_student: parseFloat(c.average_revenue_per_student),
+        with_coupon_revenue: parseFloat(c.with_coupon_revenue),
+        without_coupon_revenue: parseFloat(c.without_coupon_revenue),
+      }), validLimit, validOffset);
     } catch (error) {
       logger.error("Error in getRevenueByCourse:", error);
       return {
@@ -687,48 +514,30 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
    */
   getRevenueByBundle = async (filters = {}, access = null) => {
     try {
-      const {
-        startDate,
-        endDate,
-        limit = 20,
-        offset = 0,
-        sortBy = "revenue",
-        order = "desc",
-      } = filters;
-
-      const dateRange = parseDateRange(startDate, endDate);
+      const { startDate, endDate, limit = 20, offset = 0, sortBy = "revenue", order = "desc" } = filters;
+      const range = parseDateRange(startDate, endDate);
       const validLimit = validateLimit(limit);
       const validOffset = validateOffset(offset);
-      const restricted = this._isRestrictedAccess(access);
-      const courseIds = this._getAccessibleCourseIds(access);
 
       if (this._hasNoAccessibleCourses(access)) {
-        return {
-          success: true,
-          data: {
-            bundles: [],
-            meta: {
-              total: 0,
-              limit: validLimit,
-              offset: validOffset,
-            },
-          },
-        };
+        return emptyPage('bundles', validLimit, validOffset);
       }
 
-      const sortColumn =
-        sortBy === "purchases" ? "purchases" : "revenue";
-      const orderBy = buildOrderBy(sortColumn, order);
+      const scope = this._scope(access);
+      const params = [range.start, range.end];
+      const countParams = [];
+      const scopeWhere = scope ? `WHERE ${bundleInScope('b.id', bind(params, scope))}` : "";
+      const countWhere = scope ? `WHERE ${bundleInScope('b.id', bind(countParams, scope))}` : "";
+      const orderBy = buildOrderBy(sortBy === "purchases" ? "purchases" : "revenue", order);
 
-      // Note: bundle_purchase.timestamp is INTEGER, so compare directly
-      const query = `
-        SELECT 
+      const result = await this.query(`
+        SELECT
           b.id as bundle_id,
           b.title,
           COALESCE(SUM(bp.amount), 0) as revenue,
           COUNT(DISTINCT bp.user_id) as purchases,
-          CASE 
-            WHEN COUNT(DISTINCT bp.user_id) > 0 
+          CASE
+            WHEN COUNT(DISTINCT bp.user_id) > 0
             THEN ROUND(COALESCE(SUM(bp.amount), 0)::numeric / COUNT(DISTINCT bp.user_id), 2)
             ELSE 0
           END as average_revenue_per_purchase,
@@ -738,77 +547,22 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
         LEFT JOIN bundle_purchase bp ON b.id = bp.bundle_id
           AND ($1::bigint IS NULL OR bp.timestamp >= $1)
           AND ($2::bigint IS NULL OR bp.timestamp <= $2)
-        ${
-          restricted
-            ? "WHERE EXISTS (SELECT 1 FROM bundle_course bc WHERE bc.bundle_id = b.id AND bc.course_id = ANY($5))"
-            : ""
-        }
+        ${scopeWhere}
         GROUP BY b.id, b.title
         ${orderBy}
-        LIMIT $3 OFFSET $4
-      `;
+        LIMIT ${bind(params, validLimit)} OFFSET ${bind(params, validOffset)}
+      `, params);
+      const countResult = await this.query(`SELECT COUNT(*) as total FROM bundle b ${countWhere}`, countParams);
 
-      const result = await this.query(query, [
-        dateRange.start,
-        dateRange.end,
-        validLimit,
-        validOffset,
-        ...(restricted ? [courseIds] : []),
-      ]);
-
-      // Get total count
-      // Note: bundle_purchase.timestamp is INTEGER, so compare directly
-      const countQuery = `
-        SELECT COUNT(DISTINCT b.id) as total
-        FROM bundle b
-        LEFT JOIN bundle_purchase bp ON b.id = bp.bundle_id
-          AND ($1::bigint IS NULL OR bp.timestamp >= $1)
-          AND ($2::bigint IS NULL OR bp.timestamp <= $2)
-        ${
-          restricted
-            ? "WHERE EXISTS (SELECT 1 FROM bundle_course bc WHERE bc.bundle_id = b.id AND bc.course_id = ANY($3))"
-            : ""
-        }
-      `;
-      const countResult = await this.query(countQuery, [
-        dateRange.start,
-        dateRange.end,
-        ...(restricted ? [courseIds] : []),
-      ]);
-
-      const total =
-        countResult.success && countResult.data[0]
-          ? parseInt(countResult.data[0].total)
-          : 0;
-
-      if (!result.success) {
-        return result;
-      }
-
-      return {
-        success: true,
-        data: {
-          bundles:
-            result.data && result.data.length > 0
-              ? result.data.map((b) => ({
-                  bundle_id: parseInt(b.bundle_id),
-                  title: b.title,
-                  revenue: parseFloat(b.revenue),
-                  purchases: parseInt(b.purchases),
-                  average_revenue_per_purchase: parseFloat(
-                    b.average_revenue_per_purchase
-                  ),
-                  with_coupon_revenue: parseFloat(b.with_coupon_revenue),
-                  without_coupon_revenue: parseFloat(b.without_coupon_revenue),
-                }))
-              : [],
-          meta: {
-            total: total,
-            limit: validLimit,
-            offset: validOffset,
-          },
-        },
-      };
+      return pageReply('bundles', result, countResult, (b) => ({
+        bundle_id: parseInt(b.bundle_id),
+        title: b.title,
+        revenue: parseFloat(b.revenue),
+        purchases: parseInt(b.purchases),
+        average_revenue_per_purchase: parseFloat(b.average_revenue_per_purchase),
+        with_coupon_revenue: parseFloat(b.with_coupon_revenue),
+        without_coupon_revenue: parseFloat(b.without_coupon_revenue),
+      }), validLimit, validOffset);
     } catch (error) {
       logger.error("Error in getRevenueByBundle:", error);
       return {
@@ -852,73 +606,22 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
   getRevenuePredictions = async (filters = {}, access = null) => {
     try {
       const { period = "month", method = "average" } = filters;
-      const restricted = this._isRestrictedAccess(access);
-      const courseIds = this._getAccessibleCourseIds(access);
 
-      if (!["week", "month", "quarter", "year"].includes(period)) {
+      if (!Object.hasOwn(PREDICTION_WINDOWS, period)) {
         return {
           success: false,
           error: "Invalid period. Must be: week, month, quarter, or year",
         };
       }
 
+      // Sales in each of the last N whole periods, oldest first (failed queries are skipped).
+      const { seconds, periods } = PREDICTION_WINDOWS[period];
+      const scope = this._scope(access);
       const now = Math.floor(Date.now() / 1000);
-      let historicalPeriods = 6; // Look at last 6 periods
-      let periodSeconds = 0;
-
-      switch (period) {
-        case "week":
-          periodSeconds = 7 * 86400;
-          break;
-        case "month":
-          periodSeconds = 30 * 86400;
-          break;
-        case "quarter":
-          periodSeconds = 90 * 86400;
-          break;
-        case "year":
-          periodSeconds = 365 * 86400;
-          historicalPeriods = 3; // Look at last 3 years
-          break;
-      }
-
-      // Get historical revenue for last N periods
-      // Note: Both takes.timestamp and bundle_purchase.timestamp are INTEGER, so compare directly
-      // Filter out free enrollments from takes
-      const historicalQuery = `
-        SELECT 
-          COALESCE(SUM(amount), 0) as revenue
-        FROM (
-          SELECT amount, timestamp FROM takes
-          WHERE amount IS NOT NULL AND transaction_id IS NOT NULL
-            ${restricted ? "AND course_id = ANY($3)" : ""}
-          UNION ALL
-          SELECT amount, timestamp FROM bundle_purchase
-          ${
-            restricted
-              ? "WHERE EXISTS (SELECT 1 FROM bundle_course bc WHERE bc.bundle_id = bundle_purchase.bundle_id AND bc.course_id = ANY($3))"
-              : ""
-          }
-        ) as all_transactions
-        WHERE timestamp >= $1
-          AND timestamp <= $2
-      `;
-
       const historicalRevenues = [];
-      for (let i = historicalPeriods; i >= 1; i--) {
-        const periodStart = now - i * periodSeconds;
-        const periodEnd = now - (i - 1) * periodSeconds;
-
-        const result = await this.query(
-          historicalQuery,
-          restricted
-            ? [periodStart, periodEnd, courseIds]
-            : [periodStart, periodEnd]
-        );
-
-        if (result.success && result.data[0]) {
-          historicalRevenues.push(parseFloat(result.data[0].revenue));
-        }
+      for (let i = periods; i >= 1; i--) {
+        const totals = await this._salesTotals({ start: now - i * seconds, end: now - (i - 1) * seconds }, scope);
+        if (totals) historicalRevenues.push(parseFloat(totals.total_revenue));
       }
 
       if (historicalRevenues.length === 0) {
@@ -928,61 +631,19 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
         };
       }
 
-      let predictedRevenue = 0;
-      let confidence = "low";
-      let growthRate = 0;
-
-      if (method === "average") {
-        // Simple average
-        const sum = historicalRevenues.reduce((a, b) => a + b, 0);
-        predictedRevenue = parseFloat((sum / historicalRevenues.length).toFixed(2));
-        confidence = historicalRevenues.length >= 4 ? "medium" : "low";
-      } else if (method === "trend") {
-        // Simple linear trend
-        if (historicalRevenues.length >= 2) {
-          const recent = historicalRevenues.slice(-3);
-          const older = historicalRevenues.slice(0, -3);
-          const recentAvg =
-            recent.reduce((a, b) => a + b, 0) / recent.length;
-          const olderAvg =
-            older.length > 0
-              ? older.reduce((a, b) => a + b, 0) / older.length
-              : recentAvg;
-
-          growthRate =
-            olderAvg > 0
-              ? parseFloat(
-                  (((recentAvg - olderAvg) / olderAvg) * 100).toFixed(2)
-                )
-              : 0;
-
-          predictedRevenue = parseFloat(
-            (recentAvg * (1 + growthRate / 100)).toFixed(2)
-          );
-          confidence = historicalRevenues.length >= 4 ? "medium" : "low";
-        } else {
-          // Fallback to average
-          const sum = historicalRevenues.reduce((a, b) => a + b, 0);
-          predictedRevenue = parseFloat((sum / historicalRevenues.length).toFixed(2));
-          confidence = "low";
-        }
-      }
-
-      const periodName = `next_${period}`;
+      const { predictedRevenue, confidence, growthRate } = predict(historicalRevenues, method);
 
       return {
         success: true,
         data: {
           prediction: {
-            period: periodName,
+            period: `next_${period}`,
             predicted_revenue: predictedRevenue,
-            confidence: confidence,
-            method: method,
+            confidence,
+            method,
             based_on: {
               historical_periods: historicalRevenues.length,
-              average_revenue:
-                historicalRevenues.reduce((a, b) => a + b, 0) /
-                historicalRevenues.length,
+              average_revenue: sum(historicalRevenues) / historicalRevenues.length,
               growth_rate: growthRate,
             },
           },
