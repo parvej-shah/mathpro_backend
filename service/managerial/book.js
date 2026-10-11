@@ -1,4 +1,4 @@
-const Service = require('../base').Service;
+const { CrudService } = require('../shared/crudService');
 
 /**
  * BookService — admin catalogue of (physical) books, the many-to-many link to
@@ -6,7 +6,7 @@ const Service = require('../base').Service;
  * books (reused by the payment flow), and the admin fulfilment views over
  * course_book_purchase.
  */
-class BookService extends Service {
+class BookService extends CrudService {
     constructor() {
         super();
     }
@@ -38,11 +38,6 @@ class BookService extends Service {
     list = async () => {
         var query = `select * from ${this.table} order by id desc`;
         return this.query(query, []);
-    };
-
-    get = async (id) => {
-        var query = `select * from ${this.table} where ${this.pk} = $1`;
-        return this.query(query, [id]);
     };
 
     // ---- public (student-facing) catalogue reads -----------------------------

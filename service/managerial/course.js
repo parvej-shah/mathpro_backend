@@ -2,7 +2,7 @@ const {
   managerialAccountTypes,
   logNames,
 } = require("../../util/constants");
-const Service = require("../base").Service;
+const { CrudService } = require("../shared/crudService");
 const ChapterService = require("./chapter").ChapterService;
 const ModuleService = require("./module").ModuleService;
 const MessagingService =
@@ -13,7 +13,7 @@ const logger = require('../../util/logger');
 const messagingService = new MessagingService();
 const publicLiveCourseCache = createTtlCache(15000);
 
-class CourseService extends Service {
+class CourseService extends CrudService {
   constructor() {
     super();
   }
@@ -67,31 +67,6 @@ class CourseService extends Service {
     `object`,
     `string`,
   ];
-  getColumns = () => {
-    var result = `(`;
-    this.cols.map((c, i) => {
-      result += c;
-      if (i < this.cols.length - 1) result += ",";
-    });
-    return result + ")";
-  };
-  getWildCards = () => {
-    var result = `(`;
-    this.cols.map((_, i) => {
-      result += `$${i + 1}`;
-      if (i < this.cols.length - 1) result += ",";
-    });
-    return result + ")";
-  };
-  getUpdatePairs = () => {
-    var result = ``;
-    this.cols.map((c, i) => {
-      result += `
-                ${c} = $${i + 1}`;
-      if (i < this.cols.length - 1) result += ",";
-    });
-    return result;
-  };
 
   normalizeColumnValue = (column, value) => {
     const columnIndex = this.cols.indexOf(column);
@@ -254,13 +229,6 @@ class CourseService extends Service {
     var result = await this.query(query, params);
     return result;
   };
-  get = async (id) => {
-    var query = `select * from ${this.table} where ${this.pk}=$1`;
-    var params = [id];
-    var result = await this.query(query, params);
-    return result;
-  };
-
   // Resolve a course id from its slug (pretty route id, distinct from the legacy `url`).
   getIdBySlug = async (slug) => {
     var result = await this.query(

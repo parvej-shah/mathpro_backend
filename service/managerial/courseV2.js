@@ -3,7 +3,7 @@
  * Handles course import/export, module reordering, and enhanced features
  */
 
-const Service = require('../base').Service;
+const { CrudService } = require('../shared/crudService');
 const { safeMessage } = require('../../errors/dbErrors');
 const ModuleService = require('./module').ModuleService;
 const ChapterService = require('./chapter').ChapterService;
@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const logger = require('../../util/logger');
 const { buildUpdate } = require('../../util/buildUpdate');
 
-class CourseServiceV2 extends Service {
+class CourseServiceV2 extends CrudService {
     constructor() {
         super();
         this.moduleService = new ModuleService();
@@ -67,32 +67,8 @@ class CourseServiceV2 extends Service {
         'string',
     ];
 
-    getColumns = () => {
-        let result = '(';
-        this.cols.forEach((column, index) => {
-            result += column;
-            if (index < this.cols.length - 1) result += ',';
-        });
-        return `${result})`;
-    };
 
-    getWildCards = () => {
-        let result = '(';
-        this.cols.forEach((_, index) => {
-            result += `$${index + 1}`;
-            if (index < this.cols.length - 1) result += ',';
-        });
-        return `${result})`;
-    };
 
-    getUpdatePairs = () => {
-        let result = '';
-        this.cols.forEach((column, index) => {
-            result += `\n                ${column} = $${index + 1}`;
-            if (index < this.cols.length - 1) result += ',';
-        });
-        return result;
-    };
 
     normalizeColumnValue = (column, value) => {
         const columnIndex = this.cols.indexOf(column);
@@ -135,11 +111,6 @@ class CourseServiceV2 extends Service {
             id,
         ];
         return this.query(query, params);
-    }
-
-    async get(id) {
-        const query = `select * from ${this.table} where ${this.pk}=$1`;
-        return this.query(query, [id]);
     }
 
     async getFull(id) {

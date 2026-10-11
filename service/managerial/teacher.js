@@ -1,11 +1,11 @@
-const Service = require('../base').Service;
+const { CrudService } = require('../shared/crudService');
 const bcrypt=require('bcryptjs');
 const { managerialAccountTypes } = require('../../util/constants');
 const MessagingService=require('../../service/messagingService').MessagingService
 
 const messagingService=new MessagingService()
 
-class TeacherService extends Service {
+class TeacherService extends CrudService {
     constructor() {
         super();
     }
@@ -23,31 +23,6 @@ class TeacherService extends Service {
         `string`,
         `object`
     ]
-    getColumns=()=>{
-        var result=`(`
-        this.cols.map((c,i)=>{
-            result+=c;
-            if(i<this.cols.length-1)result+=','
-        })
-        return result+')'
-    }
-    getWildCards=()=>{
-        var result=`(`
-        this.cols.map((_,i)=>{
-            result+=`$${(i+1)}`;
-            if(i<this.cols.length-1)result+=','
-        })
-        return result+')'
-    }
-    getUpdatePairs=()=>{
-        var result=``
-        this.cols.map((c,i)=>{
-            result+=`
-                ${c} = $${(i+1)}`
-                if(i<this.cols.length-1)result+=','
-        })
-        return result
-    }
     
     list=async ()=>{
         var query=`select * from ${this.table} where type=$1 `
@@ -136,13 +111,6 @@ class TeacherService extends Service {
             
         return result[0]
     }
-    get = async id=>{
-        var query=`select * from ${this.table} where ${this.pk}=$1`
-        var params=[id]
-        var result=await this.query(query,params)
-        return result
-    }
-
     deleteEntry =async id=>{
         var query=`delete from ${this.table} where ${this.pk}=$1`
         var params=[id]

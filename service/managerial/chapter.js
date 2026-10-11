@@ -1,7 +1,7 @@
-const Service = require("../base").Service;
+const { CrudService } = require("../shared/crudService");
 const { safeMessage } = require('../../errors/dbErrors');
 
-class ChapterService extends Service {
+class ChapterService extends CrudService {
   constructor() {
     super();
   }
@@ -10,32 +10,6 @@ class ChapterService extends Service {
   fk = `course_id`;
   cols = [`title`, `chips_list`, `is_free`, `is_live`, `serial`];
   types = [`string`, `object`, `boolean`, `boolean`, `integer`];
-  getColumns = () => {
-    var result = `(`;
-    this.cols.map((c, i) => {
-      result += `${c},`;
-    });
-    result += `${this.fk}`;
-    return `${result})`;
-  };
-  getWildCards = () => {
-    var result = `(`;
-    var fields = [...this.cols, this.fk];
-    fields.map((_, i) => {
-      result += `$${i + 1}`;
-      if (i < fields.length - 1) result += ",";
-    });
-    return result + ")";
-  };
-  getUpdatePairs = () => {
-    var result = ``;
-    this.cols.map((c, i) => {
-      result += `
-                ${c} = $${i + 1}`;
-      if (i < this.cols.length - 1) result += ",";
-    });
-    return result;
-  };
 
   list = async (fk_id) => {
     var query = `select * from ${this.table} where ${this.fk} = $1 order by serial`;
@@ -127,13 +101,6 @@ class ChapterService extends Service {
     var result = await this.query(query, params);
     return result;
   };
-  get = async (id) => {
-    var query = `select * from ${this.table} where ${this.pk}=$1`;
-    var params = [id];
-    var result = await this.query(query, params);
-    return result;
-  };
-
   deleteEntry = async (id) => {
     try {
         return await this.withTransaction(async (client) => {

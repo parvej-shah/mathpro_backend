@@ -1,7 +1,7 @@
-const Service = require('../base').Service;
+const { CrudService } = require('../shared/crudService');
 const { safeMessage } = require('../../errors/dbErrors');
 
-class ModuleService extends Service {
+class ModuleService extends CrudService {
     constructor() {
         super();
     }
@@ -28,32 +28,6 @@ class ModuleService extends Service {
         `integer`,
         `integer`
     ]
-    getColumns = () => {
-        var result = `(`
-        this.cols.map((c, i) => {
-            result += `${c},`
-        })
-        result += `${this.fk}`
-        return `${result})`
-    }
-    getWildCards = () => {
-        var result = `(`
-        var fields = [...this.cols, this.fk]
-        fields.map((_, i) => {
-            result += `$${(i + 1)}`;
-            if (i < fields.length - 1) result += ','
-        })
-        return result + ')'
-    }
-    getUpdatePairs = () => {
-        var result = ``
-        this.cols.map((c, i) => {
-            result += `
-                ${c} = $${(i + 1)}`
-            if (i < this.cols.length - 1) result += ','
-        })
-        return result
-    }
 
     list = async (fk_id) => {
         var query = `

@@ -1,6 +1,6 @@
-const Service = require('../base').Service;
+const { CrudService } = require('../shared/crudService');
 
-class AnnouncementService extends Service {
+class AnnouncementService extends CrudService {
   constructor() {
     super();
   }
@@ -22,27 +22,6 @@ class AnnouncementService extends Service {
     if (!Array.isArray(sentMethods)) return [];
     return sentMethods.filter((method) => method === "notification");
   };
-  getColumnsWithParenthesis = () => {
-    var result = `(`;
-    this.cols.map((c, i) => {
-      result += `${c},`;
-    });
-    result += `${this.fk}`;
-    return `${result})`;
-  };
-  getWildCards = () => {
-    var result = `(`;
-    var fields = [...this.cols];
-    var i = 0;
-    fields.map((_, i) => {
-      result += `$${i + 1},`;
-    });
-    result += `$${fields.length + 1}`;
-    return result + ")";
-  }
-  getUpdatePairs = () => {
-    return this.cols.map((c, i) => `${c}=$${i + 1}`)
-  }
   intitializeBooleans = (reqObj) => {
     const sanitizedMethods = this.sanitizeSentMethods(reqObj);
     this.has_notification = sanitizedMethods.includes('notification');
@@ -67,14 +46,11 @@ class AnnouncementService extends Service {
     const result = await this.query(query, params);
     return result;
   }
-  async getEntry(id) {
-    var query = `select * from ${this.table} where id=$1`;
-    var params = [id];
-    const result = await this.query(query, params);
-    return result;
+  getEntry(id) {
+    return this.get(id);
   }
   async create(fk_id, reqObj) {
-    var query = `insert into ${this.table} ${this.getColumnsWithParenthesis()} values ${this.getWildCards()} returning id`;
+    var query = `insert into ${this.table} ${this.getColumns()} values ${this.getWildCards()} returning id`;
     var params = [
       ...this.cols.map((c) => {
         if(c==='user_type') return 3;
@@ -87,12 +63,6 @@ class AnnouncementService extends Service {
       }),fk_id
     ];
     const result = await this.query(query, params);
-    return result;
-  }
-  deleteEntry(id) {
-    var query = `delete from ${this.table} where id=$1`;
-    var params = [id];
-    const result = this.query(query, params);
     return result;
   }
   updateEntry(id, reqObj) { 
