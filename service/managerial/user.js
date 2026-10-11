@@ -9,6 +9,7 @@ const {
 } = require('../../util/authHelpers');
 const { managerialAccountTypes } = require('../../util/constants');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
 
 const messagingService = new MessagingService();
 
@@ -857,14 +858,11 @@ class UserService extends Service {
             }
             const calculatedLogin = normalizedEmail;
 
-            // Build update query dynamically
-            const updates = [];
-            const params = [];
-            let paramIndex = 1;
+            // Columns to update, collected in the order the checks below run
+            const patch = {};
 
             if (name !== undefined) {
-                updates.push(`name = $${paramIndex++}`);
-                params.push(name);
+                patch.name = name;
             }
 
             if (email !== undefined) {
@@ -878,13 +876,12 @@ class UserService extends Service {
                     };
                 }
 
-                updates.push(`email = $${paramIndex++}`);
-                params.push(normalizedEmail);
+                patch.email = normalizedEmail;
             }
 
             if (phone !== undefined) {
                 if (phone === null || phone === '') {
-                    updates.push(`phone = NULL`);
+                    patch.phone = null;
                 } else {
                     // Check if phone already exists (excluding current user)
                     const phoneCheckQuery = `SELECT id FROM managerial_auth WHERE (login = $1 OR phone = $1) AND id != $2`;
@@ -896,14 +893,12 @@ class UserService extends Service {
                         };
                     }
 
-                    updates.push(`phone = $${paramIndex++}`);
-                    params.push(normalizedPhone);
+                    patch.phone = normalizedPhone;
                 }
             }
 
             if (profile !== undefined) {
-                updates.push(`profile = $${paramIndex++}`);
-                params.push(typeof profile === 'string' ? JSON.parse(profile) : profile);
+                patch.profile = typeof profile === 'string' ? JSON.parse(profile) : profile;
             }
 
             // Always update login to match email
@@ -918,29 +913,25 @@ class UserService extends Service {
                     };
                 }
 
-                updates.push(`login = $${paramIndex++}`);
-                params.push(calculatedLogin);
+                patch.login = calculatedLogin;
             }
 
-            if (updates.length === 0) {
+            const { setSql, params, nextIndex } = buildUpdate(['name', 'email', 'phone', 'profile', 'login'], patch);
+            if (!setSql) {
                 return {
                     success: false,
                     error: 'No fields to update'
                 };
             }
 
-            updates.push(`updated_at = NOW()`);
-            params.push(userId);
-
             const updateQuery = `
                 UPDATE managerial_auth 
-                SET ${updates.join(', ')}
-                WHERE id = $${paramIndex} AND type = $${paramIndex + 1}
+                SET ${setSql}, updated_at = NOW()
+                WHERE id = $${nextIndex} AND type = $${nextIndex + 1}
                 RETURNING id, name, type, login, email, phone, profile, created_at, updated_at
             `;
-            params.push(managerialAccountTypes.regular);
 
-            const updateResult = await this.query(updateQuery, params);
+            const updateResult = await this.query(updateQuery, [...params, userId, managerialAccountTypes.regular]);
 
             if (!updateResult.success) {
                 return {

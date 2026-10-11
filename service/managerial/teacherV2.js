@@ -11,6 +11,7 @@ const RoleService = require('./roleService').RoleService;
 const AdminService = require('./admin').AdminService;
 const { createTtlCache } = require('../../util/ttlCache');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
 
 const messagingService = new MessagingService();
 const roleService = new RoleService();
@@ -377,15 +378,11 @@ class TeacherServiceV2 extends TeacherService {
             const existing = existingResult.data[0];
             const currentProfile = existing.profile || {};
 
-            // Build update query
-            const updateFields = [];
-            const updateParams = [];
-            let paramIndex = 1;
+            // Columns to update, collected in the order the checks below run
+            const patch = {};
 
             if (teacherData.name !== undefined) {
-                updateFields.push(`name = $${paramIndex}`);
-                updateParams.push(teacherData.name);
-                paramIndex++;
+                patch.name = teacherData.name;
             }
 
             if (teacherData.login !== undefined) {
@@ -404,9 +401,7 @@ class TeacherServiceV2 extends TeacherService {
                     };
                 }
 
-                updateFields.push(`login = $${paramIndex}`);
-                updateParams.push(teacherData.login);
-                paramIndex++;
+                patch.login = teacherData.login;
             }
 
             // Keep email/phone in sync with login when missing (auth uses login; email/phone used for notifications)
@@ -418,13 +413,9 @@ class TeacherServiceV2 extends TeacherService {
                 const phoneMissing = !(existing.phone && existing.phone.trim());
                 const loginUpdated = teacherData.login !== undefined;
                 if (loginIsEmail && (emailMissing || loginUpdated) && teacherData.email === undefined) {
-                    updateFields.push(`email = $${paramIndex}`);
-                    updateParams.push(trimmedLogin);
-                    paramIndex++;
+                    patch.email = trimmedLogin;
                 } else if (!loginIsEmail && (phoneMissing || loginUpdated) && teacherData.phone === undefined) {
-                    updateFields.push(`phone = $${paramIndex}`);
-                    updateParams.push(trimmedLogin);
-                    paramIndex++;
+                    patch.phone = trimmedLogin;
                 }
             }
 
@@ -465,9 +456,7 @@ class TeacherServiceV2 extends TeacherService {
                     }
 
                     // Set type=1 (admin); do not generate or update password
-                    updateFields.push(`type = $${paramIndex}`);
-                    updateParams.push(managerialAccountTypes.admin);
-                    paramIndex++;
+                    patch.type = managerialAccountTypes.admin;
 
                     if (teacherRoleId) {
                         const assignResult = await roleService.assignRole(teacherId, teacherRoleId, updatedBy);
@@ -489,9 +478,7 @@ class TeacherServiceV2 extends TeacherService {
                     if (teacherRoleId) {
                         await roleService.removeRole(teacherId, teacherRoleId, updatedBy);
                     }
-                    updateFields.push(`type = $${paramIndex}`);
-                    updateParams.push(managerialAccountTypes.regular);
-                    paramIndex++;
+                    patch.type = managerialAccountTypes.regular;
                 }
             }
 
@@ -508,20 +495,21 @@ class TeacherServiceV2 extends TeacherService {
                 isActive: teacherData.isActive !== undefined ? teacherData.isActive : (currentProfile.isActive !== undefined ? currentProfile.isActive : true)
             };
 
-            updateFields.push(`profile = $${paramIndex}`);
-            updateParams.push(JSON.stringify(updatedProfile));
-            paramIndex++;
+            patch.profile = JSON.stringify(updatedProfile);
+
+            const { setSql, params, nextIndex } = buildUpdate(
+                ['name', 'login', 'email', 'phone', 'type', 'profile'], patch
+            );
 
             // Update teacher
-            if (updateFields.length > 0) {
-                updateParams.push(teacherId);
+            if (setSql) {
                 const updateQuery = `
                     UPDATE managerial_auth 
-                    SET ${updateFields.join(', ')}
-                    WHERE id = $${paramIndex}
+                    SET ${setSql}
+                    WHERE id = $${nextIndex}
                     RETURNING id, name, login, type
                 `;
-                const updateResult = await this.query(updateQuery, updateParams);
+                const updateResult = await this.query(updateQuery, [...params, teacherId]);
 
                 if (!updateResult.success) {
                     return {

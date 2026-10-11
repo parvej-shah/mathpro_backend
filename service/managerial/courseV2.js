@@ -9,6 +9,7 @@ const ModuleService = require('./module').ModuleService;
 const ChapterService = require('./chapter').ChapterService;
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
 
 class CourseServiceV2 extends Service {
     constructor() {
@@ -581,64 +582,30 @@ ORDER BY COALESCE(chapter.serial, chapter.id);`;
      */
     async updateImportTracking(importId, updateData) {
         try {
-            const updateFields = [];
-            const updateParams = [];
-            let paramIndex = 1;
-
-            if (updateData.status !== undefined) {
-                updateFields.push(`status = $${paramIndex}`);
-                updateParams.push(updateData.status);
-                paramIndex++;
-            }
-
-            if (updateData.course_id !== undefined) {
-                updateFields.push(`course_id = $${paramIndex}`);
-                updateParams.push(updateData.course_id);
-                paramIndex++;
-            }
-
-            if (updateData.summary !== undefined) {
-                updateFields.push(`summary = $${paramIndex}`);
-                updateParams.push(JSON.stringify(updateData.summary));
-                paramIndex++;
-            }
-
-            if (updateData.errors !== undefined) {
-                updateFields.push(`errors = $${paramIndex}`);
-                updateParams.push(JSON.stringify(updateData.errors));
-                paramIndex++;
-            }
-
-            if (updateData.warnings !== undefined) {
-                updateFields.push(`warnings = $${paramIndex}`);
-                updateParams.push(JSON.stringify(updateData.warnings));
-                paramIndex++;
-            }
-
-            if (updateData.progress !== undefined) {
-                updateFields.push(`progress = $${paramIndex}`);
-                updateParams.push(JSON.stringify(updateData.progress));
-                paramIndex++;
-            }
+            const json = JSON.stringify;
+            const { setSql, params, nextIndex } = buildUpdate(
+                ['status', 'course_id', 'summary', 'errors', 'warnings', 'progress'],
+                updateData,
+                { transforms: { summary: json, errors: json, warnings: json, progress: json } }
+            );
+            const sets = setSql ? [setSql] : [];
 
             if (updateData.status === 'completed' || updateData.status === 'failed' || updateData.status === 'partial') {
-                updateFields.push(`completed_at = NOW()`);
+                sets.push(`completed_at = NOW()`);
             }
 
-            if (updateFields.length === 0) {
+            if (sets.length === 0) {
                 return { success: true };
             }
 
-            updateParams.push(importId);
-
             const updateQuery = `
                 UPDATE course_import_tracking
-                SET ${updateFields.join(', ')}
-                WHERE import_id = $${paramIndex}
+                SET ${sets.join(', ')}
+                WHERE import_id = $${nextIndex}
                 RETURNING import_id, status
             `;
 
-            const result = await this.query(updateQuery, updateParams);
+            const result = await this.query(updateQuery, [...params, importId]);
 
             return {
                 success: result.success,

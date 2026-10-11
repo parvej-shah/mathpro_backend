@@ -6,6 +6,15 @@
 const ModuleService = require('./module').ModuleService;
 const { validateGoogleDriveLink } = require('../../util/googleDriveValidation');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
+
+// Columns updateEnhanced may set, in SET-list order.
+const MODULE_UPDATE_COLUMNS = [
+    'title', 'description', 'score', 'is_live', 'is_free', 'serial',
+    'quiz_time_limit', 'quiz_attempt_limit',
+    'live_status', 'live_meeting_id', 'live_meeting_pass', 'live_scheduled_at',
+    'data', 'pdf_drive_link',
+];
 
 class ModuleServiceV2 extends ModuleService {
     constructor() {
@@ -153,31 +162,20 @@ class ModuleServiceV2 extends ModuleService {
             }
 
             // Update module
-            const updateFields = ['data = $1'];
-            const updateParams = [JSON.stringify(moduleData)];
-            let paramIndex = 2;
-
-            if (quizData.metadata?.time_limit !== undefined) {
-                updateFields.push(`quiz_time_limit = $${paramIndex}`);
-                updateParams.push(quizData.metadata.time_limit);
-                paramIndex++;
-            }
-
-            if (quizData.metadata?.attempt_limit !== undefined) {
-                updateFields.push(`quiz_attempt_limit = $${paramIndex}`);
-                updateParams.push(quizData.metadata.attempt_limit);
-                paramIndex++;
-            }
-
-            updateParams.push(moduleId);
+            const limits = buildUpdate(['quiz_time_limit', 'quiz_attempt_limit'], {
+                quiz_time_limit: quizData.metadata?.time_limit,
+                quiz_attempt_limit: quizData.metadata?.attempt_limit,
+            }, { startIndex: 2 });
+            const sets = ['data = $1'];
+            if (limits.setSql) sets.push(limits.setSql);
 
             const updateQuery = `
-                UPDATE module 
-                SET ${updateFields.join(', ')}
-                WHERE id = $${paramIndex}
+                UPDATE module
+                SET ${sets.join(', ')}
+                WHERE id = $${limits.nextIndex}
                 RETURNING id
             `;
-            const updateResult = await this.query(updateQuery, updateParams);
+            const updateResult = await this.query(updateQuery, [JSON.stringify(moduleData), ...limits.params, moduleId]);
 
             if (!updateResult.success) {
                 return {
@@ -356,31 +354,6 @@ class ModuleServiceV2 extends ModuleService {
             }
 
             const module = moduleResult.data[0];
-            const updateFields = [];
-            const updateParams = [];
-            let paramIndex = 1;
-
-            // Handle standard fields
-            const standardFields = ['title', 'description', 'score', 'is_live', 'is_free', 'serial'];
-            for (const field of standardFields) {
-                if (updateData[field] !== undefined) {
-                    updateFields.push(`${field} = $${paramIndex}`);
-                    updateParams.push(updateData[field]);
-                    paramIndex++;
-                }
-            }
-
-            if (updateData.quiz_time_limit !== undefined) {
-                updateFields.push(`quiz_time_limit = $${paramIndex}`);
-                updateParams.push(updateData.quiz_time_limit);
-                paramIndex++;
-            }
-
-            if (updateData.quiz_attempt_limit !== undefined) {
-                updateFields.push(`quiz_attempt_limit = $${paramIndex}`);
-                updateParams.push(updateData.quiz_attempt_limit);
-                paramIndex++;
-            }
 
             // Live-Class toggle fields (live overlay on a VIDEO module)
             if (updateData.live_status !== undefined) {
@@ -395,42 +368,6 @@ class ModuleServiceV2 extends ModuleService {
                         }
                     };
                 }
-                updateFields.push(`live_status = $${paramIndex}`);
-                updateParams.push(updateData.live_status);
-                paramIndex++;
-            }
-
-            if (updateData.live_meeting_id !== undefined) {
-                updateFields.push(`live_meeting_id = $${paramIndex}`);
-                updateParams.push(updateData.live_meeting_id);
-                paramIndex++;
-            }
-
-            if (updateData.live_meeting_pass !== undefined) {
-                updateFields.push(`live_meeting_pass = $${paramIndex}`);
-                updateParams.push(updateData.live_meeting_pass);
-                paramIndex++;
-            }
-
-            if (updateData.live_scheduled_at !== undefined) {
-                updateFields.push(`live_scheduled_at = $${paramIndex}`);
-                updateParams.push(updateData.live_scheduled_at);
-                paramIndex++;
-            }
-
-            // Handle data field (JSON)
-            if (updateData.data !== undefined) {
-                updateFields.push(`data = $${paramIndex}`);
-                // Handle null or object
-                if (updateData.data === null) {
-                    updateParams.push(null);
-                } else if (typeof updateData.data === 'object') {
-                    updateParams.push(JSON.stringify(updateData.data));
-                } else {
-                    // If it's already a string, use it as-is (shouldn't happen but handle it)
-                    updateParams.push(updateData.data);
-                }
-                paramIndex++;
             }
 
             // Handle pdf_drive_link — accept as top-level field or from data, persist to column
@@ -452,21 +389,22 @@ class ModuleServiceV2 extends ModuleService {
                         };
                     }
                 }
-                updateFields.push(`pdf_drive_link = $${paramIndex}`);
-                updateParams.push(pdfLink);
-                paramIndex++;
             }
 
+            // data (JSON) is stored as given when null or already a string
+            const { setSql, params, nextIndex } = buildUpdate(MODULE_UPDATE_COLUMNS, { ...updateData, pdf_drive_link: pdfLink }, {
+                transforms: { data: (value) => (value !== null && typeof value === 'object' ? JSON.stringify(value) : value) },
+            });
+
             // Update module
-            if (updateFields.length > 0) {
-                updateParams.push(moduleId);
+            if (setSql) {
                 const updateQuery = `
-                    UPDATE module 
-                    SET ${updateFields.join(', ')}
-                    WHERE id = $${paramIndex}
+                    UPDATE module
+                    SET ${setSql}
+                    WHERE id = $${nextIndex}
                     RETURNING id, title
                 `;
-                const updateResult = await this.query(updateQuery, updateParams);
+                const updateResult = await this.query(updateQuery, [...params, moduleId]);
 
                 if (!updateResult.success) {
                     return {

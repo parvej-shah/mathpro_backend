@@ -1,6 +1,7 @@
 const Service = require("../base").Service;
 const { createTtlCache } = require("../../util/ttlCache");
 const { v4: uuidv4 } = require("uuid");
+const { buildUpdate } = require("../../util/buildUpdate");
 
 const publicTestimonialCache = createTtlCache(15000);
 
@@ -125,26 +126,15 @@ class TestimonialService extends Service {
     // live on feedbacks, not public_testimonial — patch whichever are supplied. This
     // works regardless of featured status, so the Review Library (not yet featured)
     // can edit these too, not just the Featured selection.
-    const feedbackFieldMap = {
-      comment: "comment",
-      avatar_url: "avatar_url",
-      institution_name: "institution_name",
-      institution_logo_url: "institution_logo_url",
-      hook_text: "hook_text",
-    };
-    const feedbackUpdates = Object.entries(feedbackFieldMap).filter(
-      ([payloadKey]) => payload[payloadKey] !== undefined
-    );
-    if (feedbackUpdates.length > 0) {
-      const setClause = feedbackUpdates
-        .map(([, column], i) => `${column} = $${i + 1}`)
-        .join(", ");
-      const values = feedbackUpdates.map(
-        ([payloadKey]) => String(payload[payloadKey] || "").trim() || null
-      );
+    const feedbackColumns = ["comment", "avatar_url", "institution_name", "institution_logo_url", "hook_text"];
+    const trimOrNull = (value) => String(value || "").trim() || null;
+    const { setSql, params, nextIndex } = buildUpdate(feedbackColumns, payload, {
+      transforms: Object.fromEntries(feedbackColumns.map((column) => [column, trimOrNull])),
+    });
+    if (setSql) {
       const feedbackResult = await this.query(
-        `UPDATE feedbacks SET ${setClause} WHERE id = $${values.length + 1}`,
-        [...values, feedbackId]
+        `UPDATE feedbacks SET ${setSql} WHERE id = $${nextIndex}`,
+        [...params, feedbackId]
       );
       if (!feedbackResult.success) return feedbackResult;
     }

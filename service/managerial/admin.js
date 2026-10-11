@@ -9,6 +9,10 @@ const {
 } = require('../../util/authHelpers');
 const { managerialAccountTypes, SUPER_ADMIN_ROLE_NAME } = require('../../util/constants');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
+
+// Columns update() may set, in SET-list order (an email change sets login then email).
+const ADMIN_UPDATE_COLUMNS = ['name', 'type', 'login', 'email', 'phone', 'profile', 'password'];
 
 const messagingService = new MessagingService();
 
@@ -482,16 +486,14 @@ class AdminService extends Service {
                 return { success: false, error: 'No fields to update' };
             }
 
-            const assignments = changes.map(([column], i) => `${column} = $${i + 1}`);
-            assignments.push(`updated_at = NOW()`);
-            const params = [...changes.map(([, value]) => value), id];
+            const { setSql, params, nextIndex } = buildUpdate(ADMIN_UPDATE_COLUMNS, Object.fromEntries(changes));
 
             const updateResult = await this.query(`
                 UPDATE managerial_auth 
-                SET ${assignments.join(', ')}
-                WHERE id = $${params.length}
+                SET ${setSql}, updated_at = NOW()
+                WHERE id = $${nextIndex}
                 RETURNING id, name, type, login, email, phone, profile, created_at, updated_at
-            `, params);
+            `, [...params, id]);
 
             if (!updateResult.success) {
                 return {

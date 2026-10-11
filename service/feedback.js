@@ -1,6 +1,7 @@
 const Service = require('./base').Service;
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../util/logger');
+const { buildUpdate } = require('../util/buildUpdate');
 
 class FeedbackService extends Service {
     constructor() {
@@ -187,43 +188,25 @@ class FeedbackService extends Service {
                 };
             }
 
-            // Build update query dynamically
-            const updateFields = [];
-            const updateValues = [];
-            let paramIndex = 1;
-
-            if (updateData.rating !== undefined) {
-                if (updateData.rating < 1 || updateData.rating > 5) {
-                    return {
-                        success: false,
-                        error: 'Invalid rating value'
-                    };
-                }
-                updateFields.push(`rating = $${paramIndex++}`);
-                updateValues.push(updateData.rating);
+            if (updateData.rating !== undefined && (updateData.rating < 1 || updateData.rating > 5)) {
+                return {
+                    success: false,
+                    error: 'Invalid rating value'
+                };
             }
 
-            if (updateData.comment !== undefined) {
-                updateFields.push(`comment = $${paramIndex++}`);
-                updateValues.push(updateData.comment);
-            }
-
-            if (updateData.category !== undefined) {
-                updateFields.push(`category = $${paramIndex++}`);
-                updateValues.push(updateData.category);
-            }
-
-            if (updateFields.length === 0) {
+            const { setSql, params, nextIndex } = buildUpdate(['rating', 'comment', 'category'], updateData);
+            if (!setSql) {
                 return {
                     success: false,
                     error: 'No fields to update'
                 };
             }
 
-            updateValues.push(feedbackId);
-            const updateQuery = `UPDATE feedbacks SET ${updateFields.join(', ')} WHERE id = $${paramIndex}`;
-
-            const result = await this.query(updateQuery, updateValues);
+            const result = await this.query(
+                `UPDATE feedbacks SET ${setSql} WHERE id = $${nextIndex}`,
+                [...params, feedbackId]
+            );
 
             if (result.success) {
                 return {

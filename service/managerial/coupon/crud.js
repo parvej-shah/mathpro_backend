@@ -4,6 +4,7 @@ const { Service } = require("../../base");
 const CouponValidator = require("../CouponValidator");
 const CouponAuditLogger = require("../CouponAuditLogger");
 const logger = require('../../../util/logger');
+const { buildUpdate } = require('../../../util/buildUpdate');
 
 class CouponCrudService extends Service {
   constructor() {
@@ -229,49 +230,30 @@ class CouponCrudService extends Service {
         endTime: "end_time",
       };
 
-      const updateFields = [];
-      const updateValues = [];
-      let paramIndex = 1;
+      const patch = {};
+      for (const [key, value] of Object.entries(validatedData)) {
+        patch[fieldNameMap[key] || key] = value;
+      }
 
-      // Build dynamic update query
-      Object.keys(validatedData).forEach((key) => {
-        // Map camelCase to snake_case if needed
-        const dbFieldName = fieldNameMap[key] || key;
-        
-        if (allowedFields.includes(dbFieldName)) {
-          updateFields.push(`${dbFieldName} = $${paramIndex}`);
-          updateValues.push(
-            dbFieldName === "metadata"
-              ? JSON.stringify(validatedData[key])
-              : validatedData[key]
-          );
-          paramIndex++;
-        }
+      const { setSql, params, nextIndex } = buildUpdate(allowedFields, patch, {
+        transforms: { metadata: JSON.stringify },
       });
 
-      if (updateFields.length === 0) {
+      if (!setSql) {
         return {
           success: false,
           error: "No valid fields to update",
         };
       }
 
-      // Add updated_at timestamp
-      updateFields.push(`updated_at = $${paramIndex}`);
-      updateValues.push(Math.floor(Date.now() / 1000));
-      paramIndex++;
-
-      // Add ID for WHERE clause
-      updateValues.push(id);
-
       const result = await this.query(
         `
-                UPDATE coupons 
-                SET ${updateFields.join(", ")}
-                WHERE id = $${paramIndex}
+                UPDATE coupons
+                SET ${setSql}, updated_at = $${nextIndex}
+                WHERE id = $${nextIndex + 1}
                 RETURNING *
             `,
-        updateValues
+        [...params, Math.floor(Date.now() / 1000), id]
       );
 
       if (result.success) {

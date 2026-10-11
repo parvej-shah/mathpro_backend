@@ -2,6 +2,7 @@ const Service = require('../base').Service;
 const sslcommerz = require('../../integrations/sslcommerz');
 const CouponService = require('../managerial/coupon');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
 
 const couponService = new CouponService();
 
@@ -697,47 +698,22 @@ class PaymentService extends Service {
     // Update payment audit log after processing
     updatePaymentLog = async (logId, updateData) => {
         try {
-            const {
-                processing_status,
-                error_message,
-                processing_result,
-                retry_count
-            } = updateData;
-
-            const updates = [];
-            const params = [];
-            let paramIndex = 1;
-
-            if (processing_status !== undefined) {
-                updates.push(`processing_status = $${paramIndex++}`);
-                params.push(processing_status);
-            }
-            if (error_message !== undefined) {
-                updates.push(`error_message = $${paramIndex++}`);
-                params.push(error_message);
-            }
-            if (processing_result !== undefined) {
-                updates.push(`processing_result = $${paramIndex++}`);
-                params.push(JSON.stringify(processing_result));
-            }
-            if (retry_count !== undefined) {
-                updates.push(`retry_count = $${paramIndex++}`);
-                params.push(retry_count);
-            }
-
-            updates.push(`processed_at = $${paramIndex++}`);
-            params.push(parseInt(Date.now() / 1000));
-
-            params.push(logId);
+            const { setSql, params, nextIndex } = buildUpdate(
+                ['processing_status', 'error_message', 'processing_result', 'retry_count'],
+                updateData,
+                { transforms: { processing_result: JSON.stringify } }
+            );
+            const sets = setSql ? [setSql] : [];
+            sets.push(`processed_at = $${nextIndex}`);
 
             const query = `
                 UPDATE payment_audit_log
-                SET ${updates.join(', ')}
-                WHERE id = $${paramIndex}
+                SET ${sets.join(', ')}
+                WHERE id = $${nextIndex + 1}
                 RETURNING *
             `;
 
-            const result = await this.query(query, params);
+            const result = await this.query(query, [...params, parseInt(Date.now() / 1000), logId]);
             return result;
         } catch (error) {
             logger.error('Error updating payment log:', error);
