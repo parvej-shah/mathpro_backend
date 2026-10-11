@@ -1,6 +1,7 @@
 const Controller = require("../base").Controller;
 const { respond, catchAs } = require('../base');
 const FeedbackService = require("../../service/feedback").FeedbackService;
+const { parsePagination } = require('../../util/pagination');
 
 const feedbackService = new FeedbackService();
 
@@ -70,8 +71,7 @@ class FeedbackController extends Controller {
     // Get course feedbacks (paginated)
     getCourseFeedbacks = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
         const { courseId } = req.params;
-        const page = parseInt(req.query.page) || 1;
-        const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 per page
+        const { page, limit } = parsePagination(req.query, { defaultLimit: 10, maxLimit: 50 });
 
         const result = await feedbackService.getCourseFeedbacks(courseId, page, limit);
         return respond(res, result);

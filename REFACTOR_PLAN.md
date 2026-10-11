@@ -312,11 +312,12 @@ the catalogue in `.claude/conventions.md` so future work reuses it instead of re
   class of SQL-injection risk from un-whitelisted column names. *M.* ✅ unit tests for whitelist,
   empty patch and `null` values.
   Introduced as `util/buildUpdate.js` (whitelist-ordered columns, `undefined` skipped, `null` written, optional per-column transforms). Adopted in `moduleFeedback.updateReason` and `roleService.updateRole`; the other builders (`user`, `payment`, `book`, …) adopt it as each file is next touched.
-- [ ] **R2 Pagination.** `parsePagination(query, {defaultLimit, maxLimit})` +
+- [~] **R2 Pagination.** `parsePagination(query, {defaultLimit, maxLimit})` +
   `paginatedQuery(service, sql, params, page)` that returns the shape each endpoint already uses.
   Replaces 26 hand-parsed `req.query.page/limit` sites and 16 `LIMIT/OFFSET` builders.
   *Duplicate Code → Extract Function.* Response keys **must** match per endpoint (some say
   `total`, some `totalCount`), so the helper returns raw numbers and the caller keeps its envelope. *L.*
+  Introduced as `util/pagination.js` `parsePagination` (`parseInt(x) || default`, capped limit, plus offset). Adopted in `user/feedback.getCourseFeedbacks`. Call sites that use `x ? parseInt(x) : d` differ for `0`/junk input (they pass 0/NaN through), so each is adopted only after checking that edge; `paginatedQuery` is deferred until a second adopter shows the common shape.
 - [ ] **R3 `BaseCrudService`** (*Duplicate Code → Pull Up Method / Form Template Method*).
   `Service` subclasses already declare `table`, `pk` and `cols`, but nothing uses them. A
   `CrudService` with `findById`, `list`, `create`, `update` (via R1) and `remove`, with hooks
