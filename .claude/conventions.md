@@ -105,6 +105,22 @@ swagger/user.yaml           OpenAPI spec — the contract reference
 - Migrations are numbered SQL files in `database/migrations/`, run via
   `database/runMigration.js`. New schema changes get the next sequential number.
 
+## Shared building blocks (reuse these, don't re-write them)
+
+| Need | Use | Notes |
+|---|---|---|
+| Dynamic `UPDATE … SET` | `util/buildUpdate.js` `buildUpdate(allowedCols, patch, {transforms, startIndex})` | Whitelist of columns, `undefined` skipped, `null` written. Never build `SET` from request keys. |
+| `page` / `limit` from a query | `util/pagination.js` `parsePagination(query, {defaultLimit, maxLimit})` | Returns raw numbers + offset; you keep your own response envelope. |
+| Single-table service with `table`/`pk` | `service/shared/crudService.js` `CrudService` | Only `deleteEntry` is shared (`deleteReturning` for the RETURNING list). |
+| Course / bundle / book metadata | `util/itemTypes.js` `byKey`, `byPaymentType` | Add a new purchasable type here first. |
+| Trivial controller method | `handle((req) => service.x(...))` from `controllers/base.js` | Service result → `respond()` (200/400). Use `catchAs` where an endpoint has its own 500 body. |
+| Course-scope checks | `util/courseAccessHelpers.js` + `controllers/shared/courseAccess.js` | `checkCourseAccess`, `getAccessibleCourseIds`, `rejectCourseFilter`, `noCourseAccess`. |
+| Analytics date ranges / filters | `util/analyticsV2/dateUtils.js`, `queryUtils.js` | Used by `analyticsV2`; coupon and feedback stats still hand-roll theirs. |
+| Request-body checks | `middleware/validate.js` `validate({required, error})` | Place after rate limiters. |
+| Multi-statement writes | `Service.withTransaction` | Everything on one client; see `paymentFulfillment`. |
+| SSLCommerz calls | `integrations/sslcommerz.js` | The only place that constructs the client or reads `SSLCOMMERZ_LIVE`. |
+| Outgoing logs | `util/logger.js` | Not `console.log` / `console.error`. |
+
 ## Verification
 
 - `npm run lint` — `node -c` syntax check + ESLint (`eslint.config.js`: errors on undefined

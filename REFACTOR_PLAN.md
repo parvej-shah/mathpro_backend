@@ -336,14 +336,16 @@ the catalogue in `.claude/conventions.md` so future work reuses it instead of re
   standard Express handler (call → `respond`), so trivial controller methods become one line.
   Hand-written methods stay only where there's real request translation. *L.*
   Introduced as `handle(call)` in `controllers/base.js`; `managerial/faq` controller is now five one-liners. Other controllers adopt it as they are next touched.
-- [ ] **R6 Access-control helpers.** Consolidate course-scope checks spread across controllers
+- [~] **R6 Access-control helpers.** Consolidate course-scope checks spread across controllers
   (`getAccessibleCourseIds` / `checkCourseAccess` from `util/courseAccessHelpers.js`, plus
   inline variants) behind `requireCourseAccess` middleware or one service call. *M,* touches
   auth, so tests first (3.3).
-- [ ] **R7 Analytics query kit.** `parseDateRange(query)` + shared filter/WHERE builders for
+  Already consolidated by Phase 3: `util/courseAccessHelpers.js` plus `controllers/shared/courseAccess.js` (`noCourseAccess`, `rejectCourseFilter`). A `requireCourseAccess` middleware is deferred: each route resolves its course id differently (param, body, resource lookup), so one middleware would need a resolver per route and touches the auth path for little gain.
+- [~] **R7 Analytics query kit.** `parseDateRange(query)` + shared filter/WHERE builders for
   the date-range and filter parsing repeated across `coupon` analytics, `analyticsV2Service`,
   `revenueService` and `feedback` stats. Prerequisite for splitting analytics in 4.6. *M.*
-- [ ] **R8 Document the catalogue.** Add a "Shared building blocks" section to
+  `util/analyticsV2/dateUtils.js` (`parseDateRange`) and `queryUtils.js` (`buildDateFilter`, …) already serve the split `analyticsV2` parts. `coupon/analytics.js` and `feedback` stats still hand-roll their `startDate`/`endDate` filters; they have no pinning tests, so moving them onto `buildDateFilter` is deferred until they do.
+- [x] **R8 Document the catalogue.** Add a "Shared building blocks" section to
   `.claude/conventions.md` (what exists and when to use it) so new code stops duplicating. *L.*
 
 ### Phase 4 — Break up the god classes (highest value, highest risk)
