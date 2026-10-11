@@ -138,6 +138,84 @@ async function updateImportedModule(client, mod, moduleId) {
     ]);
 }
 
+// How each import mode finds or creates the course: { courseId } or { error }.
+const IMPORT_COURSE_MODES = {
+    create: async (client, course) => {
+        const existing = await client.query(`SELECT id FROM course WHERE title = $1`, [course.title]);
+        if (existing.rows.length > 0) {
+            return { error: `Course with title "${course.title}" already exists` };
+        }
+        const courseId = await insertImportedCourse(client, course);
+        return courseId ? { courseId } : { error: 'Failed to create course' };
+    },
+    update: async (client, course) => {
+        const courseId = await findImportedCourseId(client, course);
+        if (!courseId) return { error: 'Course not found for update' };
+        await updateImportedCourse(client, course, courseId);
+        return { courseId };
+    },
+    upsert: async (client, course) => {
+        const existingId = await findImportedCourseId(client, course);
+        if (!existingId) return { courseId: await insertImportedCourse(client, course) };
+        await updateImportedCourse(client, course, existingId);
+        return { courseId: existingId };
+    },
+};
+
+// Writes the whole import on the transaction client. update/upsert match existing chapters
+// and modules by serial and update them; anything unmatched is inserted.
+async function writeImport(client, courseData, importMode) {
+    const { courseId, error } = await IMPORT_COURSE_MODES[importMode](client, courseData.course);
+    if (error) return { success: false, error };
+
+    const matchExisting = importMode === 'update' || importMode === 'upsert';
+    let chaptersCreated = 0;
+    let modulesCreated = 0;
+
+    for (const chapterData of courseData.chapters) {
+        if (!chapterData) continue;
+
+        let chapterId = matchExisting ? await findChapterId(client, courseId, chapterData.serial) : null;
+        if (chapterId) {
+            await updateImportedChapter(client, chapterData, chapterId);
+        } else {
+            chapterId = await insertImportedChapter(client, courseId, chapterData);
+            chaptersCreated++;
+        }
+
+        for (const mod of Array.isArray(chapterData.modules) ? chapterData.modules : []) {
+            if (!mod) continue;
+
+            const moduleId = matchExisting ? await findModuleId(client, chapterId, mod.serial) : null;
+            if (moduleId) {
+                await updateImportedModule(client, mod, moduleId);
+            } else {
+                await insertImportedModule(client, chapterId, mod);
+                modulesCreated++;
+            }
+        }
+    }
+
+    return { success: true, courseId, chaptersCreated, modulesCreated };
+}
+
+// Validate-only result: chapter and module counts, modules per category.
+function importValidationSummary(courseData) {
+    const summary = {
+        total_chapters: courseData.chapters.length,
+        total_modules: courseData.chapters.reduce((sum, ch) => sum + (ch.modules?.length || 0), 0),
+        modules_by_type: {}
+    };
+    for (const ch of courseData.chapters) {
+        for (const mod of Array.isArray(ch.modules) ? ch.modules : []) {
+            if (mod && mod.category) {
+                summary.modules_by_type[mod.category] = (summary.modules_by_type[mod.category] || 0) + 1;
+            }
+        }
+    }
+    return summary;
+}
+
 class CourseImportExportService extends CourseServiceV2 {
     constructor() {
         super();
@@ -462,216 +540,37 @@ class CourseImportExportService extends CourseServiceV2 {
     }
 
     /**
-     * Process import (async)
+     * Process import (async): parse, validate, then either record a validation summary or
+     * write the course in one transaction. Every outcome lands on the import tracking row.
      * @private
      */
     async processImport(uploadKey, format, importMode, createdBy, importId, validateOnly) {
+        const fail = (errors) => this.updateImportTracking(importId, { status: 'failed', errors });
         try {
-            const fileContent = await presignedUploadService.getObjectText(uploadKey);
+            const parsed = await this.parseImportFile(uploadKey, format);
+            if (parsed.errors) return await fail(parsed.errors);
 
-            // Parse file
-            let parseResult;
-            if (format === 'json') {
-                parseResult = await this.parseJSONFile(fileContent);
-            } else if (format === 'csv') {
-                parseResult = await this.parseCSVFile(fileContent);
-            } else {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ error: `Unsupported format: ${format}` }]
-                });
-                return;
-            }
-
-            if (!parseResult.success) {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ error: parseResult.error }]
-                });
-                return;
-            }
-
-            const courseData = parseResult.data;
-
-            // Strict validation - fail on first error
-            const courseValidation = this.validateCourseData(courseData.course);
-            if (!courseValidation.valid) {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ type: 'course', error: courseValidation.errors }]
-                });
-                return;
-            }
-
-            // Validate chapters
-            if (!courseData.chapters || !Array.isArray(courseData.chapters)) {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ type: 'chapters', error: 'Chapters array is required' }]
-                });
-                return;
-            }
-
-            const chapterErrors = {};
-            for (let i = 0; i < courseData.chapters.length; i++) {
-                const chapter = courseData.chapters[i];
-                if (!chapter) {
-                    chapterErrors[`chapter_${i}`] = 'Chapter is null or undefined';
-                    continue;
-                }
-                const chapterValidation = this.validateChapterData(chapter, i);
-                if (!chapterValidation.valid) {
-                    Object.assign(chapterErrors, chapterValidation.errors);
-                }
-            }
-
-            if (Object.keys(chapterErrors).length > 0) {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ type: 'chapters', error: chapterErrors }]
-                });
-                return;
-            }
-
-            // Validate modules
-            const moduleErrors = {};
-            for (let i = 0; i < courseData.chapters.length; i++) {
-                const chapter = courseData.chapters[i];
-                if (!chapter) continue; // Skip null chapters
-                
-                if (chapter.modules && Array.isArray(chapter.modules)) {
-                    for (let j = 0; j < chapter.modules.length; j++) {
-                        const module = chapter.modules[j];
-                        if (!module) {
-                            moduleErrors[`chapter_${i}_module_${j}`] = 'Module is null or undefined';
-                            continue;
-                        }
-                        const moduleValidation = this.validateModuleData(module, i, j);
-                        if (!moduleValidation.valid) {
-                            Object.assign(moduleErrors, moduleValidation.errors);
-                        }
-                    }
-                }
-            }
-
-            if (Object.keys(moduleErrors).length > 0) {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ type: 'modules', error: moduleErrors }]
-                });
-                return;
-            }
+            const courseData = parsed.data;
+            const validationErrors = this.importValidationErrors(courseData);
+            if (validationErrors) return await fail(validationErrors);
 
             if (validateOnly) {
-                // Return validation summary
-                const summary = {
-                    total_chapters: courseData.chapters.length,
-                    total_modules: courseData.chapters.reduce((sum, ch) => sum + (ch.modules?.length || 0), 0),
-                    modules_by_type: {}
-                };
-
-                courseData.chapters.forEach(ch => {
-                    if (ch && ch.modules && Array.isArray(ch.modules)) {
-                        ch.modules.forEach(mod => {
-                            if (mod && mod.category) {
-                                summary.modules_by_type[mod.category] = (summary.modules_by_type[mod.category] || 0) + 1;
-                            }
-                        });
-                    }
-                });
-
-                await this.updateImportTracking(importId, {
+                return await this.updateImportTracking(importId, {
                     status: 'completed',
-                    summary: summary
+                    summary: importValidationSummary(courseData)
                 });
-                return;
             }
 
-            // Actually import the course
-            let courseId = null;
+            const outcome = await this.withTransaction((client) => writeImport(client, courseData, importMode));
+            if (!outcome.success) return await fail([{ error: outcome.error }]);
 
-            const outcome = await this.withTransaction(async (client) => {
-
-                // Handle import modes
-                if (importMode === 'create') {
-                    // Check if course with same title exists
-                    const existingCourseQuery = `SELECT id FROM course WHERE title = $1`;
-                    const existingResult = await client.query(existingCourseQuery, [courseData.course.title]);
-                    
-                    if (existingResult.rows.length > 0) {
-                        return { success: false, error: `Course with title "${courseData.course.title}" already exists` };
-                    }
-
-                    courseId = await insertImportedCourse(client, courseData.course);
-                    if (!courseId) {
-                        return { success: false, error: 'Failed to create course' };
-                    }
-
-                } else if (importMode === 'update') {
-                    courseId = await findImportedCourseId(client, courseData.course);
-                    if (!courseId) {
-                        return { success: false, error: 'Course not found for update' };
-                    }
-                    await updateImportedCourse(client, courseData.course, courseId);
-
-                } else if (importMode === 'upsert') {
-                    const existingId = await findImportedCourseId(client, courseData.course);
-                    if (existingId) {
-                        courseId = existingId;
-                        await updateImportedCourse(client, courseData.course, courseId);
-                    } else {
-                        courseId = await insertImportedCourse(client, courseData.course);
-                    }
-                }
-
-                // Process chapters and modules. update/upsert match existing rows by serial.
-                const matchExisting = importMode === 'update' || importMode === 'upsert';
-                let chaptersCreated = 0;
-                let modulesCreated = 0;
-
-                for (const chapterData of courseData.chapters) {
-                    if (!chapterData) continue; // Skip null/undefined chapters
-
-                    let chapterId = matchExisting ? await findChapterId(client, courseId, chapterData.serial) : null;
-                    if (chapterId) {
-                        await updateImportedChapter(client, chapterData, chapterId);
-                    } else {
-                        chapterId = await insertImportedChapter(client, courseId, chapterData);
-                        chaptersCreated++;
-                    }
-
-                    // Process modules
-                    if (chapterData.modules && Array.isArray(chapterData.modules)) {
-                        for (const moduleData of chapterData.modules) {
-                            if (!moduleData) continue; // Skip null/undefined modules
-
-                            const moduleId = matchExisting ? await findModuleId(client, chapterId, moduleData.serial) : null;
-                            if (moduleId) {
-                                await updateImportedModule(client, moduleData, moduleId);
-                            } else {
-                                await insertImportedModule(client, chapterId, moduleData);
-                                modulesCreated++;
-                            }
-                        }
-                    }
-                }
-
-                return { success: true, chaptersCreated, modulesCreated };
-            });
-
-            if (!outcome.success) {
-                await this.updateImportTracking(importId, {
-                    status: 'failed',
-                    errors: [{ error: outcome.error }]
-                });
-                return;
-            }
-
-            // Update import tracking with success
+            const { courseId } = outcome;
             await this.updateImportTracking(importId, {
                 status: 'completed',
                 course_id: courseId,
                 summary: {
+                    // CURRENT BEHAVIOUR: courseId is always set here, so an upsert never reports
+                    // "created" and its course_updated is the id (pinned in courseImport.test.js).
                     course_created: importMode === 'create' || (importMode === 'upsert' && !courseId),
                     course_updated: importMode === 'update' || (importMode === 'upsert' && courseId),
                     chapters_created: outcome.chaptersCreated,
@@ -680,11 +579,57 @@ class CourseImportExportService extends CourseServiceV2 {
             });
         } catch (error) {
             logger.error('Error processing import:', error);
-            await this.updateImportTracking(importId, {
-                status: 'failed',
-                errors: [{ error: error.message }]
-            });
+            await fail([{ error: error.message }]);
         }
+    }
+
+    // The uploaded file as course data: { data } or { errors } for the tracking row.
+    async parseImportFile(uploadKey, format) {
+        const fileContent = await presignedUploadService.getObjectText(uploadKey);
+        const parse = { json: this.parseJSONFile, csv: this.parseCSVFile }[format];
+        if (!parse) return { errors: [{ error: `Unsupported format: ${format}` }] };
+        const parseResult = await parse.call(this, fileContent);
+        return parseResult.success ? { data: parseResult.data } : { errors: [{ error: parseResult.error }] };
+    }
+
+    // Strict validation, one level at a time: the course (first error), then every chapter,
+    // then every module. Returns the tracking-row errors, or null when the data is valid.
+    importValidationErrors(courseData) {
+        const courseValidation = this.validateCourseData(courseData.course);
+        if (!courseValidation.valid) {
+            return [{ type: 'course', error: courseValidation.errors }];
+        }
+        if (!courseData.chapters || !Array.isArray(courseData.chapters)) {
+            return [{ type: 'chapters', error: 'Chapters array is required' }];
+        }
+
+        const chapterErrors = {};
+        courseData.chapters.forEach((chapter, i) => {
+            if (!chapter) {
+                chapterErrors[`chapter_${i}`] = 'Chapter is null or undefined';
+                return;
+            }
+            Object.assign(chapterErrors, this.validateChapterData(chapter, i).errors);
+        });
+        if (Object.keys(chapterErrors).length > 0) {
+            return [{ type: 'chapters', error: chapterErrors }];
+        }
+
+        const moduleErrors = {};
+        courseData.chapters.forEach((chapter, i) => {
+            if (!Array.isArray(chapter.modules)) return;
+            chapter.modules.forEach((module, j) => {
+                if (!module) {
+                    moduleErrors[`chapter_${i}_module_${j}`] = 'Module is null or undefined';
+                    return;
+                }
+                Object.assign(moduleErrors, this.validateModuleData(module, i, j).errors);
+            });
+        });
+        if (Object.keys(moduleErrors).length > 0) {
+            return [{ type: 'modules', error: moduleErrors }];
+        }
+        return null;
     }
 
     /**
