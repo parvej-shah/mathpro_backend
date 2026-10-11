@@ -31,6 +31,13 @@ function catchAs(body, handler) {
     };
 }
 
+// A handler that calls the service and replies with respond(): handle((req) => service.x(req.params.id)).
+// Rejections reach the router's error handler, as with any async handler here.
+function handle(call) {
+    return async (req, res) => respond(res, await call(req));
+}
+
 exports.Controller = Controller;
 exports.respond = respond;
 exports.catchAs = catchAs;
+exports.handle = handle;

@@ -331,10 +331,11 @@ the catalogue in `.claude/conventions.md` so future work reuses it instead of re
   branches and the triplicated `…ForBundle` / `…ForBook` methods. Adding a fourth item type
   then means one registry entry, not edits across 3 god classes. *H,* do it together with 4.2.
   4.2 already gave payment checkout and fulfilment per-item strategies. R4 adds `util/itemTypes.js` (key, payment type, item table, coupon link table, id column) and `coupon/redemption.getItemConfig` now reads it. The remaining `if itemType === …` sites (`featuredItem.getItem`, `payment.resolveBookSelection`, the reconcile access check in `controllers/user/payment.js`) take their data from the registry as each is next touched.
-- [ ] **R5 Controller handler factory** (*Duplicate Code → Extract Function*, builds on 2.3).
+- [~] **R5 Controller handler factory** (*Duplicate Code → Extract Function*, builds on 2.3).
   `handle(serviceCall)` / `handle((req) => service.x(req.params.id, req.body))` produces a
   standard Express handler (call → `respond`), so trivial controller methods become one line.
   Hand-written methods stay only where there's real request translation. *L.*
+  Introduced as `handle(call)` in `controllers/base.js`; `managerial/faq` controller is now five one-liners. Other controllers adopt it as they are next touched.
 - [ ] **R6 Access-control helpers.** Consolidate course-scope checks spread across controllers
   (`getAccessibleCourseIds` / `checkCourseAccess` from `util/courseAccessHelpers.js`, plus
   inline variants) behind `requireCourseAccess` middleware or one service call. *M,* touches

@@ -1,34 +1,20 @@
 const Controller = require("../base").Controller;
-const { respond } = require('../base');
+const { handle } = require('../base');
 const FAQService = require("../../service/managerial/faq").FAQService;
 
 const faqService = new FAQService();
+const idOf = (req) => parseInt(req.params.id, 10);
 
 class FAQController extends Controller {
-  list = async (req, res) => {
-    const result = await faqService.listAdmin();
-    return respond(res, result);
-  };
+  list = handle(() => faqService.listAdmin());
 
-  getEntry = async (req, res) => {
-    const result = await faqService.getById(parseInt(req.params.id, 10));
-    return respond(res, result);
-  };
+  getEntry = handle((req) => faqService.getById(idOf(req)));
 
-  create = async (req, res) => {
-    const result = await faqService.create(req.body);
-    return respond(res, result);
-  };
+  create = handle((req) => faqService.create(req.body));
 
-  update = async (req, res) => {
-    const result = await faqService.update(parseInt(req.params.id, 10), req.body);
-    return respond(res, result);
-  };
+  update = handle((req) => faqService.update(idOf(req), req.body));
 
-  deleteEntry = async (req, res) => {
-    const result = await faqService.deleteEntry(parseInt(req.params.id, 10));
-    return respond(res, result);
-  };
+  deleteEntry = handle((req) => faqService.deleteEntry(idOf(req)));
 }
 
 module.exports = { FAQController };

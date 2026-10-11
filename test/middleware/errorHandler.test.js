@@ -129,3 +129,15 @@ test('catchAs() sends the endpoint\'s own 500 body on a throw and stays out of t
     assert.strictEqual(sent.status, 201);
     assert.deepStrictEqual(sent.body, { partial: true });
 });
+
+test('handle() replies like respond() with the service result and passes req to it', async () => {
+    const { handle } = require('../../controllers/base');
+    const app = express();
+    app.get('/ok/:id', handle((req) => ({ success: true, data: [req.params.id] })));
+    app.get('/fail', handle(async () => ({ success: false, error: 'nope' })));
+
+    assert.deepStrictEqual((await request(app).get('/ok/7')).body, { success: true, data: ['7'] });
+    const fail = await request(app).get('/fail');
+    assert.strictEqual(fail.status, 400);
+    assert.deepStrictEqual(fail.body, { success: false, error: 'nope' });
+});
