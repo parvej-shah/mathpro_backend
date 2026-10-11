@@ -1,5 +1,6 @@
 const Controller = require("../base").Controller;
 const { respond, catchAs } = require('../base');
+const { parsePagination } = require('../../util/pagination');
 const FeedbackService = require("../../service/feedback").FeedbackService;
 const { getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
 const { rejectCourseFilter } = require('../shared/courseAccess');
@@ -15,8 +16,6 @@ class FeedbackController extends Controller {
     // Get all feedbacks with filtering and pagination
     getAllFeedbacks = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
         const {
-            page = 1,
-            limit = 20,
             courseId,
             rating,
             category,
@@ -24,8 +23,7 @@ class FeedbackController extends Controller {
             order = 'desc'
         } = req.query;
 
-        // Validate limit (max 100)
-        const validLimit = Math.min(parseInt(limit), 100);
+        const { page, limit } = parsePagination(req.query, { defaultLimit: 20, maxLimit: 100 });
         
         // Validate rating
         if (rating && (parseInt(rating) < 1 || parseInt(rating) > 5)) {
@@ -66,8 +64,8 @@ class FeedbackController extends Controller {
         const access = await getAccessibleCourseIds(userId, 'feedback', 'manage');
 
         const filters = {
-            page: parseInt(page),
-            limit: validLimit,
+            page,
+            limit,
             courseId,
             rating: rating ? parseInt(rating) : undefined,
             category,

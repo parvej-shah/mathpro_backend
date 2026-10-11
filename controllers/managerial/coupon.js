@@ -1,5 +1,12 @@
 const Controller = require("../base").Controller;
 const { respond, catchAs } = require('../base');
+const { toLimit, parsePagination } = require('../../util/pagination');
+
+// { page, limit } for a service that computes its own offset.
+const pageAndLimit = (query, options) => {
+  const { page, limit } = parsePagination(query, options);
+  return { page, limit };
+};
 const CouponService = require("../../service/managerial/coupon");
 
 const couponService = new CouponService();
@@ -112,8 +119,7 @@ class CouponController extends Controller {
     };
 
     const pagination = {
-      page: req.query.page ? parseInt(req.query.page) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit) : 10,
+      ...pageAndLimit(req.query, { defaultLimit: 10 }),
       sortBy: req.query.sortBy || "created_at",
       sortOrder: req.query.sortOrder || "DESC",
     };
@@ -339,7 +345,7 @@ class CouponController extends Controller {
    */
   getTopPerformingCoupons = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const options = {
-      limit: req.query.limit ? parseInt(req.query.limit) : 10,
+      limit: toLimit(req.query.limit, { defaultLimit: 10 }),
       sortBy: req.query.sortBy || "revenue", // 'revenue', 'usage', 'conversion', 'discount'
       startDate: req.query.startDate
         ? parseInt(req.query.startDate)
@@ -366,8 +372,7 @@ class CouponController extends Controller {
       courseId: req.query.courseId ? parseInt(req.query.courseId) : undefined,
       userId: req.query.userId ? parseInt(req.query.userId) : undefined,
       status: req.query.status,
-      page: req.query.page ? parseInt(req.query.page) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit) : 50,
+      ...pageAndLimit(req.query, { defaultLimit: 50 }),
     };
 
     const result = await couponService.getCouponUsageReport(
@@ -465,8 +470,7 @@ class CouponController extends Controller {
       dateFrom: req.query.date_from ? parseInt(req.query.date_from) : undefined,
       dateTo: req.query.date_to ? parseInt(req.query.date_to) : undefined,
       purchaseCompleted: req.query.purchase_completed !== undefined ? req.query.purchase_completed : undefined,
-      page: req.query.page || 1,
-      limit: req.query.limit || 20
+      ...pageAndLimit(req.query, { defaultLimit: 20 })
     };
 
     const result = await couponService.getCouponClicks(couponId, filters);
@@ -490,8 +494,7 @@ class CouponController extends Controller {
       dateFrom: req.query.date_from ? parseInt(req.query.date_from) : undefined,
       dateTo: req.query.date_to ? parseInt(req.query.date_to) : undefined,
       purchaseCompleted: req.query.purchase_completed !== undefined ? req.query.purchase_completed : undefined,
-      page: req.query.page || 1,
-      limit: req.query.limit || 20
+      ...pageAndLimit(req.query, { defaultLimit: 20 })
     };
 
     const result = await couponService.getAllCouponClicks(filters);

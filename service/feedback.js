@@ -2,6 +2,7 @@ const Service = require('./base').Service;
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../util/logger');
 const { buildUpdate } = require('../util/buildUpdate');
+const { pageMeta } = require('../util/pagination');
 
 class FeedbackService extends Service {
     constructor() {
@@ -133,15 +134,11 @@ class FeedbackService extends Service {
 
             if (countResult.success && feedbacksResult.success) {
                 const total = parseInt(countResult.data[0].total);
-                const totalPages = Math.ceil(total / limit);
 
                 return {
                     success: true,
                     courseId,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total,
-                    totalPages,
+                    ...pageMeta(page, limit, total),
                     feedbacks: feedbacksResult.data.map(feedback => ({
                         id: feedback.id,
                         userId: feedback.user_id,
@@ -304,10 +301,7 @@ class FeedbackService extends Service {
                 // User has .own permission but no course access - return empty result
                 return {
                     success: true,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total: 0,
-                    totalPages: 0,
+                    ...pageMeta(page, limit, 0),
                     feedbacks: []
                 };
             }
@@ -354,14 +348,10 @@ class FeedbackService extends Service {
 
             if (countResult.success && feedbacksResult.success) {
                 const total = parseInt(countResult.data[0].total);
-                const totalPages = Math.ceil(total / limit);
 
                 return {
                     success: true,
-                    page: parseInt(page),
-                    limit: parseInt(limit),
-                    total,
-                    totalPages,
+                    ...pageMeta(page, limit, total),
                     feedbacks: feedbacksResult.data
                 };
             }

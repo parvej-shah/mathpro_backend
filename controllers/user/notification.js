@@ -1,5 +1,6 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
+const { parseLimitOffset } = require('../../util/pagination');
 const NotificationService=require("../../service/user/notification").NotificationService
 
 const notificationService=new NotificationService()
@@ -10,11 +11,12 @@ class NotificationController extends Controller {
   }
 
   getNotifications = async (req, res) => {
+    const { limit, offset } = parseLimitOffset(req.query, { defaultLimit: 10 });
     var result = await notificationService.getNotificationsPaginated(
       req.body.user_id,
       parseInt(req.query.courseId),
-      parseInt(req.query.limit),
-      parseInt(req.query.offset)
+      limit,
+      offset
     );
     return respond(res, result);
   };

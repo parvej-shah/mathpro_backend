@@ -1,4 +1,5 @@
 const { catchAs } = require("../base");
+const { toLimit } = require("../../util/pagination");
 const StreakService = require('../../service/streakService');
 
 class StreakController {
@@ -135,9 +136,9 @@ class StreakController {
      */
     getCourseLeaderboard = catchAs({ success: false, message: 'Internal server error' }, async (req, res) => {
         const { courseId } = req.params;
-        const { limit = 10 } = req.query;
+        const limit = toLimit(req.query.limit, { defaultLimit: 10 });
 
-        const result = await this.streakService.getCourseLeaderboard(courseId, parseInt(limit));
+        const result = await this.streakService.getCourseLeaderboard(courseId, limit);
 
         if (result.success) {
             const leaderboard = result.data.map((entry, index) => ({

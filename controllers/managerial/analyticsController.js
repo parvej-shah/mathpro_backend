@@ -1,5 +1,6 @@
 const Controller = require("../base").Controller;
 const { catchAs } = require("../base");
+const { parseLimitOffset } = require("../../util/pagination");
 const AnalyticsV2Service = require("../../service/managerial/analyticsV2/analyticsV2Service")
   .AnalyticsV2Service;
 const { AnalyticsV2MetadataService } = require("../../service/managerial/analyticsV2/analyticsV2MetadataService");
@@ -100,8 +101,7 @@ class AnalyticsController extends Controller {
   getRevenueByCourse = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const filters = {
       ...dateFilters(req.query),
-      limit: intParam(req.query.limit, 20),
-      offset: intParam(req.query.offset, 0),
+      ...parseLimitOffset(req.query, { defaultLimit: 20, maxLimit: 100 }),
       sortBy: req.query.sort_by || "revenue",
       order: req.query.order || "desc",
     };
@@ -113,8 +113,7 @@ class AnalyticsController extends Controller {
   getRevenueByBundle = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const filters = {
       ...dateFilters(req.query),
-      limit: intParam(req.query.limit, 20),
-      offset: intParam(req.query.offset, 0),
+      ...parseLimitOffset(req.query, { defaultLimit: 20, maxLimit: 100 }),
       sortBy: req.query.sort_by || "revenue",
       order: req.query.order || "desc",
     };
@@ -194,8 +193,7 @@ class AnalyticsController extends Controller {
   getCourseCompletion = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const filters = {
       courseId: intParam(req.query.course_id),
-      limit: intParam(req.query.limit, 20),
-      offset: intParam(req.query.offset, 0),
+      ...parseLimitOffset(req.query, { defaultLimit: 20, maxLimit: 100 }),
     };
     const access = await analyticsAccess(req);
     const denied = await denyCourse(req, res, filters.courseId);
@@ -241,8 +239,7 @@ class AnalyticsController extends Controller {
   getStreakAnalytics = catchAs({ success: false, error: "Internal server error" }, async (req, res) => {
     const filters = {
       courseId: intParam(req.query.course_id),
-      limit: intParam(req.query.limit, 20),
-      offset: intParam(req.query.offset, 0),
+      ...parseLimitOffset(req.query, { defaultLimit: 20, maxLimit: 100 }),
     };
     const access = await analyticsAccess(req);
     const denied = await denyCourse(req, res, filters.courseId);
@@ -264,8 +261,7 @@ class AnalyticsController extends Controller {
     const filters = {
       couponId: intParam(req.query.coupon_id),
       ...dateFilters(req.query),
-      limit: intParam(req.query.limit, 20),
-      offset: intParam(req.query.offset, 0),
+      ...parseLimitOffset(req.query, { defaultLimit: 20, maxLimit: 100 }),
     };
     const access = await analyticsAccess(req);
     const result = await analyticsService.getCouponPerformance(filters, access);

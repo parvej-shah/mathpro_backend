@@ -1,5 +1,9 @@
 const Controller = require("../base.js").Controller;
 const { respond } = require('../base');
+const { parseLimitOffset } = require('../../util/pagination');
+
+// The admin client's own page size.
+const ANNOUNCEMENT_PAGE = { defaultLimit: 100 };
 const AnnouncementService=require("../../service/managerial/announcement.js").AnnouncementService;
 const { checkCourseAccess, assertCourseAccess, getAccessibleCourseIds } = require("../../util/courseAccessHelpers");
 const { noCourseAccess } = require('../shared/courseAccess');
@@ -16,7 +20,8 @@ class AnnouncementController extends Controller {
     getAnnouncements =async (req,res)=>{
         const userId = req.user.id;
         const access = await getAccessibleCourseIds(userId, 'announcement', 'manage');
-        var result=await announcementService.getAllAnnouncementsPaginated(parseInt(req.query.limit), parseInt(req.query.offset), access)
+        const { limit, offset } = parseLimitOffset(req.query, ANNOUNCEMENT_PAGE);
+        var result=await announcementService.getAllAnnouncementsPaginated(limit, offset, access)
         return respond(res, result)
     }
     getAnnouncementsCourseWise =async (req,res)=>{
@@ -26,7 +31,8 @@ class AnnouncementController extends Controller {
         const access = await checkCourseAccess(userId, 'announcement', 'manage', courseId);
         if (!access.hasAccess) return noCourseAccess(res);
 
-        var result=await announcementService.getAllAnnouncementsCourseWisePaginated(courseId, parseInt(req.query.limit), parseInt(req.query.offset))
+        const { limit, offset } = parseLimitOffset(req.query, ANNOUNCEMENT_PAGE);
+        var result=await announcementService.getAllAnnouncementsCourseWisePaginated(courseId, limit, offset)
         return respond(res, result)
     }
     getAnnouncementById =async (req,res)=>{

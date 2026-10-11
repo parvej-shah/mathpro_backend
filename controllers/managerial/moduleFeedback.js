@@ -1,5 +1,6 @@
 const Controller = require('../base').Controller;
 const { respond, catchAs } = require('../base');
+const { parsePagination } = require('../../util/pagination');
 const { ModuleFeedbackService } = require('../../service/moduleFeedback');
 const { getAccessibleCourseIds, checkCourseAccess, resolveCourseId } = require('../../util/courseAccessHelpers');
 const { noCourseAccess, rejectCourseFilter } = require('../shared/courseAccess');
@@ -72,7 +73,8 @@ class ModuleFeedbackController extends Controller {
      * Query: { courseId?, moduleId?, reaction?, reason?, page?, limit? }
      */
     getAllFeedback = catchAs({ success: false, error: 'Internal server error' }, async (req, res) => {
-        const { courseId, moduleId, reaction, reason, page, limit } = req.query;
+        const { courseId, moduleId, reaction, reason } = req.query;
+        const { page, limit } = parsePagination(req.query, { defaultLimit: 20 });
 
         // Get accessible course IDs for filtering
         const userId = req.user.id;
@@ -86,8 +88,8 @@ class ModuleFeedbackController extends Controller {
             moduleId: moduleId ? parseInt(moduleId) : null,
             reaction,
             reason,
-            page: page ? parseInt(page) : 1,
-            limit: limit ? parseInt(limit) : 20,
+            page,
+            limit,
             access  // Pass access info to service
         });
 

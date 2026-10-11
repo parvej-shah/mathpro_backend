@@ -1,5 +1,6 @@
 const Controller = require("../base").Controller;
 const { respond } = require('../base');
+const { parseLimitOffset } = require('../../util/pagination');
 const CourseService = require("../../service/managerial/course.js").CourseService
 const FeaturedItemService = require("../../service/managerial/featuredItem").FeaturedItemService
 const RoutineService = require("../../service/managerial/routine.js").RoutineService
@@ -41,7 +42,8 @@ class CourseController extends Controller {
     }
 
     getRanking = async (req, res) => {
-        var result = await courseService.getRanking(req.body, parseInt(req.params.id), parseInt(req.query.offset), parseInt(req.query.limit))
+        const { limit, offset } = parseLimitOffset(req.query, { defaultLimit: 10 });
+        var result = await courseService.getRanking(req.body, parseInt(req.params.id), offset, limit)
         return respond(res, result)
     }
 

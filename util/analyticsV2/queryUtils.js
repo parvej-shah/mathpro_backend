@@ -3,6 +3,8 @@
  * Helper functions for building SQL queries
  */
 
+const { toLimit, toOffset } = require("../pagination");
+
 /**
  * Build WHERE clause for date filtering
  * @param {number|null} startDate - Start timestamp (Unix seconds)
@@ -104,11 +106,7 @@ function buildOrderBy(sortBy, order = "desc") {
  * @returns {number} Validated limit
  */
 function validateLimit(limit, defaultLimit = 20, maxLimit = 100) {
-  const parsed = parseInt(limit);
-  if (isNaN(parsed) || parsed < 1) {
-    return defaultLimit;
-  }
-  return Math.min(parsed, maxLimit);
+  return toLimit(limit, { defaultLimit, maxLimit });
 }
 
 /**
@@ -117,8 +115,7 @@ function validateLimit(limit, defaultLimit = 20, maxLimit = 100) {
  * @returns {number} Validated offset
  */
 function validateOffset(offset) {
-  const parsed = parseInt(offset);
-  return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+  return toOffset(offset);
 }
 
 /**

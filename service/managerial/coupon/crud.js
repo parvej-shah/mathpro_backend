@@ -5,6 +5,7 @@ const CouponValidator = require("../CouponValidator");
 const CouponAuditLogger = require("../CouponAuditLogger");
 const logger = require('../../../util/logger');
 const { buildUpdate } = require('../../../util/buildUpdate');
+const { pageMeta } = require('../../../util/pagination');
 
 class CouponCrudService extends Service {
   constructor() {
@@ -540,12 +541,7 @@ class CouponCrudService extends Service {
         return {
           success: true,
           data: dataResult.data,
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
+          pagination: pageMeta(page, limit, total),
         };
       }
 

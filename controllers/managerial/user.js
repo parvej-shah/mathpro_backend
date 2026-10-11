@@ -1,5 +1,6 @@
 const Controller = require('../base').Controller;
 const { respond, catchAs } = require('../base');
+const { parsePagination } = require('../../util/pagination');
 const UserService = require('../../service/managerial/user').UserService;
 const { managerialAccountTypes } = require('../../util/constants');
 
@@ -26,9 +27,10 @@ class UserController extends Controller {
             dateTo: req.query.dateTo
         };
 
+        const { page, limit } = parsePagination(req.query, { defaultLimit: 20 });
         const pagination = {
-            page: req.query.page ? parseInt(req.query.page) : 1,
-            limit: req.query.limit ? parseInt(req.query.limit) : 20,
+            page,
+            limit,
             sortBy: req.query.sortBy || 'created_at',
             sortOrder: req.query.sortOrder || 'DESC'
         };

@@ -1,6 +1,7 @@
 // Coupon link clicks and their conversion to purchases.
 // Part of CouponService (service/managerial/coupon.js), which callers use.
 const { Service } = require("../../base");
+const { parsePagination, pageMeta } = require("../../../util/pagination");
 const logger = require('../../../util/logger');
 
 class CouponClickTrackingService extends Service {
@@ -219,9 +220,7 @@ class CouponClickTrackingService extends Service {
         };
       }
 
-      const page = parseInt(filters.page) || 1;
-      const limit = parseInt(filters.limit) || 20;
-      const offset = (page - 1) * limit;
+      const { page, limit, offset } = parsePagination(filters, { defaultLimit: 20 });
 
       let whereConditions = ['cc.coupon_id = $1'];
       const params = [couponId];
@@ -304,12 +303,7 @@ class CouponClickTrackingService extends Service {
           success: true,
           data: {
             clicks: dataResult.data,
-            pagination: {
-              page,
-              limit,
-              total,
-              totalPages: Math.ceil(total / limit),
-            },
+            pagination: pageMeta(page, limit, total),
           },
         };
       }
@@ -331,9 +325,7 @@ class CouponClickTrackingService extends Service {
    */
   getAllCouponClicks = async (filters = {}) => {
     try {
-      const page = parseInt(filters.page) || 1;
-      const limit = parseInt(filters.limit) || 20;
-      const offset = (page - 1) * limit;
+      const { page, limit, offset } = parsePagination(filters, { defaultLimit: 20 });
 
       let whereConditions = [];
       const params = [];
@@ -423,12 +415,7 @@ class CouponClickTrackingService extends Service {
           success: true,
           data: {
             clicks: dataResult.data,
-            pagination: {
-              page,
-              limit,
-              total,
-              totalPages: Math.ceil(total / limit),
-            },
+            pagination: pageMeta(page, limit, total),
           },
         };
       }

@@ -623,11 +623,11 @@
   "error": "string"
  },
  "GET /admin/announcement/list [admin]": {
-  "status": 400,
+  "status": 200,
   "kind": "json",
-  "keys": "error,success",
-  "success": false,
-  "error": "string"
+  "keys": "data,rowCount,success",
+  "success": true,
+  "data": "array"
  },
  "GET /admin/announcement/list/:courseId [anon]": {
   "status": 401,
@@ -2883,19 +2883,17 @@
   "error": "string"
  },
  "GET /user/course/getRanking/:id [student]": {
-  "status": 400,
+  "status": 200,
   "kind": "json",
-  "keys": "data,error,success",
-  "success": false,
-  "error": "string",
+  "keys": "data,rowCount,success",
+  "success": true,
   "data": "object"
  },
  "GET /user/course/getRanking/:id [admin]": {
-  "status": 400,
+  "status": 200,
   "kind": "json",
-  "keys": "data,error,success",
-  "success": false,
-  "error": "string",
+  "keys": "data,rowCount,success",
+  "success": true,
   "data": "object"
  },
  "GET /user/course/list [anon]": {

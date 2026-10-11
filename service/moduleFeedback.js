@@ -1,6 +1,7 @@
 const Service = require('./base').Service;
 const logger = require('../util/logger');
 const { buildUpdate } = require('../util/buildUpdate');
+const { pageMeta } = require('../util/pagination');
 
 class ModuleFeedbackService extends Service {
     constructor() {
@@ -393,12 +394,7 @@ class ModuleFeedbackService extends Service {
                 return {
                     success: true,
                     data: [],
-                    pagination: {
-                        total: 0,
-                        page,
-                        limit,
-                        totalPages: 0
-                    }
+                    pagination: pageMeta(page, limit, 0)
                 };
             }
 
@@ -458,12 +454,7 @@ class ModuleFeedbackService extends Service {
             return {
                 success: true,
                 data: result.success ? result.data : [],
-                pagination: {
-                    total,
-                    page,
-                    limit,
-                    totalPages: Math.ceil(total / limit)
-                }
+                pagination: pageMeta(page, limit, total)
             };
         } catch (error) {
             logger.error('Error in getAllFeedback:', error);

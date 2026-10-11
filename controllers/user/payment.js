@@ -3,6 +3,7 @@ const { getAccessibleCourseIds, checkCourseAccess } = require("../../util/course
 
 const Controller = require("../base").Controller;
 const { respond, catchAs } = require('../base');
+const { parseLimitOffset } = require('../../util/pagination');
 const PaymentService=require("../../service/user/payment.js").PaymentService
 const paymentFulfillment = require('../../service/user/paymentFulfillment');
 
@@ -148,8 +149,10 @@ class PaymentController extends Controller {
             item_type: req.query.item_type || req.body.item_type,
             status: req.query.status || req.body.status,
             processing_status: req.query.processing_status || req.body.processing_status,
-            limit: parseInt(req.query.limit || req.body.limit || 100),
-            offset: parseInt(req.query.offset || req.body.offset || 0),
+            ...parseLimitOffset({
+                limit: req.query.limit || req.body.limit,
+                offset: req.query.offset || req.body.offset,
+            }, { defaultLimit: 100 }),
             accessible_course_ids: access.hasGlobalAccess ? null : access.courseIds
         };
 

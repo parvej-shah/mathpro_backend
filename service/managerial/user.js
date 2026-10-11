@@ -10,6 +10,7 @@ const {
 const { managerialAccountTypes } = require('../../util/constants');
 const logger = require('../../util/logger');
 const { buildUpdate } = require('../../util/buildUpdate');
+const { pageMeta } = require('../../util/pagination');
 
 const messagingService = new MessagingService();
 
@@ -142,7 +143,6 @@ class UserService extends Service {
 
             // Calculate pagination
             const offset = (page - 1) * limit;
-            const totalPages = Math.ceil(total / limit);
 
             // Fetch users
             const validSortColumns = ['created_at', 'updated_at', 'name', 'email', 'phone'];
@@ -161,18 +161,13 @@ class UserService extends Service {
             params.push(limit, offset);
 
             const result = await this.query(query, params);
+            const meta = pageMeta(page, limit, total);
 
             return {
                 success: true,
                 data: {
                     users: result.data,
-                    pagination: {
-                        page: parseInt(page),
-                        limit: parseInt(limit),
-                        total,
-                        totalPages,
-                        hasMore: page < totalPages
-                    }
+                    pagination: { ...meta, hasMore: page < meta.totalPages }
                 }
             };
         } catch (error) {

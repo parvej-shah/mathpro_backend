@@ -1,4 +1,5 @@
 const Controller = require("../base").Controller;
+const { parseLimitOffset } = require("../../util/pagination");
 const AnnouncementService = require("../../service/user/announcement").AnnouncementService;
 
 const announcementService = new AnnouncementService();
@@ -12,8 +13,7 @@ class AnnouncementController extends Controller {
     try {
       const userId = req.body.user_id;
       const courseId = parseInt(req.params.courseId);
-      const limit = parseInt(req.query.limit) || 10;
-      const offset = parseInt(req.query.offset) || 0;
+      const { limit, offset } = parseLimitOffset(req.query, { defaultLimit: 10 });
 
       // Get announcements
       const announcementsResult = await announcementService.getAnnouncementsByCourse(
