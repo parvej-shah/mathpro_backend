@@ -2,6 +2,7 @@ const { Service } = require('../base');
 const { isValidPermission, validatePermissions, getAssignablePermissions } = require('../../util/permissions');
 const { SUPER_ADMIN_ROLE_NAME } = require('../../util/constants');
 const logger = require('../../util/logger');
+const { buildUpdate } = require('../../util/buildUpdate');
 
 /**
  * RoleService - RBAC Role and Permission Management
@@ -750,29 +751,13 @@ class RoleService extends Service {
                 }
             }
 
-            // Build update query dynamically
-            const updates = [];
-            const values = [];
-            let paramCount = 1;
+            const { setSql, params: values, nextIndex: paramCount } = buildUpdate(
+                ['name', 'display_name', 'description', 'permissions'],
+                { name, display_name, description, permissions },
+                { transforms: { permissions: JSON.stringify } }
+            );
 
-            if (name !== undefined) {
-                updates.push(`name = $${paramCount++}`);
-                values.push(name);
-            }
-            if (display_name !== undefined) {
-                updates.push(`display_name = $${paramCount++}`);
-                values.push(display_name);
-            }
-            if (description !== undefined) {
-                updates.push(`description = $${paramCount++}`);
-                values.push(description);
-            }
-            if (permissions !== undefined) {
-                updates.push(`permissions = $${paramCount++}`);
-                values.push(JSON.stringify(permissions));
-            }
-
-            if (updates.length === 0) {
+            if (!setSql) {
                 return {
                     success: false,
                     error: 'No fields to update'
@@ -783,7 +768,7 @@ class RoleService extends Service {
 
             const updateQuery = `
                 UPDATE roles
-                SET ${updates.join(', ')}
+                SET ${setSql}
                 WHERE id = $${paramCount}
                 RETURNING id, name, display_name, description, permissions, updated_at
             `;

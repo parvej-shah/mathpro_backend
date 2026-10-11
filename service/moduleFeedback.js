@@ -1,5 +1,6 @@
 const Service = require('./base').Service;
 const logger = require('../util/logger');
+const { buildUpdate } = require('../util/buildUpdate');
 
 class ModuleFeedbackService extends Service {
     constructor() {
@@ -656,31 +657,12 @@ class ModuleFeedbackService extends Service {
      */
     updateReason = async (reasonId, updateData) => {
         try {
-            const { reason_label, description, display_order, is_active } = updateData;
+                        const { setSql, params, nextIndex } = buildUpdate(
+                ['reason_label', 'description', 'display_order', 'is_active'],
+                updateData
+            );
 
-            // Build update fields dynamically
-            const updates = [];
-            const params = [];
-            let paramIndex = 1;
-
-            if (reason_label !== undefined) {
-                updates.push(`reason_label = $${paramIndex++}`);
-                params.push(reason_label);
-            }
-            if (description !== undefined) {
-                updates.push(`description = $${paramIndex++}`);
-                params.push(description);
-            }
-            if (display_order !== undefined) {
-                updates.push(`display_order = $${paramIndex++}`);
-                params.push(display_order);
-            }
-            if (is_active !== undefined) {
-                updates.push(`is_active = $${paramIndex++}`);
-                params.push(is_active);
-            }
-
-            if (updates.length === 0) {
+            if (!setSql) {
                 return {
                     success: false,
                     error: 'No fields to update'
@@ -691,8 +673,8 @@ class ModuleFeedbackService extends Service {
 
             const result = await this.query(
                 `UPDATE module_feedback_reasons 
-                 SET ${updates.join(', ')}
-                 WHERE id = $${paramIndex}
+                 SET ${setSql}
+                 WHERE id = $${nextIndex}
                  RETURNING *`,
                 params
             );

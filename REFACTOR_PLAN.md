@@ -305,12 +305,13 @@ rewritten in bulk. Runs alongside Phases 3–4, and several Phase 4 tasks build 
 Shared code lives in `util/` (pure functions, no DB) or `service/shared/` (DB-aware). Record
 the catalogue in `.claude/conventions.md` so future work reuses it instead of re-inventing it.
 
-- [ ] **R1 `buildUpdate(table, pk, allowedCols, patch)`.** *Duplicate Code → Extract Function.*
+- [~] **R1 `buildUpdate(table, pk, allowedCols, patch)`.** *Duplicate Code → Extract Function.*
   15 services hand-roll a dynamic `SET col=$n, …` builder (`admin`, `user`, `book`, `routine`,
   `testimonial`, `courseV2`, `moduleV2`, `teacherV2`, `coupon`, `roleService`, `feedback`,
   `moduleFeedback`, `courseImportExport`, `payment`, …). One whitelist-based helper also closes a
   class of SQL-injection risk from un-whitelisted column names. *M.* ✅ unit tests for whitelist,
   empty patch and `null` values.
+  Introduced as `util/buildUpdate.js` (whitelist-ordered columns, `undefined` skipped, `null` written, optional per-column transforms). Adopted in `moduleFeedback.updateReason` and `roleService.updateRole`; the other builders (`user`, `payment`, `book`, …) adopt it as each file is next touched.
 - [ ] **R2 Pagination.** `parsePagination(query, {defaultLimit, maxLimit})` +
   `paginatedQuery(service, sql, params, page)` that returns the shape each endpoint already uses.
   Replaces 26 hand-parsed `req.query.page/limit` sites and 16 `LIMIT/OFFSET` builders.
