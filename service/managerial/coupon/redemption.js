@@ -4,6 +4,7 @@ const { Service } = require("../../base");
 const CouponValidator = require("../CouponValidator");
 const CouponAuditLogger = require("../CouponAuditLogger");
 const logger = require('../../../util/logger');
+const { byKey } = require("../../../util/itemTypes");
 
 class CouponRedemptionService extends Service {
   constructor() {
@@ -85,37 +86,15 @@ class CouponRedemptionService extends Service {
   };
 
   getItemConfig = (itemType) => {
-    if (itemType === "course") {
-      return {
-        itemLabel: "course",
-        itemKey: "course_id",
-        linkTable: "coupon_courses",
-        linkKey: "course_id",
-        itemTable: "course",
-      };
-    }
-
-    if (itemType === "bundle") {
-      return {
-        itemLabel: "bundle",
-        itemKey: "bundle_id",
-        linkTable: "coupon_bundles",
-        linkKey: "bundle_id",
-        itemTable: "bundle",
-      };
-    }
-
-    if (itemType === "book") {
-      return {
-        itemLabel: "book",
-        itemKey: "book_id",
-        linkTable: "coupon_books",
-        linkKey: "book_id",
-        itemTable: "book",
-      };
-    }
-
-    return null;
+    const type = byKey(itemType);
+    if (!type) return null;
+    return {
+      itemLabel: type.key,
+      itemKey: type.idColumn,
+      linkTable: type.linkTable,
+      linkKey: type.idColumn,
+      itemTable: type.itemTable,
+    };
   };
 
   getCouponByCode = async (code, notFoundError = "Invalid coupon code") => {

@@ -324,12 +324,13 @@ the catalogue in `.claude/conventions.md` so future work reuses it instead of re
   for ordering and scoping. Adopt in the small, near-identical services first: `faq`,
   `announcement`, `routine`, `book`, `chapter`, `featuredItem` (~1,100 lines today). *M.*
   Introduced as `service/shared/crudService.js` with the one operation that is genuinely identical, `deleteEntry` (`pk` default `id`, optional `deleteReturning`); `faq` and `routine` extend it. On reading the six services, `create`/`update`/`getById` differ in normalisation, column lists, timestamp format (epoch seconds vs `NOW()`) and key shape (`featuredItem` has a composite key), so a generic version would need so many hooks that it costs more than it saves. Those stay in the subclasses; `update` can use R1's `buildUpdate` where a service builds its SET dynamically.
-- [ ] **R4 Purchasable item registry** (*Switch Statements / Parallel Inheritance →
+- [~] **R4 Purchasable item registry** (*Switch Statements / Parallel Inheritance →
   Replace Conditional with Polymorphism*). One `itemTypes` registry describing course, bundle
   and book: price lookup, existence check, enrollment/fulfillment, coupon link table, display
   name. Payment (4.2/4.3), coupon (4.5) and feedback use it instead of `if itemType === …`
   branches and the triplicated `…ForBundle` / `…ForBook` methods. Adding a fourth item type
   then means one registry entry, not edits across 3 god classes. *H,* do it together with 4.2.
+  4.2 already gave payment checkout and fulfilment per-item strategies. R4 adds `util/itemTypes.js` (key, payment type, item table, coupon link table, id column) and `coupon/redemption.getItemConfig` now reads it. The remaining `if itemType === …` sites (`featuredItem.getItem`, `payment.resolveBookSelection`, the reconcile access check in `controllers/user/payment.js`) take their data from the registry as each is next touched.
 - [ ] **R5 Controller handler factory** (*Duplicate Code → Extract Function*, builds on 2.3).
   `handle(serviceCall)` / `handle((req) => service.x(req.params.id, req.body))` produces a
   standard Express handler (call → `respond`), so trivial controller methods become one line.
