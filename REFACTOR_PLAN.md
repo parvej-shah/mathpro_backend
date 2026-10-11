@@ -305,46 +305,46 @@ rewritten in bulk. Runs alongside Phases 3–4, and several Phase 4 tasks build 
 Shared code lives in `util/` (pure functions, no DB) or `service/shared/` (DB-aware). Record
 the catalogue in `.claude/conventions.md` so future work reuses it instead of re-inventing it.
 
-- [~] **R1 `buildUpdate(table, pk, allowedCols, patch)`.** *Duplicate Code → Extract Function.*
+- [x] **R1 `buildUpdate(table, pk, allowedCols, patch)`.** *Duplicate Code → Extract Function.*
   15 services hand-roll a dynamic `SET col=$n, …` builder (`admin`, `user`, `book`, `routine`,
   `testimonial`, `courseV2`, `moduleV2`, `teacherV2`, `coupon`, `roleService`, `feedback`,
   `moduleFeedback`, `courseImportExport`, `payment`, …). One whitelist-based helper also closes a
   class of SQL-injection risk from un-whitelisted column names. *M.* ✅ unit tests for whitelist,
   empty patch and `null` values.
-  Introduced as `util/buildUpdate.js` (whitelist-ordered columns, `undefined` skipped, `null` written, optional per-column transforms). Adopted in `moduleFeedback.updateReason` and `roleService.updateRole`; the other builders (`user`, `payment`, `book`, …) adopt it as each file is next touched.
-- [~] **R2 Pagination.** `parsePagination(query, {defaultLimit, maxLimit})` +
+  Done. `util/buildUpdate.js` builds every dynamic SET: moduleFeedback, roleService, feedback, coupon crud, courseV2 import tracking, payment audit log, moduleV2 (importQuiz, updateEnhanced), teacherV2, managerial user, admin, testimonial; SQL pinned in `test/service/dynamicUpdates*.test.js`. `routine.update` writes every column (not conditional) and uses `CrudService.getUpdatePairs`.
+- [x] **R2 Pagination.** `parsePagination(query, {defaultLimit, maxLimit})` +
   `paginatedQuery(service, sql, params, page)` that returns the shape each endpoint already uses.
   Replaces 26 hand-parsed `req.query.page/limit` sites and 16 `LIMIT/OFFSET` builders.
   *Duplicate Code → Extract Function.* Response keys **must** match per endpoint (some say
   `total`, some `totalCount`), so the helper returns raw numbers and the caller keeps its envelope. *L.*
-  Introduced as `util/pagination.js` `parsePagination` (`parseInt(x) || default`, capped limit, plus offset). Adopted in `user/feedback.getCourseFeedbacks`. Call sites that use `x ? parseInt(x) : d` differ for `0`/junk input (they pass 0/NaN through), so each is adopted only after checking that edge; `paginatedQuery` is deferred until a second adopter shows the common shape.
-- [~] **R3 `BaseCrudService`** (*Duplicate Code → Pull Up Method / Form Template Method*).
+  Done. `util/pagination.js`: `parsePagination`, `parseLimitOffset`, `toLimit`, `toOffset`, `pageMeta`; analyticsV2 `validateLimit/validateOffset` delegate to it. Adopted by every list endpoint that parses paging (coupon, users, feedback, module feedback, payment audit logs, analytics lists, streak leaderboards, announcements, notifications, ranking). Valid values unchanged; zero/negative/junk now fall back to the default, and the three endpoints that had none default to their client's page size (snapshot updated). Kept as is: revenue top-generators (explicit 400 contract), teacher search (no LIMIT when absent), dashboard breakdown (clamps to 1..50). `paginatedQuery` not built: each list's count query differs; `pageMeta` covers the shared part. Pinned in `test/contract/pagination.test.js`.
+- [x] **R3 `BaseCrudService`** (*Duplicate Code → Pull Up Method / Form Template Method*).
   `Service` subclasses already declare `table`, `pk` and `cols`, but nothing uses them. A
   `CrudService` with `findById`, `list`, `create`, `update` (via R1) and `remove`, with hooks
   for ordering and scoping. Adopt in the small, near-identical services first: `faq`,
   `announcement`, `routine`, `book`, `chapter`, `featuredItem` (~1,100 lines today). *M.*
-  Introduced as `service/shared/crudService.js` with the one operation that is genuinely identical, `deleteEntry` (`pk` default `id`, optional `deleteReturning`); `faq` and `routine` extend it. On reading the six services, `create`/`update`/`getById` differ in normalisation, column lists, timestamp format (epoch seconds vs `NOW()`) and key shape (`featuredItem` has a composite key), so a generic version would need so many hooks that it costs more than it saves. Those stay in the subclasses; `update` can use R1's `buildUpdate` where a service builds its SET dynamically.
-- [~] **R4 Purchasable item registry** (*Switch Statements / Parallel Inheritance →
+  Done. `CrudService` owns `getColumns`/`getWildCards`/`getUpdatePairs` (were copied in 7 services), `get(id)` (6 copies) and `deleteEntry`; announcement, book, chapter, course, courseV2, faq, module, routine and teacher extend it. Prototype methods, so subclasses override with either a method or a field. `list`/`create`/`update` stay per service (filters, ordering, parameter normalisation and key shape differ; `featuredItem` has a composite key). Pinned in `test/service/crudFragments.test.js`.
+- [x] **R4 Purchasable item registry** (*Switch Statements / Parallel Inheritance →
   Replace Conditional with Polymorphism*). One `itemTypes` registry describing course, bundle
   and book: price lookup, existence check, enrollment/fulfillment, coupon link table, display
   name. Payment (4.2/4.3), coupon (4.5) and feedback use it instead of `if itemType === …`
   branches and the triplicated `…ForBundle` / `…ForBook` methods. Adding a fourth item type
   then means one registry entry, not edits across 3 god classes. *H,* do it together with 4.2.
-  4.2 already gave payment checkout and fulfilment per-item strategies. R4 adds `util/itemTypes.js` (key, payment type, item table, coupon link table, id column) and `coupon/redemption.getItemConfig` now reads it. The remaining `if itemType === …` sites (`featuredItem.getItem`, `payment.resolveBookSelection`, the reconcile access check in `controllers/user/payment.js`) take their data from the registry as each is next touched.
-- [~] **R5 Controller handler factory** (*Duplicate Code → Extract Function*, builds on 2.3).
+  Done. `util/itemTypes.js` (key, payment type, tables, id column) drives coupon `getItemConfig`, `featuredItem`, and the payment callbacks; per-type behaviour is a lookup table beside its caller: `COUPON_TARGET_OPS` (student coupon controller), `RECONCILE_ACCESS` (reconcile), `ENROLMENTS` (fulfilment, from 4.3). Left as two-way branches: fulfilment's BOOK-first dispatch with the legacy COURSE default, and course-vs-bundle book lookups in `payment.js`. Pinned in `test/contract/userCouponTargets.test.js`, `test/payment/reconcile.test.js`, `test/service/featuredItem.test.js`.
+- [x] **R5 Controller handler factory** (*Duplicate Code → Extract Function*, builds on 2.3).
   `handle(serviceCall)` / `handle((req) => service.x(req.params.id, req.body))` produces a
   standard Express handler (call → `respond`), so trivial controller methods become one line.
   Hand-written methods stay only where there's real request translation. *L.*
-  Introduced as `handle(call)` in `controllers/base.js`; `managerial/faq` controller is now five one-liners. Other controllers adopt it as they are next touched.
-- [~] **R6 Access-control helpers.** Consolidate course-scope checks spread across controllers
+  Done. 72 trivial methods are `handle(...)` one-liners (FAQ plus 67 across 20 controllers); `catchAs`-wrapped ones are `catchAs(body, handle(...))`. The ~110 remaining `respond(res, result)` calls are in methods that check access, validate with their own status codes or parse paging.
+- [x] **R6 Access-control helpers.** Consolidate course-scope checks spread across controllers
   (`getAccessibleCourseIds` / `checkCourseAccess` from `util/courseAccessHelpers.js`, plus
   inline variants) behind `requireCourseAccess` middleware or one service call. *M,* touches
   auth, so tests first (3.3).
-  Already consolidated by Phase 3: `util/courseAccessHelpers.js` plus `controllers/shared/courseAccess.js` (`noCourseAccess`, `rejectCourseFilter`). A `requireCourseAccess` middleware is deferred: each route resolves its course id differently (param, body, resource lookup), so one middleware would need a resolver per route and touches the auth path for little gain.
-- [~] **R7 Analytics query kit.** `parseDateRange(query)` + shared filter/WHERE builders for
+  Done. `controllers/shared/courseAccess.js` `denyCourseAccess` / `denyResourceAccess` replace 34 check-and-403 blocks (one line per site). Kept in controllers rather than a `requireCourseAccess` middleware so each endpoint keeps its 400-before-403 order (the existing middleware only checks the JWT permission). Pinned in `test/contract/courseAccessDenied.test.js`.
+- [x] **R7 Analytics query kit.** `parseDateRange(query)` + shared filter/WHERE builders for
   the date-range and filter parsing repeated across `coupon` analytics, `analyticsV2Service`,
   `revenueService` and `feedback` stats. Prerequisite for splitting analytics in 4.6. *M.*
-  `util/analyticsV2/dateUtils.js` (`parseDateRange`) and `queryUtils.js` (`buildDateFilter`, …) already serve the split `analyticsV2` parts. `coupon/analytics.js` and `feedback` stats still hand-roll their `startDate`/`endDate` filters; they have no pinning tests, so moving them onto `buildDateFilter` is deferred until they do.
+  Done. `util/dateRangeFilter.js` replaces 14 hand-written date-range blocks (coupon analytics, click tracking, coupon list, feedback export, managerial users, analyticsV2 learning progress); SQL for all 13 methods and every bound mix pinned in `test/service/dateFilters.test.js` (snapshot recorded before the change). analyticsV2 keeps `parseDateRange`; `queryUtils.buildDateFilter` has no callers (left, not deleted).
 - [x] **R8 Document the catalogue.** Add a "Shared building blocks" section to
   `.claude/conventions.md` (what exists and when to use it) so new code stops duplicating. *L.*
 

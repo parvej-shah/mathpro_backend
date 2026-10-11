@@ -109,13 +109,14 @@ swagger/user.yaml           OpenAPI spec — the contract reference
 
 | Need | Use | Notes |
 |---|---|---|
-| Dynamic `UPDATE … SET` | `util/buildUpdate.js` `buildUpdate(allowedCols, patch, {transforms, startIndex})` | Whitelist of columns, `undefined` skipped, `null` written. Never build `SET` from request keys. |
-| `page` / `limit` from a query | `util/pagination.js` `parsePagination(query, {defaultLimit, maxLimit})` | Returns raw numbers + offset; you keep your own response envelope. |
-| Single-table service with `table`/`pk` | `service/shared/crudService.js` `CrudService` | Only `deleteEntry` is shared (`deleteReturning` for the RETURNING list). |
-| Course / bundle / book metadata | `util/itemTypes.js` `byKey`, `byPaymentType` | Add a new purchasable type here first. |
-| Trivial controller method | `handle((req) => service.x(...))` from `controllers/base.js` | Service result → `respond()` (200/400). Use `catchAs` where an endpoint has its own 500 body. |
-| Course-scope checks | `util/courseAccessHelpers.js` + `controllers/shared/courseAccess.js` | `checkCourseAccess`, `getAccessibleCourseIds`, `rejectCourseFilter`, `noCourseAccess`. |
-| Analytics date ranges / filters | `util/analyticsV2/dateUtils.js`, `queryUtils.js` | Used by `analyticsV2`; coupon and feedback stats still hand-roll theirs. |
+| Dynamic `UPDATE … SET` | `util/buildUpdate.js` `buildUpdate(allowedCols, patch, {transforms, startIndex})` | Whitelist of columns, `undefined` skipped, `null` written. Never build `SET` from request keys. Collect conditional columns into a `patch` object and call it once. |
+| `page` / `limit` / `offset` from a query | `util/pagination.js` `parsePagination`, `parseLimitOffset`, `toLimit`, `toOffset` | Zero, negative or junk values fall back to the default; `maxLimit` caps. `pageMeta(page, limit, total)` builds `{page, limit, total, totalPages}`. Envelope key names stay per endpoint. |
+| Optional date range in a WHERE | `util/dateRangeFilter.js` `dateRangeFilter(column, from, to, {startIndex, transform})` | Returns `{conditions, params, nextIndex}`; append to your own lists. |
+| Table-backed service (`table`, `cols`, optional `fk`, `pk`) | `service/shared/crudService.js` `CrudService` | `getColumns()` / `getWildCards()` (INSERT, fk last), `getUpdatePairs()`, `get(id)`, `deleteEntry(id)` (`deleteReturning`). Prototype methods: override with a method or a field. |
+| Course / bundle / book metadata | `util/itemTypes.js` `byKey`, `byPaymentType` | Add a new purchasable type here first. Per-type behaviour goes in a lookup table next to its caller (e.g. `COUPON_TARGET_OPS`, `RECONCILE_ACCESS`, payment `ENROLMENTS`), not an if/else chain. |
+| Trivial controller method | `handle((req) => service.x(...))` from `controllers/base.js` | Service result → `respond()` (200/400). Wrap as `catchAs(body, handle(...))` where an endpoint has its own 500 body. |
+| Course-scope checks | `controllers/shared/courseAccess.js` `denyCourseAccess`, `denyResourceAccess`, `rejectCourseFilter` | `if (await denyCourseAccess(res, req.user.id, 'course', courseId)) return;` → 403 NO_COURSE_ACCESS from the caller's DB roles. Lists use `getAccessibleCourseIds` (`util/courseAccessHelpers.js`). |
+| Analytics date parsing | `util/analyticsV2/dateUtils.js` `parseDateRange`; `queryUtils.js` | `validateLimit` / `validateOffset` delegate to `util/pagination.js`. |
 | Request-body checks | `middleware/validate.js` `validate({required, error})` | Place after rate limiters. |
 | Multi-statement writes | `Service.withTransaction` | Everything on one client; see `paymentFulfillment`. |
 | SSLCommerz calls | `integrations/sslcommerz.js` | The only place that constructs the client or reads `SSLCOMMERZ_LIVE`. |
