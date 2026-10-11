@@ -1,0 +1,1290 @@
+{
+ "summary global": {
+  "success": true,
+  "data": {
+   "total_revenue": 5100,
+   "course_revenue": 3500,
+   "bundle_revenue": 1600,
+   "with_coupon_revenue": 2700,
+   "without_coupon_revenue": 4400,
+   "discount_given": 700,
+   "average_order_value": 850,
+   "total_transactions": 6,
+   "trends": []
+  }
+ },
+ "summary global by month": {
+  "success": true,
+  "data": {
+   "total_revenue": 5100,
+   "course_revenue": 3500,
+   "bundle_revenue": 1600,
+   "with_coupon_revenue": 2700,
+   "without_coupon_revenue": 4400,
+   "discount_given": 700,
+   "average_order_value": 850,
+   "total_transactions": 6,
+   "trends": [
+    {
+     "period": "2001-03-01",
+     "revenue": 1800,
+     "enrollments": 2
+    },
+    {
+     "period": "2001-04-01",
+     "revenue": 500,
+     "enrollments": 2
+    },
+    {
+     "period": "2001-05-01",
+     "revenue": 1200,
+     "enrollments": 1
+    }
+   ]
+  }
+ },
+ "trends global by day": {
+  "success": true,
+  "data": {
+   "trends": [
+    {
+     "period": "2001-03-10",
+     "revenue": 2700,
+     "enrollments": 2,
+     "course_revenue": 1800,
+     "bundle_revenue": 900
+    },
+    {
+     "period": "2001-04-15",
+     "revenue": 500,
+     "enrollments": 1,
+     "course_revenue": 500,
+     "bundle_revenue": 0
+    },
+    {
+     "period": "2001-05-20",
+     "revenue": 1900,
+     "enrollments": 1,
+     "course_revenue": 1200,
+     "bundle_revenue": 700
+    }
+   ],
+   "summary": {
+    "total_revenue": 5100,
+    "average_daily_revenue": 1700
+   }
+  }
+ },
+ "trends global by month": {
+  "success": true,
+  "data": {
+   "trends": [
+    {
+     "period": "2001-03-01",
+     "revenue": 2700,
+     "enrollments": 2,
+     "course_revenue": 1800,
+     "bundle_revenue": 900
+    },
+    {
+     "period": "2001-04-01",
+     "revenue": 500,
+     "enrollments": 1,
+     "course_revenue": 500,
+     "bundle_revenue": 0
+    },
+    {
+     "period": "2001-05-01",
+     "revenue": 1900,
+     "enrollments": 1,
+     "course_revenue": 1200,
+     "bundle_revenue": 700
+    }
+   ],
+   "summary": {
+    "total_revenue": 5100,
+    "average_daily_revenue": 1700
+   }
+  }
+ },
+ "byCourse global": {
+  "success": true,
+  "data": {
+   "courses": [
+    {
+     "course_id": 9101,
+     "title": "Revenue In Scope",
+     "revenue": 1800,
+     "enrollments": 2,
+     "average_revenue_per_student": 900,
+     "with_coupon_revenue": 800,
+     "without_coupon_revenue": 1000
+    },
+    {
+     "course_id": 9102,
+     "title": "Revenue Out Of Scope",
+     "revenue": 1700,
+     "enrollments": 2,
+     "average_revenue_per_student": 850,
+     "with_coupon_revenue": 1200,
+     "without_coupon_revenue": 500
+    }
+   ],
+   "meta": {
+    "total": "live",
+    "limit": 100,
+    "offset": 0
+   }
+  }
+ },
+ "byBundle global": {
+  "success": true,
+  "data": {
+   "bundles": [
+    {
+     "bundle_id": 9101,
+     "title": "Bundle In Scope",
+     "revenue": 900,
+     "purchases": 1,
+     "average_revenue_per_purchase": 900,
+     "with_coupon_revenue": 0,
+     "without_coupon_revenue": 900
+    },
+    {
+     "bundle_id": 9102,
+     "title": "Bundle Out Of Scope",
+     "revenue": 700,
+     "purchases": 1,
+     "average_revenue_per_purchase": 700,
+     "with_coupon_revenue": 700,
+     "without_coupon_revenue": 0
+    }
+   ],
+   "meta": {
+    "total": "live",
+    "limit": 100,
+    "offset": 0
+   }
+  }
+ },
+ "summary scoped": {
+  "success": true,
+  "data": {
+   "total_revenue": 2700,
+   "course_revenue": 1800,
+   "bundle_revenue": 900,
+   "with_coupon_revenue": 0,
+   "without_coupon_revenue": 2700,
+   "discount_given": 0,
+   "average_order_value": 900,
+   "total_transactions": 3,
+   "trends": []
+  }
+ },
+ "summary scoped by month": {
+  "success": true,
+  "data": {
+   "total_revenue": 2700,
+   "course_revenue": 1800,
+   "bundle_revenue": 900,
+   "with_coupon_revenue": 0,
+   "without_coupon_revenue": 2700,
+   "discount_given": 0,
+   "average_order_value": 900,
+   "total_transactions": 3,
+   "trends": [
+    {
+     "period": "2001-03-01",
+     "revenue": 1800,
+     "enrollments": 2
+    },
+    {
+     "period": "2001-04-01",
+     "revenue": 0,
+     "enrollments": 1
+    }
+   ]
+  }
+ },
+ "trends scoped by day": {
+  "success": true,
+  "data": {
+   "trends": [
+    {
+     "period": "2001-03-10",
+     "revenue": 2700,
+     "enrollments": 2,
+     "course_revenue": 1800,
+     "bundle_revenue": 900
+    }
+   ],
+   "summary": {
+    "total_revenue": 2700,
+    "average_daily_revenue": 2700
+   }
+  }
+ },
+ "trends scoped by month": {
+  "success": true,
+  "data": {
+   "trends": [
+    {
+     "period": "2001-03-01",
+     "revenue": 2700,
+     "enrollments": 2,
+     "course_revenue": 1800,
+     "bundle_revenue": 900
+    }
+   ],
+   "summary": {
+    "total_revenue": 2700,
+    "average_daily_revenue": 2700
+   }
+  }
+ },
+ "byCourse scoped": {
+  "success": true,
+  "data": {
+   "courses": [
+    {
+     "course_id": 9101,
+     "title": "Revenue In Scope",
+     "revenue": 1800,
+     "enrollments": 2,
+     "average_revenue_per_student": 900,
+     "with_coupon_revenue": 800,
+     "without_coupon_revenue": 1000
+    }
+   ],
+   "meta": {
+    "total": 1,
+    "limit": 100,
+    "offset": 0
+   }
+  }
+ },
+ "byBundle scoped": {
+  "success": true,
+  "data": {
+   "bundles": [
+    {
+     "bundle_id": 9101,
+     "title": "Bundle In Scope",
+     "revenue": 900,
+     "purchases": 1,
+     "average_revenue_per_purchase": 900,
+     "with_coupon_revenue": 0,
+     "without_coupon_revenue": 900
+    }
+   ],
+   "meta": {
+    "total": 1,
+    "limit": 100,
+    "offset": 0
+   }
+  }
+ },
+ "summary noCourses": {
+  "success": true,
+  "data": {
+   "total_revenue": 0,
+   "course_revenue": 0,
+   "bundle_revenue": 0,
+   "with_coupon_revenue": 0,
+   "without_coupon_revenue": 0,
+   "discount_given": 0,
+   "average_order_value": 0,
+   "total_transactions": 0,
+   "trends": []
+  }
+ },
+ "summary noCourses by month": {
+  "success": true,
+  "data": {
+   "total_revenue": 0,
+   "course_revenue": 0,
+   "bundle_revenue": 0,
+   "with_coupon_revenue": 0,
+   "without_coupon_revenue": 0,
+   "discount_given": 0,
+   "average_order_value": 0,
+   "total_transactions": 0,
+   "trends": []
+  }
+ },
+ "trends noCourses by day": {
+  "success": true,
+  "data": {
+   "trends": [],
+   "summary": {
+    "total_revenue": 0,
+    "average_daily_revenue": 0
+   }
+  }
+ },
+ "trends noCourses by month": {
+  "success": true,
+  "data": {
+   "trends": [],
+   "summary": {
+    "total_revenue": 0,
+    "average_daily_revenue": 0
+   }
+  }
+ },
+ "byCourse noCourses": {
+  "success": true,
+  "data": {
+   "courses": [],
+   "meta": {
+    "total": 0,
+    "limit": 100,
+    "offset": 0
+   }
+  }
+ },
+ "byBundle noCourses": {
+  "success": true,
+  "data": {
+   "bundles": [],
+   "meta": {
+    "total": 0,
+    "limit": 100,
+    "offset": 0
+   }
+  }
+ },
+ "summary filtered to course 9102 and bundle 9101": {
+  "success": true,
+  "data": {
+   "total_revenue": 2600,
+   "course_revenue": 1700,
+   "bundle_revenue": 900,
+   "with_coupon_revenue": 2700,
+   "without_coupon_revenue": 1900,
+   "discount_given": 700,
+   "average_order_value": 850,
+   "total_transactions": 6,
+   "trends": []
+  }
+ },
+ "trends filtered to course 9102 and bundle 9101": {
+  "success": true,
+  "data": {
+   "trends": [
+    {
+     "period": "2001-03-10",
+     "revenue": 900,
+     "enrollments": 0,
+     "course_revenue": 0,
+     "bundle_revenue": 900
+    },
+    {
+     "period": "2001-04-15",
+     "revenue": 500,
+     "enrollments": 1,
+     "course_revenue": 500,
+     "bundle_revenue": 0
+    },
+    {
+     "period": "2001-05-20",
+     "revenue": 1200,
+     "enrollments": 1,
+     "course_revenue": 1200,
+     "bundle_revenue": 0
+    }
+   ],
+   "summary": {
+    "total_revenue": 2600,
+    "average_daily_revenue": 866.67
+   }
+  }
+ },
+ "trends without dates": {
+  "success": false,
+  "error": "start_date and end_date are required"
+ },
+ "byCourse scoped, asc by enrollments, paged": {
+  "success": true,
+  "data": {
+   "courses": [
+    {
+     "course_id": 9101,
+     "title": "Revenue In Scope",
+     "revenue": 1800,
+     "enrollments": 2,
+     "average_revenue_per_student": 900,
+     "with_coupon_revenue": 800,
+     "without_coupon_revenue": 1000
+    }
+   ],
+   "meta": {
+    "total": 1,
+    "limit": 1,
+    "offset": 0
+   }
+  }
+ },
+ "byCourse scoped, junk paging": {
+  "success": true,
+  "data": {
+   "courses": [
+    {
+     "course_id": 9101,
+     "title": "Revenue In Scope",
+     "revenue": 1800,
+     "enrollments": 2,
+     "average_revenue_per_student": 900,
+     "with_coupon_revenue": 800,
+     "without_coupon_revenue": 1000
+    }
+   ],
+   "meta": {
+    "total": 1,
+    "limit": 20,
+    "offset": 0
+   }
+  }
+ },
+ "byBundle scoped, by purchases": {
+  "success": true,
+  "data": {
+   "bundles": [
+    {
+     "bundle_id": 9101,
+     "title": "Bundle In Scope",
+     "revenue": 900,
+     "purchases": 1,
+     "average_revenue_per_purchase": 900,
+     "with_coupon_revenue": 0,
+     "without_coupon_revenue": 900
+    }
+   ],
+   "meta": {
+    "total": 1,
+    "limit": 20,
+    "offset": 0
+   }
+  }
+ },
+ "predictions bad period": {
+  "success": false,
+  "error": "Invalid period. Must be: week, month, quarter, or year"
+ },
+ "predictions week average global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 316.67,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 316.6666666666667,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week average scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week trend global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 633.33,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 316.6666666666667,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week trend scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week other global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 316.6666666666667,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week other scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month average global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 850,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month average scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 450,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month trend global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 1700,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month trend scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 900,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month other global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month other scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter average global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 850,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter average scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 450,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter trend global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 1700,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter trend scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 900,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter other global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter other scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year average global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 1700,
+    "confidence": "low",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 1700,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year average scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 900,
+    "confidence": "low",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 900,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year trend global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 1700,
+    "confidence": "low",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 1700,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year trend scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 900,
+    "confidence": "low",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 900,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year other global at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 1700,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year other scoped at mid-2001": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 900,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week average global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week average scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week trend global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week trend scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week other global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions week other scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_week",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month average global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month average scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month trend global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month trend scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month other global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions month other scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_month",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 0,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter average global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 850,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter average scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 450,
+    "confidence": "medium",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter trend global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 711.12,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": -11.11
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter trend scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 0,
+    "confidence": "medium",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": -100
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter other global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 850,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions quarter other scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_quarter",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 6,
+     "average_revenue": 450,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year average global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 1700,
+    "confidence": "low",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 1700,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year average scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 900,
+    "confidence": "low",
+    "method": "average",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 900,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year trend global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 1700,
+    "confidence": "low",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 1700,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year trend scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 900,
+    "confidence": "low",
+    "method": "trend",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 900,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year other global at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 1700,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ },
+ "predictions year other scoped at start-2002": {
+  "success": true,
+  "data": {
+   "prediction": {
+    "period": "next_year",
+    "predicted_revenue": 0,
+    "confidence": "low",
+    "method": "other",
+    "based_on": {
+     "historical_periods": 3,
+     "average_revenue": 900,
+     "growth_rate": 0
+    }
+   },
+   "disclaimer": "Predictions are based on simple historical averages and trends. Actual results may vary."
+  }
+ }
+}
