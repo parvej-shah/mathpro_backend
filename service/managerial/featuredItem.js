@@ -1,6 +1,11 @@
 const Service = require("../base").Service;
 const { ValidationError } = require("../../errors/AppError");
 const { safeMessage } = require("../../errors/dbErrors");
+const { byKey } = require("../../util/itemTypes");
+
+// Featured items are courses or bundles (not books).
+const FEATURABLE = ["course", "bundle"];
+const isFeaturable = (itemType) => FEATURABLE.includes(itemType);
 
 class FeaturedItemService extends Service {
   listPublic = async () => {
@@ -48,22 +53,13 @@ class FeaturedItemService extends Service {
   };
 
   getItem = async (itemType, itemId) => {
-    if (itemType === "course") {
-      return this.query(`SELECT id, title, is_live FROM course WHERE id = $1`, [
-        itemId,
-      ]);
-    }
-    if (itemType === "bundle") {
-      return this.query(`SELECT id, title, is_live FROM bundle WHERE id = $1`, [
-        itemId,
-      ]);
-    }
-    return { success: true, data: [] };
+    if (!isFeaturable(itemType)) return { success: true, data: [] };
+    return this.query(`SELECT id, title, is_live FROM ${byKey(itemType).itemTable} WHERE id = $1`, [itemId]);
   };
 
   create = async (payload) => {
     const itemType = payload.item_type;
-    if (itemType !== "course" && itemType !== "bundle") {
+    if (!isFeaturable(itemType)) {
       return { success: false, error: "item_type must be 'course' or 'bundle'" };
     }
 
@@ -141,7 +137,7 @@ class FeaturedItemService extends Service {
           const itemId = Number.parseInt(String(entry.item_id), 10);
           const sortOrder = Math.trunc(Number(entry.sort_order) || 0);
 
-          if (itemType !== "course" && itemType !== "bundle" || Number.isNaN(itemId)) {
+          if (!isFeaturable(itemType) || Number.isNaN(itemId)) {
             // Thrown, not returned, so the updates already made in this loop roll back.
             throw new ValidationError("Invalid item in reorder payload");
           }

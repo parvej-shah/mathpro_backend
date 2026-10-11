@@ -8,6 +8,32 @@ const PaymentService=require("../../service/user/payment.js").PaymentService
 const paymentFulfillment = require('../../service/user/paymentFulfillment');
 
 const logger = require('../../util/logger');
+const { byPaymentType } = require('../../util/itemTypes');
+
+// SSLCommerz value_d (COURSE / BUNDLE / BOOK) as the Frontend's item type, or null.
+const itemKeyOf = (valueD) => byPaymentType(valueD)?.key || null;
+
+// Who may reconcile a logged payment, per item_type: a check (true when allowed) and the 403
+// body when not. Types without an entry (books) are not course-scoped.
+const RECONCILE_ACCESS = {
+    COURSE: {
+        allowed: async (userId, courseId) => (await checkCourseAccess(userId, 'payment', 'manage', courseId)).hasAccess,
+        denied: { error: 'NO_COURSE_ACCESS', message: 'No access to reconcile payments for this course' },
+    },
+    BUNDLE: {
+        // Access to any course in the bundle is enough; an unknown bundle is not blocked here.
+        allowed: async (userId, bundleId) => {
+            const { BundleService } = require('../../service/managerial/bundle');
+            const bundleResult = await new BundleService().get(bundleId);
+            if (!bundleResult.success || !bundleResult.data || bundleResult.data.length === 0) return true;
+            const access = await getAccessibleCourseIds(userId, 'payment', 'manage');
+            if (access.hasGlobalAccess) return true;
+            const courses = bundleResult.data[0].courses || [];
+            return courses.some((course) => access.courseIds.includes(course.id));
+        },
+        denied: { error: 'NO_BUNDLE_ACCESS', message: 'No access to reconcile payments for this bundle' },
+    },
+};
 
 
 const paymentService=new PaymentService()
@@ -45,27 +71,15 @@ class PaymentController extends Controller {
             // Extract necessary data from the POST body
             const { tran_id, status, value_d } = req.body;
             
-            // Determine the type from value_d (COURSE, BUNDLE, or BOOK)
-            const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : 'course';
+            // Item type from value_d; anything unknown is treated as a course
+            const type = itemKeyOf(value_d) || 'course';
             const itemId = req.body.value_b; // course_id, bundle_id, or book_id
 
-            // Build frontend URL with query parameters
+            // The invoice when SSLCommerz sent a tran_id, else post-payment with ?type=…&<type>Id=…
             const frontendUrl = process.env.FRONTEND_URL || 'https://mathprobd.com';
-            let redirectUrl;
-
-            if (type === 'bundle') {
-                redirectUrl = tran_id
-                    ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
-                    : `${frontendUrl}/post-payment/success?type=bundle&bundleId=${itemId}`;
-            } else if (type === 'book') {
-                redirectUrl = tran_id
-                    ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
-                    : `${frontendUrl}/post-payment/success?type=book&bookId=${itemId}`;
-            } else {
-                redirectUrl = tran_id
-                    ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
-                    : `${frontendUrl}/post-payment/success?type=course&courseId=${itemId}`;
-            }
+            const redirectUrl = tran_id
+                ? `${frontendUrl}/billing/invoice/${encodeURIComponent(tran_id)}`
+                : `${frontendUrl}/post-payment/success?type=${type}&${type}Id=${itemId}`;
             
             console.log('Payment success redirect:', { type, itemId, tran_id, redirectUrl });
             
@@ -84,7 +98,7 @@ class PaymentController extends Controller {
         const frontendUrl = process.env.FRONTEND_URL || 'https://mathprobd.com';
         try {
             const { value_d } = req.body;
-            const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : value_d === 'COURSE' ? 'course' : null;
+            const type = itemKeyOf(value_d);
             const itemId = req.body.value_b; // course_id, bundle_id, or book_id
 
             const redirectUrl = type && itemId
@@ -103,7 +117,7 @@ class PaymentController extends Controller {
         const frontendUrl = process.env.FRONTEND_URL || 'https://mathprobd.com';
         try {
             const { value_d } = req.body;
-            const type = value_d === 'BUNDLE' ? 'bundle' : value_d === 'BOOK' ? 'book' : value_d === 'COURSE' ? 'course' : null;
+            const type = itemKeyOf(value_d);
             const itemId = req.body.value_b; // course_id, bundle_id, or book_id
 
             const redirectUrl = type && itemId
@@ -219,48 +233,9 @@ class PaymentController extends Controller {
 
         if (logResult.success && logResult.data && logResult.data.length > 0) {
             const { item_id, item_type } = logResult.data[0];
-            
-            if (item_type === 'COURSE') {
-                const access = await checkCourseAccess(reconciled_by, 'payment', 'manage', item_id);
-                if (!access.hasAccess) {
-                    return res.status(403).json({
-                        success: false,
-                        error: 'NO_COURSE_ACCESS',
-                        message: 'No access to reconcile payments for this course'
-                    });
-                }
-            } else if (item_type === 'BUNDLE') {
-                // Check if user has access to ANY course in the bundle
-                const { BundleService } = require('../../service/managerial/bundle');
-                const bundleService = new BundleService();
-                const bundleResult = await bundleService.get(item_id);
-                
-                if (bundleResult.success && bundleResult.data && bundleResult.data.length > 0) {
-                    const courses = bundleResult.data[0].courses || [];
-                    let hasAnyAccess = false;
-                    
-                    // If user has global access, they're good
-                    const globalAccess = await getAccessibleCourseIds(reconciled_by, 'payment', 'manage');
-                    if (globalAccess.hasGlobalAccess) {
-                        hasAnyAccess = true;
-                    } else {
-                        // Check individual courses
-                        for (const course of courses) {
-                            if (globalAccess.courseIds.includes(course.id)) {
-                                hasAnyAccess = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (!hasAnyAccess) {
-                        return res.status(403).json({
-                            success: false,
-                            error: 'NO_BUNDLE_ACCESS',
-                            message: 'No access to reconcile payments for this bundle'
-                        });
-                    }
-                }
+            const rule = Object.prototype.hasOwnProperty.call(RECONCILE_ACCESS, item_type) ? RECONCILE_ACCESS[item_type] : null;
+            if (rule && !(await rule.allowed(reconciled_by, item_id))) {
+                return res.status(403).json({ success: false, ...rule.denied });
             }
         }
 

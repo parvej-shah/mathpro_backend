@@ -4,6 +4,28 @@ const CouponService = require("../../service/managerial/coupon");
 
 const couponService = new CouponService();
 
+// The coupon facade has one method per item type; this picks them by the request's target.
+// clickIds gives trackCouponClick's (courseId, bundleId); null means clicks aren't tracked.
+// trackCouponClick only supports course_id/bundle_id today, so book "apply" clicks are not
+// tracked (recordUsage/linkClickToPurchase, used at payment time, do support book_id).
+const COUPON_TARGET_OPS = {
+  course: {
+    validate: (t, userId, details) => couponService.validateCoupon(t.couponCode, t.id, userId, details),
+    apply: (t, userId) => couponService.applyCouponToPrice(t.couponCode, t.id, userId),
+    clickIds: (id) => [id, null],
+  },
+  bundle: {
+    validate: (t, userId) => couponService.validateCouponForBundle(t.couponCode, t.id, userId),
+    apply: (t, userId) => couponService.applyCouponToPriceForBundle(t.couponCode, t.id, userId),
+    clickIds: (id) => [null, id],
+  },
+  book: {
+    validate: (t, userId) => couponService.validateCouponForBook(t.couponCode, t.id, userId),
+    apply: (t, userId) => couponService.applyCouponToPriceForBook(t.couponCode, t.id, userId),
+    clickIds: null,
+  },
+};
+
 // Reads `{ coupon_code, course_id | bundle_id | book_id }`. Returns `{ error }` (the 400 message)
 // or `{ couponCode, type: "course" | "bundle" | "book", id }`.
 const COUPON_TARGETS = [["course_id", "course"], ["bundle_id", "bundle"], ["book_id", "book"]];
@@ -51,14 +73,7 @@ class UserCouponController extends Controller {
       timestamp: Math.floor(Date.now() / 1000),
     };
 
-    let result;
-    if (target.type === "course") {
-      result = await couponService.validateCoupon(target.couponCode, target.id, userId, requestDetails);
-    } else if (target.type === "bundle") {
-      result = await couponService.validateCouponForBundle(target.couponCode, target.id, userId);
-    } else {
-      result = await couponService.validateCouponForBook(target.couponCode, target.id, userId);
-    }
+    const result = await COUPON_TARGET_OPS[target.type].validate(target, userId, requestDetails);
 
     return res.status(result.valid ? 200 : 400).json(result);
   });
@@ -76,23 +91,12 @@ class UserCouponController extends Controller {
 
     const userId = req.body.auth === true ? parseInt(req.body.user_id) : null;
 
-    let result;
-    if (target.type === "course") {
-      result = await couponService.applyCouponToPrice(target.couponCode, target.id, userId);
-    } else if (target.type === "bundle") {
-      result = await couponService.applyCouponToPriceForBundle(target.couponCode, target.id, userId);
-    } else {
-      result = await couponService.applyCouponToPriceForBook(target.couponCode, target.id, userId);
-    }
+    const ops = COUPON_TARGET_OPS[target.type];
+    const result = await ops.apply(target, userId);
     const couponId = result.success && result.data && result.data.coupon ? result.data.coupon.id : null;
 
-    // Track coupon click after successful application
-    // NOTE: trackCouponClick only supports course_id/bundle_id today (see
-    // coupon.js) — book clicks are intentionally not tracked here, matching
-    // the scope of this task (recordUsage/linkClickToPurchase, used at actual
-    // payment time, do support book_id; this is a separate pre-checkout
-    // "apply" click-tracking path outside that scope).
-    if (result.success && couponId && userId) {
+    // Track coupon click after successful application (courses and bundles; see COUPON_TARGET_OPS)
+    if (result.success && couponId && userId && ops.clickIds) {
       try {
         const requestDetails = {
           userAgent: req.get('User-Agent') || null,
@@ -104,11 +108,8 @@ class UserCouponController extends Controller {
           }
         };
 
-        if (target.type === "course") {
-          await couponService.trackCouponClick(couponId, userId, target.id, null, requestDetails);
-        } else if (target.type === "bundle") {
-          await couponService.trackCouponClick(couponId, userId, null, target.id, requestDetails);
-        }
+        const [courseId, bundleId] = ops.clickIds(target.id);
+        await couponService.trackCouponClick(couponId, userId, courseId, bundleId, requestDetails);
       } catch (trackError) {
         // Non-critical error - don't fail the request if tracking fails
         console.warn('Failed to track coupon click (non-critical):', trackError);

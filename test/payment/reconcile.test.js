@@ -19,7 +19,7 @@ const BOOK = 822; // 200; same id as course 822 on purpose
 const RECONCILER = { id: 820, name: 'Reconciler', type: 1, login: 'rec@test.local' };
 let gw;
 
-let nextUser = 851;
+let nextUser = 941; // 941-969 are free; 861+ belong to paymentHistory.test.js
 const newStudent = async () => {
     const id = nextUser++;
     await pool.query(
@@ -81,6 +81,13 @@ const reconcile = (tranId) => request(app)
     .post(`/admin/payment/reconcile/${encodeURIComponent(tranId)}`)
     .set('Authorization', `Bearer ${sign(RECONCILER, [], [PERMISSIONS.PAYMENT.MANAGE.ALL])}`)
     .send({ notes: 'student emailed' });
+
+// Passes the route's JWT guard, but has no role in the DB, so no payment access on any item.
+const UNSCOPED = { id: 2, name: 'Test Student', type: 3, login: '01700000000' };
+const reconcileAs = (user, tranId) => request(app)
+    .post(`/admin/payment/reconcile/${encodeURIComponent(tranId)}`)
+    .set('Authorization', `Bearer ${sign(user, [], [PERMISSIONS.PAYMENT.MANAGE.ALL])}`)
+    .send({ notes: 'no access' });
 
 const enrolments = async (userId) => (await pool.query(
     'SELECT course_id, amount, transaction_id FROM takes WHERE user_id = $1 ORDER BY course_id', [userId]
@@ -188,4 +195,30 @@ test('a standalone book is fulfilled as a book purchase, not a course enrolment'
     assert.deepStrictEqual(await enrolments(user.id), []);
     const books = await pool.query('SELECT book_id, course_id, bundle_id FROM course_book_purchase WHERE transaction_id = $1', [init.tran_id]);
     assert.deepStrictEqual(books.rows, [{ book_id: BOOK, course_id: null, bundle_id: null }]);
+});
+
+test('a reconciler without access to the item: 403 for a course or bundle, books are not scoped', async () => {
+    const course = await checkout(await newStudent(), `initiate/${COURSE}`, 700);
+    await auditRow(course);
+    const deniedCourse = await reconcileAs(UNSCOPED, course.tran_id);
+    assert.deepStrictEqual([deniedCourse.status, deniedCourse.body], [403, {
+        success: false, error: 'NO_COURSE_ACCESS', message: 'No access to reconcile payments for this course',
+    }]);
+
+    const bundle = await checkout(await newStudent(), `initiate-for-bundle/${BUNDLE}`, 900);
+    await auditRow(bundle);
+    const deniedBundle = await reconcileAs(UNSCOPED, bundle.tran_id);
+    assert.deepStrictEqual([deniedBundle.status, deniedBundle.body], [403, {
+        success: false, error: 'NO_BUNDLE_ACCESS', message: 'No access to reconcile payments for this bundle',
+    }]);
+
+    const book = await checkout(await newStudent(), `initiate-for-book/${BOOK}`, 200, { shipping: { name: 'N', phone: 'P', address: 'A' } });
+    await auditRow(book);
+    const bookRes = await reconcileAs(UNSCOPED, book.tran_id);
+    assert.strictEqual(bookRes.status, 200);
+    assert.strictEqual(bookRes.body.data.enrollment_succeeded, true);
+
+    // The same course and bundle rows go through for a reconciler with access.
+    assert.strictEqual((await reconcile(course.tran_id)).status, 200);
+    assert.strictEqual((await reconcile(bundle.tran_id)).status, 200);
 });
