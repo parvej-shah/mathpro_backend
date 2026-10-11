@@ -47,6 +47,16 @@ const OTP_ACCOUNT_RULES = {
     }
 };
 
+const PASSWORD_TOO_SHORT = 'Password must be at least 6 characters long';
+const isPasswordTooShort = (password) => !password || `${password}`.trim().length < 6;
+
+// Sign-up and password reset take a phone number and a new password; returns the refusal or null.
+const phoneAndPasswordRefusal = (contactType, password) => {
+    if (contactType !== 'phone') return 'Enter a valid phone number';
+    if (isPasswordTooShort(password)) return PASSWORD_TOO_SHORT;
+    return null;
+};
+
 const messagingService=new MessagingService()
 const roleService = new RoleService()
 
@@ -112,6 +122,33 @@ class AuthService extends Service {
         permissions,
         ...(sid ? { sid } : {}),
         createdAt: Date.now()
+    });
+
+    hashPassword = async (password) => bcrypt.hash(password, await bcrypt.genSalt(10));
+
+    // The sign-in token: regular users get a device-limited session (sid); admins and
+    // moderators keep session-less tokens.
+    issueToken = async (user, roles, permissions, deviceInfo) => {
+        const sid = user.type === managerialAccountTypes.regular
+            ? await this.createSession(user.id, deviceInfo)
+            : null;
+        const tokenObject = this.buildTokenObject(user, roles, permissions, sid);
+        return this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+    };
+
+    // The login / Google login reply.
+    signedInReply = (user, token, roles, permissions) => ({
+        success: true,
+        token,
+        user: {
+            id: user.id,
+            name: user.name,
+            type: user.type,
+            email: user.email,
+            phone: user.phone,
+            roles,
+            permissions
+        }
     });
 
     // ========================================
@@ -453,115 +490,52 @@ class AuthService extends Service {
     register = async (reqObj, deviceInfo = {}) => {
         try {
             const { name, login, password, otp, email: rawEmail } = reqObj;
-            const { contactType, value: normalizedLogin } = this.resolveContact(login);
+            // Public signup is phone-only (OTP via SMS). Email accounts arrive via Google.
+            const { contactType, value: phone } = this.resolveContact(login);
             const email = rawEmail && `${rawEmail}`.trim() ? `${rawEmail}`.trim().toLowerCase() : null;
 
-            // Public signup is phone-only (OTP via SMS). Email accounts arrive via Google.
-            if (contactType !== 'phone') {
-                return {
-                    success: false,
-                    error: 'Enter a valid phone number'
-                };
-            }
-
-            if (!password || `${password}`.trim().length < 6) {
-                return {
-                    success: false,
-                    error: 'Password must be at least 6 characters long'
-                };
-            }
-
-            if (!otp) {
-                return {
-                    success: false,
-                    error: 'OTP is required'
-                };
-            }
-
-            const contactColumn = contactType === 'phone' ? 'phone' : 'email';
-            const existsResult = await this.query(
-                `SELECT id FROM managerial_auth WHERE login = $1 OR ${contactColumn} = $1`,
-                [normalizedLogin]
-            );
-            if (existsResult.data.length > 0) {
-                return {
-                    success: false,
-                    error: `An account already exists with this ${contactType}`
-                };
-            }
-
-            if (email) {
-                const emailExists = await this.query(
-                    `SELECT id FROM managerial_auth WHERE email = $1`,
-                    [email]
-                );
-                if (emailExists.data.length > 0) {
-                    return {
-                        success: false,
-                        error: 'An account already exists with this email'
-                    };
-                }
-            }
+            const refusal = phoneAndPasswordRefusal(contactType, password)
+                || (otp ? null : 'OTP is required')
+                || await this.registrationTakenRefusal(phone, email);
+            if (refusal) return { success: false, error: refusal };
 
             // Enforce OTP verification before creating the account.
-            const otpVerification = await this.verifyOTP(normalizedLogin, otp);
+            const otpVerification = await this.verifyOTP(phone, otp);
             if (!otpVerification.success) {
                 return otpVerification;
             }
 
-            const salt = await bcrypt.genSalt(10);
-            const hashedPass = await bcrypt.hash(password, salt);
-            const finalName = name && `${name}`.trim() ? `${name}`.trim() : 'Student';
-            const profile = this.buildProfileWithAuth({}, {
-                authProvider: 'password',
-                passwordSet: true
-            });
-            profile.phone_verified = true;
-            profile.email_verified = false;
-
-            const phone = normalizedLogin;
+            const user = {
+                name: name && `${name}`.trim() ? `${name}`.trim() : 'Student',
+                type: managerialAccountTypes.regular,
+                login: phone,
+                email,
+                phone,
+                profile: {
+                    ...this.buildProfileWithAuth({}, { authProvider: 'password', passwordSet: true }),
+                    phone_verified: true,
+                    email_verified: false
+                }
+            };
 
             const result = await this.query(
                 `INSERT INTO managerial_auth (name, type, login, email, phone, password, profile)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)
                  RETURNING id`,
-                [
-                    finalName,
-                    managerialAccountTypes.regular,
-                    normalizedLogin,
-                    email,
-                    phone,
-                    hashedPass,
-                    JSON.stringify(profile)
-                ]
+                [user.name, user.type, user.login, email, phone, await this.hashPassword(password), JSON.stringify(user.profile)]
             );
-
-            if (result.success) {
-                const userId = result.data[0].id;
-                const sid = await this.createSession(userId, deviceInfo);
-                const tokenObject = this.buildTokenObject(
-                    { id: userId, name: finalName, type: managerialAccountTypes.regular, login: normalizedLogin, profile },
-                    [], [], sid
-                );
-                const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
-                console.log(`New user registered: ${sanitizeContactForLog(normalizedLogin, contactType)}`);
-
-                return {
-                    success: true,
-                    token,
-                    user: {
-                        id: userId,
-                        name: finalName,
-                        type: managerialAccountTypes.regular,
-                        email,
-                        phone
-                    }
-                };
+            if (!result.success) {
+                return { success: false, error: 'Registration failed' };
             }
 
+            user.id = result.data[0].id;
+            const token = await this.issueToken(user, [], [], deviceInfo);
+            console.log(`New user registered: ${sanitizeContactForLog(phone, contactType)}`);
+
             return {
-                success: false,
-                error: 'Registration failed'
+                success: true,
+                token,
+                user: { id: user.id, name: user.name, type: user.type, email, phone }
             };
         } catch (error) {
             logger.error('Error in register:', error);
@@ -570,6 +544,16 @@ class AuthService extends Service {
                 error: 'An error occurred during registration'
             };
         }
+    }
+
+    // A sign-up phone (as login or phone) or email that already has an account; returns the
+    // refusal or null.
+    registrationTakenRefusal = async (phone, email) => {
+        const phoneTaken = await this.query(`SELECT id FROM managerial_auth WHERE login = $1 OR phone = $1`, [phone]);
+        if (phoneTaken.data.length > 0) return 'An account already exists with this phone';
+        if (!email) return null;
+        const emailTaken = await this.query(`SELECT id FROM managerial_auth WHERE email = $1`, [email]);
+        return emailTaken.data.length > 0 ? 'An account already exists with this email' : null;
     }
 
     /**
@@ -616,31 +600,11 @@ class AuthService extends Service {
             }
 
             const { roles, permissions } = await this.getUserRolesAndPermissions(user.id);
-
-            // Only regular users get device-limited sessions.
-            const sid = user.type === managerialAccountTypes.regular
-                ? await this.createSession(user.id, deviceInfo)
-                : null;
-
-            const tokenObject = this.buildTokenObject(user, roles, permissions, sid);
-
-            const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+            const token = await this.issueToken(user, roles, permissions, deviceInfo);
 
             console.log(`User logged in: ${sanitizeContactForLog(user.login, contactType)} with ${roles.length} role(s) and ${permissions.length} permission(s)`);
 
-            return {
-                success: true,
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    type: user.type,
-                    email: user.email,
-                    phone: user.phone,
-                    roles: roles,
-                    permissions: permissions
-                }
-            };
+            return this.signedInReply(user, token, roles, permissions);
         } catch (error) {
             logger.error('Error in login:', error);
             return {
@@ -650,6 +614,8 @@ class AuthService extends Service {
         }
     }
 
+    // Google sign-in: signs in the account with this Google email (as email or login), or
+    // creates a regular account for it.
     googleLogin = async ({ id_token }, deviceInfo = {}) => {
         try {
             const googleVerification = await this.verifyGoogleToken(id_token);
@@ -663,92 +629,9 @@ class AuthService extends Service {
                 [email]
             );
 
-            if (existingResult.data.length > 0) {
-                const user = existingResult.data[0];
-
-                const updatedProfile = this.buildProfileWithAuth(user.profile, {
-                    authProvider: 'google'
-                }, Boolean(user.password));
-
-                if (JSON.stringify(updatedProfile) !== JSON.stringify(this.getSafeProfile(user.profile))) {
-                    const updateProfileResult = await this.query(
-                        `UPDATE managerial_auth SET profile = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-                        [JSON.stringify(updatedProfile), user.id]
-                    );
-                    if (updateProfileResult.success && updateProfileResult.data.length > 0) {
-                        Object.assign(user, updateProfileResult.data[0]);
-                    }
-                }
-
-                const { roles, permissions } = await this.getUserRolesAndPermissions(user.id);
-                // Only regular users (type=3) get device-limited sessions; admins/mods
-                // keep session-less tokens (consistent with password login).
-                const sid = user.type === managerialAccountTypes.regular
-                    ? await this.createSession(user.id, deviceInfo)
-                    : null;
-                const tokenObject = this.buildTokenObject(user, roles, permissions, sid);
-                const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
-
-                return {
-                    success: true,
-                    token,
-                    user: {
-                        id: user.id,
-                        name: user.name,
-                        type: user.type,
-                        email: user.email,
-                        phone: user.phone,
-                        roles,
-                        permissions
-                    }
-                };
-            }
-
-            const randomPassword = this.getRandomPin('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 32);
-            const salt = await bcrypt.genSalt(10);
-            const hashedPass = await bcrypt.hash(randomPassword, salt);
-            const profile = this.buildProfileWithAuth({}, {
-                authProvider: 'google',
-                passwordSet: false
-            }, true);
-            profile.email_verified = true;
-            profile.phone_verified = false;
-
-            const insertResult = await this.query(
-                `
-                    INSERT INTO managerial_auth (
-                        name, type, login, email, phone, password, profile
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-                    RETURNING id, name, type, login, email, phone, profile
-                `,
-                [name, managerialAccountTypes.regular, email, email, null, hashedPass, JSON.stringify(profile)]
-            );
-
-            if (!insertResult.success || insertResult.data.length === 0) {
-                return {
-                    success: false,
-                    error: insertResult.error || 'Failed to create Google user'
-                };
-            }
-
-            const user = insertResult.data[0];
-            const sid = await this.createSession(user.id, deviceInfo);
-            const tokenObject = this.buildTokenObject(user, [], [], sid);
-            const token = this.signToken(tokenObject, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
-
-            return {
-                success: true,
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    type: user.type,
-                    email: user.email,
-                    phone: user.phone,
-                    roles: [],
-                    permissions: []
-                }
-            };
+            return existingResult.data.length > 0
+                ? await this.googleSignIn(existingResult.data[0], deviceInfo)
+                : await this.googleSignUp(email, name, deviceInfo);
         } catch (error) {
             logger.error('Error in googleLogin:', error);
             return {
@@ -756,6 +639,59 @@ class AuthService extends Service {
                 error: 'An error occurred during Google login'
             };
         }
+    }
+
+    // Existing account: records google as an auth provider (only if that changes the
+    // profile), then signs in like a password login.
+    googleSignIn = async (user, deviceInfo) => {
+        const updatedProfile = this.buildProfileWithAuth(user.profile, {
+            authProvider: 'google'
+        }, Boolean(user.password));
+
+        if (JSON.stringify(updatedProfile) !== JSON.stringify(this.getSafeProfile(user.profile))) {
+            const updateProfileResult = await this.query(
+                `UPDATE managerial_auth SET profile = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+                [JSON.stringify(updatedProfile), user.id]
+            );
+            if (updateProfileResult.success && updateProfileResult.data.length > 0) {
+                Object.assign(user, updateProfileResult.data[0]);
+            }
+        }
+
+        const { roles, permissions } = await this.getUserRolesAndPermissions(user.id);
+        const token = await this.issueToken(user, roles, permissions, deviceInfo);
+        return this.signedInReply(user, token, roles, permissions);
+    }
+
+    // New Google account: a regular user with an unusable random password (password_set false).
+    googleSignUp = async (email, name, deviceInfo) => {
+        const randomPassword = this.getRandomPin('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 32);
+        const profile = {
+            ...this.buildProfileWithAuth({}, { authProvider: 'google', passwordSet: false }, true),
+            email_verified: true,
+            phone_verified: false
+        };
+
+        const insertResult = await this.query(
+            `
+                INSERT INTO managerial_auth (
+                    name, type, login, email, phone, password, profile
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id, name, type, login, email, phone, profile
+            `,
+            [name, managerialAccountTypes.regular, email, email, null, await this.hashPassword(randomPassword), JSON.stringify(profile)]
+        );
+
+        if (!insertResult.success || insertResult.data.length === 0) {
+            return {
+                success: false,
+                error: insertResult.error || 'Failed to create Google user'
+            };
+        }
+
+        const user = insertResult.data[0];
+        const token = await this.issueToken(user, [], [], deviceInfo);
+        return this.signedInReply(user, token, [], []);
     }
 
     /**
@@ -772,8 +708,8 @@ class AuthService extends Service {
             if (!isValidPhone(normalizedPhone)) {
                 return { success: false, error: 'Enter a valid phone number' };
             }
-            if (!password || `${password}`.trim().length < 6) {
-                return { success: false, error: 'Password must be at least 6 characters long' };
+            if (isPasswordTooShort(password)) {
+                return { success: false, error: PASSWORD_TOO_SHORT };
             }
             if (!otp) {
                 return { success: false, error: 'OTP is required' };
@@ -799,8 +735,7 @@ class AuthService extends Service {
             }
             const user = userResult.data[0];
 
-            const salt = await bcrypt.genSalt(10);
-            const hashedPass = await bcrypt.hash(password, salt);
+            const hashedPass = await this.hashPassword(password);
             const updatedProfile = this.buildProfileWithAuth(user.profile, {
                 authProvider: 'password',
                 passwordSet: true
@@ -910,53 +845,36 @@ class AuthService extends Service {
         try {
             const { contactType, value } = this.resolveContact(contact);
 
-            if (contactType !== 'phone') {
-                return {
-                    success: false,
-                    error: 'Enter a valid phone number'
-                };
-            }
-
-            if (!newPassword || `${newPassword}`.trim().length < 6) {
-                return {
-                    success: false,
-                    error: 'Password must be at least 6 characters long'
-                };
-            }
+            const refusal = phoneAndPasswordRefusal(contactType, newPassword);
+            if (refusal) return { success: false, error: refusal };
 
             const otpVerification = await this.verifyOTP(value, otp);
             if (!otpVerification.success) {
                 return otpVerification;
             }
 
-            const salt = await bcrypt.genSalt(10);
-            const hashedPass = await bcrypt.hash(newPassword, salt);
-
             const updateResult = await this.query(
                 `UPDATE managerial_auth
                  SET password = $1, updated_at = NOW()
                  WHERE login = $2 OR phone = $2
                  RETURNING id`,
-                [hashedPass, value]
+                [await this.hashPassword(newPassword), value]
             );
 
-            if (updateResult.success && updateResult.rowCount > 0) {
-                // Log out all devices after a password reset.
-                await this.query(
-                    `DELETE FROM auth_session WHERE user_id = $1`,
-                    [updateResult.data[0].id]
-                );
-                console.log(`Password reset for ${sanitizeContactForLog(value, contactType)}`);
+            if (!updateResult.success || updateResult.rowCount === 0) {
+                logger.error(`Failed to update password - no rows affected for: ${sanitizeContactForLog(value, contactType)}`);
                 return {
-                    success: true,
-                    message: 'Password updated successfully'
+                    success: false,
+                    error: 'Failed to update password - user not found'
                 };
             }
 
-            logger.error(`Failed to update password - no rows affected for: ${sanitizeContactForLog(value, contactType)}`);
+            // Log out all devices after a password reset.
+            await this.query(`DELETE FROM auth_session WHERE user_id = $1`, [updateResult.data[0].id]);
+            console.log(`Password reset for ${sanitizeContactForLog(value, contactType)}`);
             return {
-                success: false,
-                error: 'Failed to update password - user not found'
+                success: true,
+                message: 'Password updated successfully'
             };
         } catch (error) {
             logger.error('Error in resetPasswordWithOTP:', error);
