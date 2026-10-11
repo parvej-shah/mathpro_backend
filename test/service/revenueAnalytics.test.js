@@ -129,3 +129,14 @@ test('the seeded sales are what the summary adds up', async () => {
         [3500, 1600, 6, 2700, 700]
     );
 });
+
+test('a course-scoped admin sees coupon use on their courses and their bundles only', async () => {
+    // course 9101's coupon sale counts; course 9102's and bundle 9102's do not
+    const { data } = await revenue.getRevenueSummary(YEAR_2001, SCOPED);
+    assert.deepStrictEqual([data.with_coupon_revenue, data.discount_given, data.without_coupon_revenue], [800, 200, 2500]);
+
+    // a bundle coupon counts once the bundle contains one of the admin's courses
+    const bundleScoped = { hasGlobalAccess: false, courseIds: [9102] };
+    const scoped9102 = (await revenue.getRevenueSummary(YEAR_2001, bundleScoped)).data;
+    assert.deepStrictEqual([scoped9102.with_coupon_revenue, scoped9102.discount_given], [1900, 500]);
+});

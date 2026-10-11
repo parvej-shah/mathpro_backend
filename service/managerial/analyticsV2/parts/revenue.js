@@ -154,16 +154,14 @@ class RevenueAnalyticsService extends AnalyticsV2Base {
     return firstRow(await this.query(query, params));
   };
 
-  // Completed coupon sales: revenue and discount.
-  // KNOWN BUG (kept as is): coupon_usage has no item_type / item_id columns, so for a
-  // course-scoped admin this query fails and both figures read 0.
+  // Completed coupon sales: revenue and discount. A course-scoped admin sees coupon use on
+  // their courses and on bundles containing one (book coupons are not course-scoped).
   _couponRevenue = async (range, scope) => {
     const params = [range.start, range.end];
     let scopeSql = "";
     if (scope) {
       const ref = bind(params, scope);
-      scopeSql = `AND ((item_type = 'COURSE' AND item_id = ANY(${ref}))
-        OR (item_type = 'BUNDLE' AND ${bundleInScope('coupon_usage.item_id', ref)}))`;
+      scopeSql = `AND (course_id = ANY(${ref}) OR ${bundleInScope('coupon_usage.bundle_id', ref)})`;
     }
     const query = `
       SELECT COALESCE(SUM(final_price), 0) as revenue_with_coupon, COALESCE(SUM(discount_amount), 0) as discount_given
