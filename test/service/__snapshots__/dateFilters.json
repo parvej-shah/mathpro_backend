@@ -1,0 +1,789 @@
+{
+ "coupon.getAllCouponStats [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(DISTINCT cc.coupon_id) as total_coupons, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.clicked_at >= $1 AND cc.clicked_at <= $2",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "coupon.getAllCouponStats [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(DISTINCT cc.coupon_id) as total_coupons, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.clicked_at >= $1",
+   "params": [
+    1700000000
+   ]
+  }
+ ],
+ "coupon.getAllCouponStats [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(DISTINCT cc.coupon_id) as total_coupons, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.clicked_at <= $1",
+   "params": [
+    1800000000
+   ]
+  }
+ ],
+ "coupon.getAllCouponStats [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(DISTINCT cc.coupon_id) as total_coupons, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id",
+   "params": []
+  }
+ ],
+ "coupon.getCouponUsageStatistics [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total_usage_attempts, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_redemptions, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_redemptions, COUNT(CASE WHEN cu.payment_status = 'pending' THEN 1 END) as pending_redemptions, COALESCE(SUM(cu.original_price), 0) as total_original_value, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as total_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as average_discount_amount, COUNT(DISTINCT cu.coupon_id) as unique_coupons_used, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses FROM coupon_usage cu WHERE cu.used_at >= $1 AND cu.used_at <= $2",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total_coupons, COUNT(CASE WHEN status = 'active' THEN 1 END) as active_coupons, COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired_coupons, COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_coupons, COALESCE(SUM(usage_count), 0) as total_usage_count FROM coupons WHERE status != 'deleted'",
+   "params": []
+  },
+  {
+   "sql": "SELECT to_char(to_timestamp(cu.used_at), 'YYYY-MM') as period, COUNT(*) as usage_count, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu WHERE cu.used_at >= $1 AND cu.used_at <= $2 GROUP BY to_char(to_timestamp(cu.used_at), 'YYYY-MM') ORDER BY period DESC LIMIT 50",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "coupon.getCouponUsageStatistics [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_usage_attempts, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_redemptions, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_redemptions, COUNT(CASE WHEN cu.payment_status = 'pending' THEN 1 END) as pending_redemptions, COALESCE(SUM(cu.original_price), 0) as total_original_value, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as total_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as average_discount_amount, COUNT(DISTINCT cu.coupon_id) as unique_coupons_used, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses FROM coupon_usage cu WHERE cu.used_at >= $1",
+   "params": [
+    1700000000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total_coupons, COUNT(CASE WHEN status = 'active' THEN 1 END) as active_coupons, COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired_coupons, COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_coupons, COALESCE(SUM(usage_count), 0) as total_usage_count FROM coupons WHERE status != 'deleted'",
+   "params": []
+  },
+  {
+   "sql": "SELECT to_char(to_timestamp(cu.used_at), 'YYYY-MM') as period, COUNT(*) as usage_count, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu WHERE cu.used_at >= $1 GROUP BY to_char(to_timestamp(cu.used_at), 'YYYY-MM') ORDER BY period DESC LIMIT 50",
+   "params": [
+    1700000000
+   ]
+  }
+ ],
+ "coupon.getCouponUsageStatistics [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_usage_attempts, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_redemptions, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_redemptions, COUNT(CASE WHEN cu.payment_status = 'pending' THEN 1 END) as pending_redemptions, COALESCE(SUM(cu.original_price), 0) as total_original_value, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as total_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as average_discount_amount, COUNT(DISTINCT cu.coupon_id) as unique_coupons_used, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses FROM coupon_usage cu WHERE cu.used_at <= $1",
+   "params": [
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total_coupons, COUNT(CASE WHEN status = 'active' THEN 1 END) as active_coupons, COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired_coupons, COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_coupons, COALESCE(SUM(usage_count), 0) as total_usage_count FROM coupons WHERE status != 'deleted'",
+   "params": []
+  },
+  {
+   "sql": "SELECT to_char(to_timestamp(cu.used_at), 'YYYY-MM') as period, COUNT(*) as usage_count, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu WHERE cu.used_at <= $1 GROUP BY to_char(to_timestamp(cu.used_at), 'YYYY-MM') ORDER BY period DESC LIMIT 50",
+   "params": [
+    1800000000
+   ]
+  }
+ ],
+ "coupon.getCouponUsageStatistics [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total_usage_attempts, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_redemptions, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_redemptions, COUNT(CASE WHEN cu.payment_status = 'pending' THEN 1 END) as pending_redemptions, COALESCE(SUM(cu.original_price), 0) as total_original_value, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as total_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as average_discount_amount, COUNT(DISTINCT cu.coupon_id) as unique_coupons_used, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses FROM coupon_usage cu",
+   "params": []
+  },
+  {
+   "sql": "SELECT COUNT(*) as total_coupons, COUNT(CASE WHEN status = 'active' THEN 1 END) as active_coupons, COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired_coupons, COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_coupons, COALESCE(SUM(usage_count), 0) as total_usage_count FROM coupons WHERE status != 'deleted'",
+   "params": []
+  },
+  {
+   "sql": "SELECT to_char(to_timestamp(cu.used_at), 'YYYY-MM') as period, COUNT(*) as usage_count, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu GROUP BY to_char(to_timestamp(cu.used_at), 'YYYY-MM') ORDER BY period DESC LIMIT 50",
+   "params": []
+  }
+ ],
+ "coupon.getRevenueImpactAnalytics [both]": [
+  {
+   "sql": "SELECT c.id as coupon_id, c.name as coupon_name, c.code as coupon_code, c.discount_type, c.discount_value, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, COALESCE(AVG(cu.original_price), 0) as avg_original_price, COALESCE(AVG(cu.final_price), 0) as avg_final_price FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id AND cu.used_at >= $1 AND cu.used_at <= $2 WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC, c.usage_count DESC",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "coupon.getRevenueImpactAnalytics [fromOnly]": [
+  {
+   "sql": "SELECT c.id as coupon_id, c.name as coupon_name, c.code as coupon_code, c.discount_type, c.discount_value, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, COALESCE(AVG(cu.original_price), 0) as avg_original_price, COALESCE(AVG(cu.final_price), 0) as avg_final_price FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id AND cu.used_at >= $1 WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC, c.usage_count DESC",
+   "params": [
+    1700000000
+   ]
+  }
+ ],
+ "coupon.getRevenueImpactAnalytics [toOnly]": [
+  {
+   "sql": "SELECT c.id as coupon_id, c.name as coupon_name, c.code as coupon_code, c.discount_type, c.discount_value, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, COALESCE(AVG(cu.original_price), 0) as avg_original_price, COALESCE(AVG(cu.final_price), 0) as avg_final_price FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id AND cu.used_at <= $1 WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC, c.usage_count DESC",
+   "params": [
+    1800000000
+   ]
+  }
+ ],
+ "coupon.getRevenueImpactAnalytics [none]": [
+  {
+   "sql": "SELECT c.id as coupon_id, c.name as coupon_name, c.code as coupon_code, c.discount_type, c.discount_value, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, COALESCE(AVG(cu.original_price), 0) as avg_original_price, COALESCE(AVG(cu.final_price), 0) as avg_final_price FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC, c.usage_count DESC",
+   "params": []
+  }
+ ],
+ "coupon.getTopPerformingCoupons [both]": [
+  {
+   "sql": "SELECT c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, CASE WHEN COUNT(cu.id) > 0 THEN ROUND((COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END)::numeric / COUNT(cu.id) * 100), 2) ELSE 0 END as conversion_rate, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses_purchased FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id AND cu.used_at >= $1 AND cu.used_at <= $2 WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC LIMIT $3",
+   "params": [
+    1700000000,
+    1800000000,
+    10
+   ]
+  },
+  {
+   "sql": "SELECT cu.coupon_id, c.title as course_title, co.name as course_name, COUNT(cu.id) as usage_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu JOIN course co ON cu.course_id = co.id JOIN coupons c ON cu.coupon_id = c.id WHERE cu.coupon_id = ANY($1) AND cu.used_at >= $1 AND cu.used_at <= $2 GROUP BY cu.coupon_id, co.id, co.title, c.name ORDER BY cu.coupon_id, usage_count DESC",
+   "params": [
+    [
+     null
+    ],
+    1700000000
+   ]
+  }
+ ],
+ "coupon.getTopPerformingCoupons [fromOnly]": [
+  {
+   "sql": "SELECT c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, CASE WHEN COUNT(cu.id) > 0 THEN ROUND((COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END)::numeric / COUNT(cu.id) * 100), 2) ELSE 0 END as conversion_rate, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses_purchased FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id AND cu.used_at >= $1 WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC LIMIT $2",
+   "params": [
+    1700000000,
+    10
+   ]
+  },
+  {
+   "sql": "SELECT cu.coupon_id, c.title as course_title, co.name as course_name, COUNT(cu.id) as usage_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu JOIN course co ON cu.course_id = co.id JOIN coupons c ON cu.coupon_id = c.id WHERE cu.coupon_id = ANY($1) AND cu.used_at >= $1 GROUP BY cu.coupon_id, co.id, co.title, c.name ORDER BY cu.coupon_id, usage_count DESC",
+   "params": [
+    [
+     null
+    ]
+   ]
+  }
+ ],
+ "coupon.getTopPerformingCoupons [toOnly]": [
+  {
+   "sql": "SELECT c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, CASE WHEN COUNT(cu.id) > 0 THEN ROUND((COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END)::numeric / COUNT(cu.id) * 100), 2) ELSE 0 END as conversion_rate, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses_purchased FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id AND cu.used_at <= $1 WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC LIMIT $2",
+   "params": [
+    1800000000,
+    10
+   ]
+  },
+  {
+   "sql": "SELECT cu.coupon_id, c.title as course_title, co.name as course_name, COUNT(cu.id) as usage_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu JOIN course co ON cu.course_id = co.id JOIN coupons c ON cu.coupon_id = c.id WHERE cu.coupon_id = ANY($1) AND cu.used_at <= $1 GROUP BY cu.coupon_id, co.id, co.title, c.name ORDER BY cu.coupon_id, usage_count DESC",
+   "params": [
+    [
+     null
+    ]
+   ]
+  }
+ ],
+ "coupon.getTopPerformingCoupons [none]": [
+  {
+   "sql": "SELECT c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time, COUNT(cu.id) as total_uses, COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END) as successful_uses, COUNT(CASE WHEN cu.payment_status = 'failed' THEN 1 END) as failed_uses, COALESCE(SUM(cu.original_price), 0) as total_original_revenue, COALESCE(SUM(cu.discount_amount), 0) as total_discount_given, COALESCE(SUM(cu.final_price), 0) as actual_revenue_generated, COALESCE(AVG(cu.discount_amount), 0) as avg_discount_per_use, CASE WHEN COUNT(cu.id) > 0 THEN ROUND((COUNT(CASE WHEN cu.payment_status = 'completed' THEN 1 END)::numeric / COUNT(cu.id) * 100), 2) ELSE 0 END as conversion_rate, COUNT(DISTINCT cu.user_id) as unique_users, COUNT(DISTINCT cu.course_id) as unique_courses_purchased FROM coupons c LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id WHERE c.status != 'deleted' GROUP BY c.id, c.name, c.code, c.discount_type, c.discount_value, c.usage_limit, c.usage_count, c.status, c.start_time, c.end_time HAVING COUNT(cu.id) > 0 OR c.usage_count > 0 ORDER BY actual_revenue_generated DESC LIMIT $1",
+   "params": [
+    10
+   ]
+  },
+  {
+   "sql": "SELECT cu.coupon_id, c.title as course_title, co.name as course_name, COUNT(cu.id) as usage_count, COALESCE(SUM(cu.discount_amount), 0) as total_discount, COALESCE(SUM(cu.final_price), 0) as revenue_generated FROM coupon_usage cu JOIN course co ON cu.course_id = co.id JOIN coupons c ON cu.coupon_id = c.id WHERE cu.coupon_id = ANY($1) GROUP BY cu.coupon_id, co.id, co.title, c.name ORDER BY cu.coupon_id, usage_count DESC",
+   "params": [
+    [
+     null
+    ]
+   ]
+  }
+ ],
+ "coupon.getCouponUsageReport [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_usage cu WHERE cu.coupon_id = $1 AND cu.used_at >= $2 AND cu.used_at <= $3",
+   "params": [
+    5,
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT cu.id, cu.coupon_id, c.name as coupon_name, c.code as coupon_code, cu.user_id, cu.course_id, co.title as course_title, cu.original_price, cu.discount_amount, cu.final_price, cu.used_at, cu.payment_status, cu.metadata, ROUND((cu.discount_amount / NULLIF(cu.original_price, 0) * 100), 2) as discount_percentage FROM coupon_usage cu JOIN coupons c ON cu.coupon_id = c.id LEFT JOIN course co ON cu.course_id = co.id WHERE cu.coupon_id = $1 AND cu.used_at >= $2 AND cu.used_at <= $3 ORDER BY cu.used_at DESC LIMIT $4 OFFSET $5",
+   "params": [
+    5,
+    1700000000,
+    1800000000,
+    50,
+    0
+   ]
+  }
+ ],
+ "coupon.getCouponUsageReport [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_usage cu WHERE cu.coupon_id = $1 AND cu.used_at >= $2",
+   "params": [
+    5,
+    1700000000
+   ]
+  },
+  {
+   "sql": "SELECT cu.id, cu.coupon_id, c.name as coupon_name, c.code as coupon_code, cu.user_id, cu.course_id, co.title as course_title, cu.original_price, cu.discount_amount, cu.final_price, cu.used_at, cu.payment_status, cu.metadata, ROUND((cu.discount_amount / NULLIF(cu.original_price, 0) * 100), 2) as discount_percentage FROM coupon_usage cu JOIN coupons c ON cu.coupon_id = c.id LEFT JOIN course co ON cu.course_id = co.id WHERE cu.coupon_id = $1 AND cu.used_at >= $2 ORDER BY cu.used_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    5,
+    1700000000,
+    50,
+    0
+   ]
+  }
+ ],
+ "coupon.getCouponUsageReport [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_usage cu WHERE cu.coupon_id = $1 AND cu.used_at <= $2",
+   "params": [
+    5,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT cu.id, cu.coupon_id, c.name as coupon_name, c.code as coupon_code, cu.user_id, cu.course_id, co.title as course_title, cu.original_price, cu.discount_amount, cu.final_price, cu.used_at, cu.payment_status, cu.metadata, ROUND((cu.discount_amount / NULLIF(cu.original_price, 0) * 100), 2) as discount_percentage FROM coupon_usage cu JOIN coupons c ON cu.coupon_id = c.id LEFT JOIN course co ON cu.course_id = co.id WHERE cu.coupon_id = $1 AND cu.used_at <= $2 ORDER BY cu.used_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    5,
+    1800000000,
+    50,
+    0
+   ]
+  }
+ ],
+ "coupon.getCouponUsageReport [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_usage cu WHERE cu.coupon_id = $1",
+   "params": [
+    5
+   ]
+  },
+  {
+   "sql": "SELECT cu.id, cu.coupon_id, c.name as coupon_name, c.code as coupon_code, cu.user_id, cu.course_id, co.title as course_title, cu.original_price, cu.discount_amount, cu.final_price, cu.used_at, cu.payment_status, cu.metadata, ROUND((cu.discount_amount / NULLIF(cu.original_price, 0) * 100), 2) as discount_percentage FROM coupon_usage cu JOIN coupons c ON cu.coupon_id = c.id LEFT JOIN course co ON cu.course_id = co.id WHERE cu.coupon_id = $1 ORDER BY cu.used_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    5,
+    50,
+    0
+   ]
+  }
+ ],
+ "clicks.getCouponClicks [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 AND cc.clicked_at <= $3",
+   "params": [
+    5,
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 AND cc.clicked_at <= $3 ORDER BY cc.clicked_at DESC LIMIT $4 OFFSET $5",
+   "params": [
+    5,
+    1700000000,
+    1800000000,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getCouponClicks [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2",
+   "params": [
+    5,
+    1700000000
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 ORDER BY cc.clicked_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    5,
+    1700000000,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getCouponClicks [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.coupon_id = $1 AND cc.clicked_at <= $2",
+   "params": [
+    5,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at <= $2 ORDER BY cc.clicked_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    5,
+    1800000000,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getCouponClicks [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.coupon_id = $1",
+   "params": [
+    5
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 ORDER BY cc.clicked_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    5,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getAllCouponClicks [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.clicked_at >= $1 AND cc.clicked_at <= $2",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.clicked_at >= $1 AND cc.clicked_at <= $2 ORDER BY cc.clicked_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    1700000000,
+    1800000000,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getAllCouponClicks [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.clicked_at >= $1",
+   "params": [
+    1700000000
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.clicked_at >= $1 ORDER BY cc.clicked_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    1700000000,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getAllCouponClicks [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc WHERE cc.clicked_at <= $1",
+   "params": [
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.clicked_at <= $1 ORDER BY cc.clicked_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    1800000000,
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getAllCouponClicks [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupon_clicks cc",
+   "params": []
+  },
+  {
+   "sql": "SELECT cc.id, cc.coupon_id, c.code as coupon_code, cc.user_id, ma_user.name as user_name, ma_user.email as user_email, ma_user.phone as user_phone, cc.course_id, co.title as course_title, cc.bundle_id, b.title as bundle_name, cc.clicked_at, cc.user_agent, cc.metadata, cc.purchase_completed, cc.purchase_completed_at, cc.transaction_id, cc.coupon_usage_id, COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric) as final_price, COALESCE(cu.discount_amount, (cc.metadata->>'discount_amount')::numeric) as discount_amount, COALESCE((cc.metadata->>'original_price')::numeric, cu.original_price) as original_price FROM coupon_clicks cc LEFT JOIN coupons c ON cc.coupon_id = c.id LEFT JOIN managerial_auth ma_user ON cc.user_id = ma_user.id LEFT JOIN course co ON cc.course_id = co.id LEFT JOIN bundle b ON cc.bundle_id = b.id LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id ORDER BY cc.clicked_at DESC LIMIT $1 OFFSET $2",
+   "params": [
+    20,
+    0
+   ]
+  }
+ ],
+ "clicks.getCouponConversionStats [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 AND cc.clicked_at <= $3",
+   "params": [
+    5,
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "clicks.getCouponConversionStats [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2",
+   "params": [
+    5,
+    1700000000
+   ]
+  }
+ ],
+ "clicks.getCouponConversionStats [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at <= $2",
+   "params": [
+    5,
+    1800000000
+   ]
+  }
+ ],
+ "clicks.getCouponConversionStats [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1",
+   "params": [
+    5
+   ]
+  }
+ ],
+ "clicks.getCouponClickAnalytics [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 AND cc.clicked_at <= $3",
+   "params": [
+    5,
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT DATE(to_timestamp(cc.clicked_at)) as date, COUNT(*) as clicks, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases FROM coupon_clicks cc WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 AND cc.clicked_at <= $3 GROUP BY DATE(to_timestamp(cc.clicked_at)) ORDER BY date DESC",
+   "params": [
+    5,
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "clicks.getCouponClickAnalytics [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2",
+   "params": [
+    5,
+    1700000000
+   ]
+  },
+  {
+   "sql": "SELECT DATE(to_timestamp(cc.clicked_at)) as date, COUNT(*) as clicks, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases FROM coupon_clicks cc WHERE cc.coupon_id = $1 AND cc.clicked_at >= $2 GROUP BY DATE(to_timestamp(cc.clicked_at)) ORDER BY date DESC",
+   "params": [
+    5,
+    1700000000
+   ]
+  }
+ ],
+ "clicks.getCouponClickAnalytics [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1 AND cc.clicked_at <= $2",
+   "params": [
+    5,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT DATE(to_timestamp(cc.clicked_at)) as date, COUNT(*) as clicks, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases FROM coupon_clicks cc WHERE cc.coupon_id = $1 AND cc.clicked_at <= $2 GROUP BY DATE(to_timestamp(cc.clicked_at)) ORDER BY date DESC",
+   "params": [
+    5,
+    1800000000
+   ]
+  }
+ ],
+ "clicks.getCouponClickAnalytics [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total_clicks, COUNT(DISTINCT cc.user_id) as unique_users, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases_completed, COALESCE( SUM(COALESCE(cu.final_price, (cc.metadata->>'final_price')::numeric)) FILTER (WHERE cc.purchase_completed = TRUE), 0 ) as total_revenue FROM coupon_clicks cc LEFT JOIN coupon_usage cu ON cc.coupon_usage_id = cu.id WHERE cc.coupon_id = $1",
+   "params": [
+    5
+   ]
+  },
+  {
+   "sql": "SELECT DATE(to_timestamp(cc.clicked_at)) as date, COUNT(*) as clicks, COUNT(*) FILTER (WHERE cc.purchase_completed = TRUE) as purchases FROM coupon_clicks cc WHERE cc.coupon_id = $1 GROUP BY DATE(to_timestamp(cc.clicked_at)) ORDER BY date DESC",
+   "params": [
+    5
+   ]
+  }
+ ],
+ "crud.listCoupons [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupons c WHERE c.status != 'deleted' AND c.created_at >= $1 AND c.created_at <= $2",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT c.*, ma.name as created_by_name, c.usage_count, COUNT(cu.id) as total_usage_from_table FROM coupons c LEFT JOIN managerial_auth ma ON c.created_by = ma.id LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id WHERE c.status != 'deleted' AND c.created_at >= $1 AND c.created_at <= $2 GROUP BY c.id, ma.name, c.usage_count ORDER BY c.created_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    1700000000,
+    1800000000,
+    10,
+    0
+   ]
+  }
+ ],
+ "crud.listCoupons [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupons c WHERE c.status != 'deleted' AND c.created_at >= $1",
+   "params": [
+    1700000000
+   ]
+  },
+  {
+   "sql": "SELECT c.*, ma.name as created_by_name, c.usage_count, COUNT(cu.id) as total_usage_from_table FROM coupons c LEFT JOIN managerial_auth ma ON c.created_by = ma.id LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id WHERE c.status != 'deleted' AND c.created_at >= $1 GROUP BY c.id, ma.name, c.usage_count ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    1700000000,
+    10,
+    0
+   ]
+  }
+ ],
+ "crud.listCoupons [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupons c WHERE c.status != 'deleted' AND c.created_at <= $1",
+   "params": [
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT c.*, ma.name as created_by_name, c.usage_count, COUNT(cu.id) as total_usage_from_table FROM coupons c LEFT JOIN managerial_auth ma ON c.created_by = ma.id LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id WHERE c.status != 'deleted' AND c.created_at <= $1 GROUP BY c.id, ma.name, c.usage_count ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    1800000000,
+    10,
+    0
+   ]
+  }
+ ],
+ "crud.listCoupons [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total FROM coupons c WHERE c.status != 'deleted'",
+   "params": []
+  },
+  {
+   "sql": "SELECT c.*, ma.name as created_by_name, c.usage_count, COUNT(cu.id) as total_usage_from_table FROM coupons c LEFT JOIN managerial_auth ma ON c.created_by = ma.id LEFT JOIN coupon_usage cu ON c.id = cu.coupon_id WHERE c.status != 'deleted' GROUP BY c.id, ma.name, c.usage_count ORDER BY c.created_at DESC LIMIT $1 OFFSET $2",
+   "params": [
+    10,
+    0
+   ]
+  }
+ ],
+ "feedback.exportFeedbacks [both]": [
+  {
+   "sql": "SELECT f.id, f.course_id, f.course_id as course_name, f.user_id, COALESCE(u.name, 'Anonymous') as user_name, u.email as user_email, f.rating, f.comment, f.category, f.created_at, f.updated_at FROM feedbacks f LEFT JOIN managerial_auth u ON f.user_id = u.id::text WHERE f.created_at >= $1 AND f.created_at <= $2 ORDER BY f.created_at DESC",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "feedback.exportFeedbacks [fromOnly]": [
+  {
+   "sql": "SELECT f.id, f.course_id, f.course_id as course_name, f.user_id, COALESCE(u.name, 'Anonymous') as user_name, u.email as user_email, f.rating, f.comment, f.category, f.created_at, f.updated_at FROM feedbacks f LEFT JOIN managerial_auth u ON f.user_id = u.id::text WHERE f.created_at >= $1 ORDER BY f.created_at DESC",
+   "params": [
+    1700000000
+   ]
+  }
+ ],
+ "feedback.exportFeedbacks [toOnly]": [
+  {
+   "sql": "SELECT f.id, f.course_id, f.course_id as course_name, f.user_id, COALESCE(u.name, 'Anonymous') as user_name, u.email as user_email, f.rating, f.comment, f.category, f.created_at, f.updated_at FROM feedbacks f LEFT JOIN managerial_auth u ON f.user_id = u.id::text WHERE f.created_at <= $1 ORDER BY f.created_at DESC",
+   "params": [
+    1800000000
+   ]
+  }
+ ],
+ "feedback.exportFeedbacks [none]": [
+  {
+   "sql": "SELECT f.id, f.course_id, f.course_id as course_name, f.user_id, COALESCE(u.name, 'Anonymous') as user_name, u.email as user_email, f.rating, f.comment, f.category, f.created_at, f.updated_at FROM feedbacks f LEFT JOIN managerial_auth u ON f.user_id = u.id::text ORDER BY f.created_at DESC",
+   "params": []
+  }
+ ],
+ "user.listUsers [both]": [
+  {
+   "sql": "SELECT COUNT(*)::integer as total FROM managerial_auth WHERE type = $1 AND created_at >= $2 AND created_at <= $3",
+   "params": [
+    3,
+    1700000000,
+    1800000000,
+    10,
+    0
+   ]
+  },
+  {
+   "sql": "SELECT id, name, type, login, email, phone, profile, created_at, updated_at FROM managerial_auth WHERE type = $1 AND created_at >= $2 AND created_at <= $3 ORDER BY created_at DESC LIMIT $4 OFFSET $5",
+   "params": [
+    3,
+    1700000000,
+    1800000000,
+    10,
+    0
+   ]
+  }
+ ],
+ "user.listUsers [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*)::integer as total FROM managerial_auth WHERE type = $1 AND created_at >= $2",
+   "params": [
+    3,
+    1700000000,
+    10,
+    0
+   ]
+  },
+  {
+   "sql": "SELECT id, name, type, login, email, phone, profile, created_at, updated_at FROM managerial_auth WHERE type = $1 AND created_at >= $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    3,
+    1700000000,
+    10,
+    0
+   ]
+  }
+ ],
+ "user.listUsers [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*)::integer as total FROM managerial_auth WHERE type = $1 AND created_at <= $2",
+   "params": [
+    3,
+    1800000000,
+    10,
+    0
+   ]
+  },
+  {
+   "sql": "SELECT id, name, type, login, email, phone, profile, created_at, updated_at FROM managerial_auth WHERE type = $1 AND created_at <= $2 ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+   "params": [
+    3,
+    1800000000,
+    10,
+    0
+   ]
+  }
+ ],
+ "user.listUsers [none]": [
+  {
+   "sql": "SELECT COUNT(*)::integer as total FROM managerial_auth WHERE type = $1",
+   "params": [
+    3,
+    10,
+    0
+   ]
+  },
+  {
+   "sql": "SELECT id, name, type, login, email, phone, profile, created_at, updated_at FROM managerial_auth WHERE type = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+   "params": [
+    3,
+    10,
+    0
+   ]
+  }
+ ],
+ "analytics.getLearningProgress [both]": [
+  {
+   "sql": "SELECT COUNT(*) as total_modules_completed, COUNT(DISTINCT p.user_id) as active_learners_30d FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp >= $1 AND p.timestamp >= $2 AND p.timestamp <= $3",
+   "params": [
+    1747408000,
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE ($1::bigint IS NULL OR p.timestamp >= $1::bigint) AND ($2::bigint IS NULL OR p.timestamp <= $2::bigint)",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT AVG(completion_rate) as avg_completion_rate FROM ( SELECT ch.course_id, COUNT(DISTINCT t.user_id) as enrolled, COUNT(DISTINCT p.user_id) as completed, CASE WHEN COUNT(DISTINCT t.user_id) > 0 THEN (COUNT(DISTINCT p.user_id)::numeric / COUNT(DISTINCT t.user_id)) * 100 ELSE 0 END as completion_rate FROM course c LEFT JOIN takes t ON c.id = t.course_id LEFT JOIN chapter ch ON c.id = ch.course_id LEFT JOIN module m ON ch.id = m.chapter_id LEFT JOIN progress p ON m.id = p.module_id AND p.user_id = t.user_id GROUP BY ch.course_id ) as course_completion",
+   "params": []
+  },
+  {
+   "sql": "SELECT u.id as user_id, u.name, COUNT(DISTINCT p.module_id) as modules_completed, MAX(ucs.current_streak) as current_streak FROM progress p JOIN managerial_auth u ON p.user_id = u.id LEFT JOIN user_course_streaks ucs ON u.id = ucs.user_id JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp >= $1 AND p.timestamp <= $2 GROUP BY u.id, u.name ORDER BY modules_completed DESC LIMIT 10",
+   "params": [
+    1700000000,
+    1800000000
+   ]
+  }
+ ],
+ "analytics.getLearningProgress [fromOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_modules_completed, COUNT(DISTINCT p.user_id) as active_learners_30d FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp >= $1 AND p.timestamp >= $2 AND p.timestamp <= $3",
+   "params": [
+    1747408000,
+    1700000000,
+    1750000000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE ($1::bigint IS NULL OR p.timestamp >= $1::bigint) AND ($2::bigint IS NULL OR p.timestamp <= $2::bigint)",
+   "params": [
+    1700000000,
+    1750000000
+   ]
+  },
+  {
+   "sql": "SELECT AVG(completion_rate) as avg_completion_rate FROM ( SELECT ch.course_id, COUNT(DISTINCT t.user_id) as enrolled, COUNT(DISTINCT p.user_id) as completed, CASE WHEN COUNT(DISTINCT t.user_id) > 0 THEN (COUNT(DISTINCT p.user_id)::numeric / COUNT(DISTINCT t.user_id)) * 100 ELSE 0 END as completion_rate FROM course c LEFT JOIN takes t ON c.id = t.course_id LEFT JOIN chapter ch ON c.id = ch.course_id LEFT JOIN module m ON ch.id = m.chapter_id LEFT JOIN progress p ON m.id = p.module_id AND p.user_id = t.user_id GROUP BY ch.course_id ) as course_completion",
+   "params": []
+  },
+  {
+   "sql": "SELECT u.id as user_id, u.name, COUNT(DISTINCT p.module_id) as modules_completed, MAX(ucs.current_streak) as current_streak FROM progress p JOIN managerial_auth u ON p.user_id = u.id LEFT JOIN user_course_streaks ucs ON u.id = ucs.user_id JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp >= $1 AND p.timestamp <= $2 GROUP BY u.id, u.name ORDER BY modules_completed DESC LIMIT 10",
+   "params": [
+    1700000000,
+    1750000000
+   ]
+  }
+ ],
+ "analytics.getLearningProgress [toOnly]": [
+  {
+   "sql": "SELECT COUNT(*) as total_modules_completed, COUNT(DISTINCT p.user_id) as active_learners_30d FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp >= $1 AND p.timestamp <= $2",
+   "params": [
+    1747408000,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE ($1::bigint IS NULL OR p.timestamp >= $1::bigint) AND ($2::bigint IS NULL OR p.timestamp <= $2::bigint)",
+   "params": [
+    null,
+    1800000000
+   ]
+  },
+  {
+   "sql": "SELECT AVG(completion_rate) as avg_completion_rate FROM ( SELECT ch.course_id, COUNT(DISTINCT t.user_id) as enrolled, COUNT(DISTINCT p.user_id) as completed, CASE WHEN COUNT(DISTINCT t.user_id) > 0 THEN (COUNT(DISTINCT p.user_id)::numeric / COUNT(DISTINCT t.user_id)) * 100 ELSE 0 END as completion_rate FROM course c LEFT JOIN takes t ON c.id = t.course_id LEFT JOIN chapter ch ON c.id = ch.course_id LEFT JOIN module m ON ch.id = m.chapter_id LEFT JOIN progress p ON m.id = p.module_id AND p.user_id = t.user_id GROUP BY ch.course_id ) as course_completion",
+   "params": []
+  },
+  {
+   "sql": "SELECT u.id as user_id, u.name, COUNT(DISTINCT p.module_id) as modules_completed, MAX(ucs.current_streak) as current_streak FROM progress p JOIN managerial_auth u ON p.user_id = u.id LEFT JOIN user_course_streaks ucs ON u.id = ucs.user_id JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp <= $1 GROUP BY u.id, u.name ORDER BY modules_completed DESC LIMIT 10",
+   "params": [
+    1800000000
+   ]
+  }
+ ],
+ "analytics.getLearningProgress [none]": [
+  {
+   "sql": "SELECT COUNT(*) as total_modules_completed, COUNT(DISTINCT p.user_id) as active_learners_30d FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE p.timestamp >= $1",
+   "params": [
+    1747408000
+   ]
+  },
+  {
+   "sql": "SELECT COUNT(*) as total FROM progress p JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id WHERE ($1::bigint IS NULL OR p.timestamp >= $1::bigint) AND ($2::bigint IS NULL OR p.timestamp <= $2::bigint)",
+   "params": [
+    null,
+    null
+   ]
+  },
+  {
+   "sql": "SELECT AVG(completion_rate) as avg_completion_rate FROM ( SELECT ch.course_id, COUNT(DISTINCT t.user_id) as enrolled, COUNT(DISTINCT p.user_id) as completed, CASE WHEN COUNT(DISTINCT t.user_id) > 0 THEN (COUNT(DISTINCT p.user_id)::numeric / COUNT(DISTINCT t.user_id)) * 100 ELSE 0 END as completion_rate FROM course c LEFT JOIN takes t ON c.id = t.course_id LEFT JOIN chapter ch ON c.id = ch.course_id LEFT JOIN module m ON ch.id = m.chapter_id LEFT JOIN progress p ON m.id = p.module_id AND p.user_id = t.user_id GROUP BY ch.course_id ) as course_completion",
+   "params": []
+  },
+  {
+   "sql": "SELECT u.id as user_id, u.name, COUNT(DISTINCT p.module_id) as modules_completed, MAX(ucs.current_streak) as current_streak FROM progress p JOIN managerial_auth u ON p.user_id = u.id LEFT JOIN user_course_streaks ucs ON u.id = ucs.user_id JOIN module m ON p.module_id = m.id JOIN chapter ch ON m.chapter_id = ch.id GROUP BY u.id, u.name ORDER BY modules_completed DESC LIMIT 10",
+   "params": []
+  }
+ ]
+}

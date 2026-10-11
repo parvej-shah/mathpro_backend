@@ -4,6 +4,7 @@ const { Service } = require("../../base");
 const CouponValidator = require("../CouponValidator");
 const CouponAuditLogger = require("../CouponAuditLogger");
 const logger = require('../../../util/logger');
+const { dateRangeFilter } = require('../../../util/dateRangeFilter');
 const { buildUpdate } = require('../../../util/buildUpdate');
 const { pageMeta } = require('../../../util/pagination');
 
@@ -476,17 +477,10 @@ class CouponCrudService extends Service {
         paramIndex++;
       }
 
-      if (startDate) {
-        whereConditions.push(`c.created_at >= $${paramIndex}`);
-        queryParams.push(startDate);
-        paramIndex++;
-      }
-
-      if (endDate) {
-        whereConditions.push(`c.created_at <= $${paramIndex}`);
-        queryParams.push(endDate);
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('c.created_at', startDate, endDate, { startIndex: paramIndex });
+      whereConditions.push(...dateFilter.conditions);
+      queryParams.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       const whereClause =
         whereConditions.length > 0

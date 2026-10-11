@@ -3,6 +3,7 @@
 const { Service } = require("../../base");
 const { parsePagination, pageMeta } = require("../../../util/pagination");
 const logger = require('../../../util/logger');
+const { dateRangeFilter } = require('../../../util/dateRangeFilter');
 
 class CouponClickTrackingService extends Service {
   constructor() {
@@ -227,17 +228,10 @@ class CouponClickTrackingService extends Service {
       let paramIndex = 2;
 
       // Date range filter
-      if (filters.dateFrom) {
-        whereConditions.push(`cc.clicked_at >= $${paramIndex}`);
-        params.push(parseInt(filters.dateFrom));
-        paramIndex++;
-      }
-
-      if (filters.dateTo) {
-        whereConditions.push(`cc.clicked_at <= $${paramIndex}`);
-        params.push(parseInt(filters.dateTo));
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cc.clicked_at', filters.dateFrom, filters.dateTo, { startIndex: paramIndex, transform: (v) => parseInt(v) });
+      whereConditions.push(...dateFilter.conditions);
+      params.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       // Purchase completed filter
       if (filters.purchaseCompleted !== undefined) {
@@ -339,17 +333,10 @@ class CouponClickTrackingService extends Service {
       }
 
       // Date range filter
-      if (filters.dateFrom) {
-        whereConditions.push(`cc.clicked_at >= $${paramIndex}`);
-        params.push(parseInt(filters.dateFrom));
-        paramIndex++;
-      }
-
-      if (filters.dateTo) {
-        whereConditions.push(`cc.clicked_at <= $${paramIndex}`);
-        params.push(parseInt(filters.dateTo));
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cc.clicked_at', filters.dateFrom, filters.dateTo, { startIndex: paramIndex, transform: (v) => parseInt(v) });
+      whereConditions.push(...dateFilter.conditions);
+      params.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       // Purchase completed filter
       if (filters.purchaseCompleted !== undefined) {
@@ -522,17 +509,10 @@ class CouponClickTrackingService extends Service {
       const params = [couponId];
       let paramIndex = 2;
 
-      if (dateRange.dateFrom) {
-        whereConditions.push(`cc.clicked_at >= $${paramIndex}`);
-        params.push(parseInt(dateRange.dateFrom));
-        paramIndex++;
-      }
-
-      if (dateRange.dateTo) {
-        whereConditions.push(`cc.clicked_at <= $${paramIndex}`);
-        params.push(parseInt(dateRange.dateTo));
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cc.clicked_at', dateRange.dateFrom, dateRange.dateTo, { startIndex: paramIndex, transform: (v) => parseInt(v) });
+      whereConditions.push(...dateFilter.conditions);
+      params.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       const whereClause = whereConditions.join(' AND ');
 
@@ -603,17 +583,10 @@ class CouponClickTrackingService extends Service {
       const params = [couponId];
       let paramIndex = 2;
 
-      if (dateRange.dateFrom) {
-        whereConditions.push(`cc.clicked_at >= $${paramIndex}`);
-        params.push(parseInt(dateRange.dateFrom));
-        paramIndex++;
-      }
-
-      if (dateRange.dateTo) {
-        whereConditions.push(`cc.clicked_at <= $${paramIndex}`);
-        params.push(parseInt(dateRange.dateTo));
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cc.clicked_at', dateRange.dateFrom, dateRange.dateTo, { startIndex: paramIndex, transform: (v) => parseInt(v) });
+      whereConditions.push(...dateFilter.conditions);
+      params.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       const whereClause = whereConditions.join(' AND ');
 

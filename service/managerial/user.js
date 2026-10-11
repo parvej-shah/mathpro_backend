@@ -9,6 +9,7 @@ const {
 } = require('../../util/authHelpers');
 const { managerialAccountTypes } = require('../../util/constants');
 const logger = require('../../util/logger');
+const { dateRangeFilter } = require('../../util/dateRangeFilter');
 const { buildUpdate } = require('../../util/buildUpdate');
 const { pageMeta } = require('../../util/pagination');
 
@@ -121,16 +122,10 @@ class UserService extends Service {
             }
 
             // Date range filter
-            if (dateFrom) {
-                conditions.push(`created_at >= $${paramIndex}`);
-                params.push(dateFrom);
-                paramIndex++;
-            }
-            if (dateTo) {
-                conditions.push(`created_at <= $${paramIndex}`);
-                params.push(dateTo);
-                paramIndex++;
-            }
+            const dateFilter = dateRangeFilter('created_at', dateFrom, dateTo, { startIndex: paramIndex });
+            conditions.push(...dateFilter.conditions);
+            params.push(...dateFilter.params);
+            paramIndex = dateFilter.nextIndex;
 
             // Count total records
             const countQuery = `

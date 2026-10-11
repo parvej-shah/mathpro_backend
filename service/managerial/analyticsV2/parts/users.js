@@ -4,6 +4,7 @@ const { AnalyticsV2Base } = require("./base");
 const { parseDateRange } = require("../../../../util/analyticsV2/dateUtils");
 const { validateLimit, validateOffset, buildDateGrouping } = require("../../../../util/analyticsV2/queryUtils");
 const logger = require('../../../../util/logger');
+const { dateRangeFilter } = require('../../../../util/dateRangeFilter');
 
 class UserAnalyticsService extends AnalyticsV2Base {
   constructor() {
@@ -550,16 +551,10 @@ class UserAnalyticsService extends AnalyticsV2Base {
       let progressWhereClause = "WHERE p.timestamp >= $1";
       let paramIndex = 2;
 
-      if (dateRange.start) {
-        progressWhereClause += ` AND p.timestamp >= $${paramIndex}`;
-        progressParams.push(dateRange.start);
-        paramIndex++;
-      }
-      if (dateRange.end) {
-        progressWhereClause += ` AND p.timestamp <= $${paramIndex}`;
-        progressParams.push(dateRange.end);
-        paramIndex++;
-      }
+      const progressDates = dateRangeFilter('p.timestamp', dateRange.start, dateRange.end, { startIndex: paramIndex });
+      progressWhereClause += progressDates.conditions.map((condition) => ` AND ${condition}`).join('');
+      progressParams.push(...progressDates.params);
+      paramIndex = progressDates.nextIndex;
       if (courseId) {
         progressWhereClause += ` AND ch.course_id = $${paramIndex}`;
         progressParams.push(courseId);
@@ -639,16 +634,10 @@ class UserAnalyticsService extends AnalyticsV2Base {
       let topLearnersWhereClause = [];
       let topLearnersParamIndex = 1;
 
-      if (dateRange.start) {
-        topLearnersWhereClause.push(`p.timestamp >= $${topLearnersParamIndex}`);
-        topLearnersParams.push(dateRange.start);
-        topLearnersParamIndex++;
-      }
-      if (dateRange.end) {
-        topLearnersWhereClause.push(`p.timestamp <= $${topLearnersParamIndex}`);
-        topLearnersParams.push(dateRange.end);
-        topLearnersParamIndex++;
-      }
+      const dateFilter = dateRangeFilter('p.timestamp', dateRange.start, dateRange.end, { startIndex: topLearnersParamIndex });
+      topLearnersWhereClause.push(...dateFilter.conditions);
+      topLearnersParams.push(...dateFilter.params);
+      topLearnersParamIndex = dateFilter.nextIndex;
       if (courseId) {
         topLearnersWhereClause.push(`ch.course_id = $${topLearnersParamIndex}`);
         topLearnersParams.push(courseId);

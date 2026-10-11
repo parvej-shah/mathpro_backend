@@ -2,6 +2,7 @@
 // Part of CouponService (service/managerial/coupon.js), which callers use.
 const { Service } = require("../../base");
 const logger = require('../../../util/logger');
+const { dateRangeFilter } = require('../../../util/dateRangeFilter');
 
 class CouponAnalyticsService extends Service {
   constructor() {
@@ -19,17 +20,10 @@ class CouponAnalyticsService extends Service {
       const params = [];
       let paramIndex = 1;
 
-      if (dateRange.dateFrom) {
-        whereConditions.push(`cc.clicked_at >= $${paramIndex}`);
-        params.push(parseInt(dateRange.dateFrom));
-        paramIndex++;
-      }
-
-      if (dateRange.dateTo) {
-        whereConditions.push(`cc.clicked_at <= $${paramIndex}`);
-        params.push(parseInt(dateRange.dateTo));
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cc.clicked_at', dateRange.dateFrom, dateRange.dateTo, { startIndex: paramIndex, transform: (v) => parseInt(v) });
+      whereConditions.push(...dateFilter.conditions);
+      params.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
@@ -105,17 +99,10 @@ class CouponAnalyticsService extends Service {
       let paramIndex = 1;
 
       // Build WHERE conditions based on filters
-      if (startDate) {
-        whereConditions.push(`cu.used_at >= $${paramIndex}`);
-        queryParams.push(startDate);
-        paramIndex++;
-      }
-
-      if (endDate) {
-        whereConditions.push(`cu.used_at <= $${paramIndex}`);
-        queryParams.push(endDate);
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cu.used_at', startDate, endDate, { startIndex: paramIndex });
+      whereConditions.push(...dateFilter.conditions);
+      queryParams.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       if (courseId) {
         whereConditions.push(`cu.course_id = $${paramIndex}`);
@@ -270,17 +257,10 @@ class CouponAnalyticsService extends Service {
       const queryParams = [];
       let paramIndex = 1;
 
-      if (startDate) {
-        whereConditions.push(`cu.used_at >= $${paramIndex}`);
-        queryParams.push(startDate);
-        paramIndex++;
-      }
-
-      if (endDate) {
-        whereConditions.push(`cu.used_at <= $${paramIndex}`);
-        queryParams.push(endDate);
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cu.used_at', startDate, endDate, { startIndex: paramIndex });
+      whereConditions.push(...dateFilter.conditions);
+      queryParams.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       if (courseId) {
         whereConditions.push(`cu.course_id = $${paramIndex}`);
@@ -403,17 +383,10 @@ class CouponAnalyticsService extends Service {
       const queryParams = [];
       let paramIndex = 1;
 
-      if (startDate) {
-        whereConditions.push(`cu.used_at >= $${paramIndex}`);
-        queryParams.push(startDate);
-        paramIndex++;
-      }
-
-      if (endDate) {
-        whereConditions.push(`cu.used_at <= $${paramIndex}`);
-        queryParams.push(endDate);
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cu.used_at', startDate, endDate, { startIndex: paramIndex });
+      whereConditions.push(...dateFilter.conditions);
+      queryParams.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       if (courseId) {
         whereConditions.push(`cu.course_id = $${paramIndex}`);
@@ -568,17 +541,10 @@ class CouponAnalyticsService extends Service {
         paramIndex++;
       }
 
-      if (startDate) {
-        whereConditions.push(`cu.used_at >= $${paramIndex}`);
-        queryParams.push(startDate);
-        paramIndex++;
-      }
-
-      if (endDate) {
-        whereConditions.push(`cu.used_at <= $${paramIndex}`);
-        queryParams.push(endDate);
-        paramIndex++;
-      }
+      const dateFilter = dateRangeFilter('cu.used_at', startDate, endDate, { startIndex: paramIndex });
+      whereConditions.push(...dateFilter.conditions);
+      queryParams.push(...dateFilter.params);
+      paramIndex = dateFilter.nextIndex;
 
       if (courseId) {
         whereConditions.push(`cu.course_id = $${paramIndex}`);

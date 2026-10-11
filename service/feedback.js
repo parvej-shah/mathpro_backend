@@ -1,6 +1,7 @@
 const Service = require('./base').Service;
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../util/logger');
+const { dateRangeFilter } = require('../util/dateRangeFilter');
 const { buildUpdate } = require('../util/buildUpdate');
 const { pageMeta } = require('../util/pagination');
 
@@ -576,15 +577,10 @@ class FeedbackService extends Service {
                 whereValues.push(access.courseIds);
             }
 
-            if (startDate) {
-                whereConditions.push(`f.created_at >= $${paramIndex++}`);
-                whereValues.push(startDate);
-            }
-
-            if (endDate) {
-                whereConditions.push(`f.created_at <= $${paramIndex++}`);
-                whereValues.push(endDate);
-            }
+            const dateFilter = dateRangeFilter('f.created_at', startDate, endDate, { startIndex: paramIndex });
+            whereConditions.push(...dateFilter.conditions);
+            whereValues.push(...dateFilter.params);
+            paramIndex = dateFilter.nextIndex;
 
             const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
