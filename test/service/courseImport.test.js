@@ -22,19 +22,20 @@ after(async () => {
     await pool.end();
 });
 
-// Runs one import of `data` (synchronously, via processImport) and returns the tracking row.
+// Runs one import of `content` (synchronously, via processImport) and returns the tracking row.
 let n = 0;
-const runImport = async (mode, data) => {
-    const key = `import-${++n}.json`;
-    uploads[key] = JSON.stringify(data);
-    const tracking = await service.createImportTracking('json', mode, ADMIN.id);
+const runRawImport = async (mode, content, { format = 'json', validateOnly = false } = {}) => {
+    const key = `import-${++n}.${format}`;
+    uploads[key] = content;
+    const tracking = await service.createImportTracking(format, mode, ADMIN.id);
     const importId = tracking.data.import_id;
-    await service.processImport(key, 'json', mode, ADMIN.id, importId, false);
+    await service.processImport(key, format, mode, ADMIN.id, importId, validateOnly);
     const row = (await pool.query(
         'SELECT status, course_id, summary, errors FROM course_import_tracking WHERE import_id = $1', [importId]
     )).rows[0];
     return row;
 };
+const runImport = (mode, data, options) => runRawImport(mode, JSON.stringify(data), options);
 
 const courseState = async (courseId) => {
     const course = (await pool.query(
@@ -156,4 +157,91 @@ test('upsert: creates a missing course, then updates it in place', async () => {
     const state = await courseState(created.course_id);
     assert.strictEqual(state.course.description, 'changed');
     assert.deepStrictEqual(state.chapters[1].modules.map((m) => m.title), ['Quiz', 'Quiz 2']);
+});
+
+// ---------- failures and validate-only (nothing is written) ----------
+
+const courseCount = async () => (await pool.query('SELECT count(*)::int AS n FROM course')).rows[0].n;
+const failedWith = async (row, errors) => {
+    assert.strictEqual(row.status, 'failed');
+    assert.deepStrictEqual(row.errors, errors);
+    assert.strictEqual(row.course_id, null);
+};
+
+test('unsupported format and unparsable files', async () => {
+    const before = await courseCount();
+    await failedWith(await runRawImport('create', '{}', { format: 'xml' }), [{ error: 'Unsupported format: xml' }]);
+    const broken = await runRawImport('create', '{not json');
+    assert.strictEqual(broken.status, 'failed');
+    assert.match(broken.errors[0].error, /^Failed to parse JSON file: /);
+    await failedWith(await runRawImport('create', '{"chapters": []}'), [{ error: 'Invalid JSON format: missing course object' }]);
+    await failedWith(await runRawImport('create', '{"course": {"title": "x"}}'), [{ error: 'Invalid JSON format: missing chapters array' }]);
+    assert.strictEqual(await courseCount(), before);
+});
+
+test('course, chapter and module validation stop the import', async () => {
+    const before = await courseCount();
+    const data = (patch) => {
+        const d = structuredClone(base);
+        d.course.title = 'Never Written';
+        patch(d);
+        return d;
+    };
+    await failedWith(await runImport('create', data((d) => { d.course.title = ' '; })),
+        [{ type: 'course', error: { title: 'Course title is required' } }]);
+    await failedWith(await runImport('create', data((d) => { d.course.price = -1; })),
+        [{ type: 'course', error: { price: 'Price must be a non-negative number' } }]);
+
+    // every chapter is checked and the errors collected; null chapters are reported too
+    await failedWith(await runImport('create', data((d) => {
+        d.chapters[0].serial = 0;
+        d.chapters[1].is_live = 'yes';
+        d.chapters.push(null);
+    })), [{
+        type: 'chapters',
+        error: {
+            'chapters[0].serial': 'Chapter serial must be a positive integer',
+            'chapters[1].is_live': 'is_live must be a boolean',
+            chapter_2: 'Chapter is null or undefined',
+        },
+    }]);
+
+    // modules are only checked once the chapters pass
+    await failedWith(await runImport('create', data((d) => {
+        d.chapters[0].modules[0].category = 'AUDIO';
+        d.chapters[0].modules.push(null);
+        d.chapters[1].modules[0].data = { quiz: 'not-a-list' };
+    })), [{
+        type: 'modules',
+        error: {
+            'chapters[0].modules[0].category': 'Category must be one of: VIDEO, QUIZ, PDF, TEXT',
+            chapter_0_module_2: 'Module is null or undefined',
+            'chapters[1].modules[0].data.quiz': 'Quiz must be an array',
+        },
+    }]);
+    assert.strictEqual(await courseCount(), before);
+});
+
+test('validate-only reports a summary and writes nothing', async () => {
+    const before = await courseCount();
+    const data = structuredClone(base);
+    data.course.title = 'Only Validated';
+    data.chapters.push({ serial: 3, title: 'No modules' });
+    const row = await runImport('create', data, { validateOnly: true });
+    assert.strictEqual(row.status, 'completed');
+    assert.strictEqual(row.course_id, null);
+    assert.deepStrictEqual(row.summary, { total_chapters: 3, total_modules: 3, modules_by_type: { TEXT: 1, PDF: 1, QUIZ: 1 } });
+    assert.strictEqual(await courseCount(), before);
+});
+
+test('a database error inside the import rolls back and is recorded', async () => {
+    const before = await courseCount();
+    const data = structuredClone(base);
+    data.course.title = 'Rolled Back';
+    data.chapters[0].modules[0].serial = 2 ** 31; // out of range for an integer column
+    const row = await runImport('create', data);
+    assert.strictEqual(row.status, 'failed');
+    assert.strictEqual(row.errors.length, 1);
+    assert.strictEqual(typeof row.errors[0].error, 'string');
+    assert.strictEqual(await courseCount(), before);
 });
