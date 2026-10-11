@@ -42,3 +42,19 @@ test('updateRole: nothing supplied is refused', async () => {
   svc.getRoleById = async () => ({ success: true, data: { name: 'custom' } });
   assert.deepEqual(await svc.updateRole(9, {}), { success: false, error: 'No fields to update' });
 });
+
+const { FAQService } = require('../../service/managerial/faq');
+const { RoutineService } = require('../../service/managerial/routine');
+
+test('CrudService.deleteEntry: faq returns id, routine returns nothing', async () => {
+  const faq = new FAQService();
+  const faqCalls = captured(faq, [{ id: 1 }]);
+  await faq.deleteEntry(1);
+  assert.equal(faqCalls[0].sql, 'DELETE FROM public_faq WHERE id = $1 RETURNING id');
+  assert.deepEqual(faqCalls[0].params, [1]);
+
+  const routine = new RoutineService();
+  const rCalls = captured(routine, []);
+  await routine.deleteEntry(2);
+  assert.equal(rCalls[0].sql, 'DELETE FROM course_routine WHERE id = $1');
+});

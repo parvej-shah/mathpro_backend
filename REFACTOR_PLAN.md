@@ -318,11 +318,12 @@ the catalogue in `.claude/conventions.md` so future work reuses it instead of re
   *Duplicate Code → Extract Function.* Response keys **must** match per endpoint (some say
   `total`, some `totalCount`), so the helper returns raw numbers and the caller keeps its envelope. *L.*
   Introduced as `util/pagination.js` `parsePagination` (`parseInt(x) || default`, capped limit, plus offset). Adopted in `user/feedback.getCourseFeedbacks`. Call sites that use `x ? parseInt(x) : d` differ for `0`/junk input (they pass 0/NaN through), so each is adopted only after checking that edge; `paginatedQuery` is deferred until a second adopter shows the common shape.
-- [ ] **R3 `BaseCrudService`** (*Duplicate Code → Pull Up Method / Form Template Method*).
+- [~] **R3 `BaseCrudService`** (*Duplicate Code → Pull Up Method / Form Template Method*).
   `Service` subclasses already declare `table`, `pk` and `cols`, but nothing uses them. A
   `CrudService` with `findById`, `list`, `create`, `update` (via R1) and `remove`, with hooks
   for ordering and scoping. Adopt in the small, near-identical services first: `faq`,
   `announcement`, `routine`, `book`, `chapter`, `featuredItem` (~1,100 lines today). *M.*
+  Introduced as `service/shared/crudService.js` with the one operation that is genuinely identical, `deleteEntry` (`pk` default `id`, optional `deleteReturning`); `faq` and `routine` extend it. On reading the six services, `create`/`update`/`getById` differ in normalisation, column lists, timestamp format (epoch seconds vs `NOW()`) and key shape (`featuredItem` has a composite key), so a generic version would need so many hooks that it costs more than it saves. Those stay in the subclasses; `update` can use R1's `buildUpdate` where a service builds its SET dynamically.
 - [ ] **R4 Purchasable item registry** (*Switch Statements / Parallel Inheritance →
   Replace Conditional with Polymorphism*). One `itemTypes` registry describing course, bundle
   and book: price lookup, existence check, enrollment/fulfillment, coupon link table, display

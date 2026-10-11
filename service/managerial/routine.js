@@ -1,7 +1,7 @@
 const { managerialAccountTypes } = require('../../util/constants');
-const Service = require('../base').Service;
+const { CrudService } = require('../shared/crudService');
 
-class RoutineService extends Service {
+class RoutineService extends CrudService {
     constructor() {
         super();
     }
@@ -227,14 +227,6 @@ class RoutineService extends Service {
             JOIN course c ON r.course_id = c.id
             WHERE r.${this.pk} = $1
         `;
-        var params = [id];
-        var result = await this.query(query, params);
-        return result;
-    };
-
-    // Delete routine
-    deleteEntry = async (id) => {
-        var query = `DELETE FROM ${this.table} WHERE ${this.pk} = $1`;
         var params = [id];
         var result = await this.query(query, params);
         return result;

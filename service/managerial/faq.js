@@ -1,4 +1,4 @@
-const Service = require("../base").Service;
+const { CrudService } = require("../shared/crudService");
 
 const VALID_CATEGORIES = new Set([
   "courses",
@@ -7,8 +7,9 @@ const VALID_CATEGORIES = new Set([
   "support",
 ]);
 
-class FAQService extends Service {
+class FAQService extends CrudService {
   table = "public_faq";
+  deleteReturning = "id";
 
   normalizePayload = (payload = {}, { partial = false } = {}) => {
     const normalized = {};
@@ -148,9 +149,6 @@ class FAQService extends Service {
     );
   };
 
-  deleteEntry = async (id) => {
-    return this.query(`DELETE FROM ${this.table} WHERE id = $1 RETURNING id`, [id]);
-  };
 }
 
 module.exports = {
